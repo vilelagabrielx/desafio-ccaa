@@ -1,0 +1,357 @@
+<!-- Header Principal -->
+<header class="main-header">
+  <div class="top-bar">
+    <div class="container">
+      <div class="logo">
+        <span class="logo-icon">📚</span>
+        <h1>CCAA Books</h1>
+      </div>
+      <!-- Botão Mobile Menu -->
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+        <span class="hamburger"></span>
+      </button>
+      
+      <!-- Menu Mobile -->
+      <div class="mobile-menu" [class.active]="mobileMenuOpen()">
+                 <div class="mobile-menu-header">
+           <h3>Menu</h3>
+           <button class="mobile-close mobile-only" (click)="toggleMobileMenu()" aria-label="Fechar menu">×</button>
+         </div>
+        
+        <!-- Busca Mobile -->
+        <div class="mobile-search">
+          <div class="search-container">
+            <select class="search-category">
+              <option>TODO O CATÁLOGO</option>
+              <option>Por Título</option>
+              <option>Por Autor</option>
+              <option>Por Categoria</option>
+            </select>
+            <input 
+              type="text" 
+              placeholder="Buscar livros..." 
+              class="search-input"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              (keyup.enter)="searchBooks()"
+            >
+            <button class="search-btn" (click)="searchBooks()">
+              🔍
+            </button>
+          </div>
+        </div>
+        
+        <!-- Ações Mobile -->
+        <div class="mobile-actions">
+          <button class="mobile-action-btn" (click)="addBook(); toggleMobileMenu()">
+            <span class="btn-icon">📚</span>
+            Adicionar Livro
+          </button>
+          <button class="mobile-action-btn" (click)="clearFilters(); toggleMobileMenu()">
+            <span class="btn-icon">🔄</span>
+            Limpar Filtros
+          </button>
+        </div>
+        
+        <!-- Usuário Mobile -->
+        <div class="mobile-user">
+          <span class="user-icon">👤</span>
+          <span class="user-text">Administrador</span>
+        </div>
+      </div>
+      
+      <!-- Busca Desktop -->
+      <div class="search-section desktop-only">
+        <div class="search-container">
+          <select class="search-category">
+            <option>TODO O CATÁLOGO</option>
+            <option>Por Título</option>
+            <option>Por Autor</option>
+            <option>Por Categoria</option>
+          </select>
+          <input 
+            type="text" 
+            placeholder="Buscar livros..." 
+            class="search-input"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            (keyup.enter)="searchBooks()"
+          >
+          <button class="search-btn" (click)="searchBooks()">
+            🔍
+          </button>
+        </div>
+      </div>
+      
+      <!-- Usuário Desktop -->
+      <div class="user-section desktop-only">
+        <span class="user-icon">👤</span>
+        <span class="user-text">Administrador</span>
+      </div>
+    </div>
+  </div>
+  
+
+</header>
+
+
+
+<!-- Conteúdo Principal -->
+<main class="main-content">
+  <div class="container">
+    <h2 class="page-title">Livros</h2>
+    
+         <div class="content-wrapper">
+       <!-- Botão Mobile para Sidebar -->
+       <button class="mobile-sidebar-toggle" (click)="toggleSidebar()">
+         <span class="sidebar-icon">📚</span>
+         <span class="sidebar-text">Categorias</span>
+         <span class="sidebar-arrow">▼</span>
+       </button>
+       
+       <!-- Sidebar de Categorias -->
+       <aside class="categories-sidebar" [class.mobile-open]="sidebarOpen()">
+                 <div class="sidebar-header">
+          <h3 class="sidebar-title">Categorias</h3>
+          <button class="mobile-sidebar-close mobile-only" (click)="toggleSidebar()">×</button>
+        </div>
+         <ul class="categories-list">
+           <li 
+             class="category-item" 
+             [class.active]="selectedCategory() === ''"
+             (click)="filterByCategory(''); toggleSidebar()"
+           >
+             <span class="category-name">Todas as Categorias</span>
+             <span class="category-count">({{ books().length }})</span>
+           </li>
+           @for (category of categoryCounts(); track category.id) {
+             <li 
+               class="category-item" 
+               [class.active]="selectedCategory() === category.name"
+               (click)="filterByCategory(category.name); toggleSidebar()"
+             >
+               <span class="category-name">{{ category.name }}</span>
+               <span class="category-count">({{ category.count }})</span>
+             </li>
+           }
+         </ul>
+       </aside>
+
+      <!-- Área Principal de Conteúdo -->
+      <div class="main-area">
+                 <!-- Cards de Destaque -->
+         <div class="featured-cards">
+           <div class="featured-card">
+             <h3>Livros Favoritos</h3>
+             <p>confira ></p>
+           </div>
+           <div class="featured-card">
+             <h3>Novidades</h3>
+             <p>confira ></p>
+           </div>
+         </div>
+         
+         <!-- Filtro Mobile Ativo -->
+         @if (selectedCategory()) {
+           <div class="mobile-filter-info">
+             <span class="filter-label">Filtro ativo:</span>
+             <span class="filter-value">{{ selectedCategory() }}</span>
+             <button class="clear-filter-btn" (click)="filterByCategory('')">
+               <span class="btn-icon">✕</span>
+             </button>
+           </div>
+         }
+
+        <!-- Modal de Adição de Livro -->
+        @if (showAddForm()) {
+          <div class="modal-overlay" (click)="closeModal()">
+            <div class="modal-container" (click)="$event.stopPropagation()">
+                             <div class="modal-header">
+                 <h3>📚 Adicionar Novo Livro</h3>
+                 <button class="modal-close" (click)="closeModal()" aria-label="Fechar modal">×</button>
+               </div>
+              
+              <div class="modal-body">
+                <form class="modal-form" (ngSubmit)="saveBook()">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="title">Título *</label>
+                      <input 
+                        id="title"
+                        type="text" 
+                        [(ngModel)]="newBook().title" 
+                        name="title"
+                        placeholder="Título do livro"
+                        required
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label for="author">Autor *</label>
+                      <input 
+                        id="author"
+                        type="text" 
+                        [(ngModel)]="newBook().author" 
+                        name="author"
+                        placeholder="Nome do autor"
+                        required
+                      >
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="isbn">ISBN *</label>
+                      <input 
+                        id="isbn"
+                        type="text" 
+                        [(ngModel)]="newBook().isbn" 
+                        name="isbn"
+                        placeholder="ISBN"
+                        required
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label for="category">Categoria *</label>
+                      <select 
+                        id="category"
+                        [(ngModel)]="newBook().category" 
+                        name="category"
+                        required
+                      >
+                        <option value="">Selecione uma categoria</option>
+                        @for (category of categoryCounts(); track category.id) {
+                          <option [value]="category.name">{{ category.name }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="price">Preço *</label>
+                      <div class="input-with-icon">
+                        <span class="currency-icon">R$</span>
+                        <input 
+                          id="price"
+                          type="number" 
+                          [(ngModel)]="newBook().price" 
+                          name="price"
+                          placeholder="0.00" 
+                          step="0.01"
+                          min="0"
+                          required
+                        >
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="stock">Estoque *</label>
+                      <input 
+                        id="stock"
+                        type="number" 
+                        [(ngModel)]="newBook().stockQuantity" 
+                        name="stock"
+                        placeholder="0"
+                        min="0"
+                        required
+                      >
+                    </div>
+                  </div>
+                  
+                  <div class="form-group full-width">
+                    <label for="description">Descrição</label>
+                    <textarea 
+                      id="description"
+                      [(ngModel)]="newBook().description" 
+                      name="description"
+                      placeholder="Breve descrição do livro..."
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="publisher">Editora</label>
+                      <input 
+                        id="publisher"
+                        type="text" 
+                        [(ngModel)]="newBook().publisher" 
+                        name="publisher"
+                        placeholder="Nome da editora"
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label for="year">Ano de Publicação</label>
+                      <input 
+                        id="year"
+                        type="number" 
+                        [(ngModel)]="newBook().publicationYear" 
+                        name="year"
+                        placeholder="2024"
+                        min="1900"
+                        max="2030"
+                      >
+                    </div>
+                  </div>
+                  
+                  <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" (click)="closeModal()">
+                      Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="!isFormValid()">
+                      <span class="btn-icon">💾</span>
+                      Salvar Livro
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Lista de Livros -->
+        <div class="books-section">
+          <h3>Indicações</h3>
+          
+          @if (filteredBooks().length === 0) {
+            <div class="no-books">
+              <p>Nenhum livro encontrado.</p>
+            </div>
+          } @else {
+            <div class="books-grid">
+              @for (book of filteredBooks(); track book.id) {
+                <div class="book-card">
+                  <div class="book-cover">
+                    <img 
+                      [src]="book.coverImage" 
+                      [alt]="book.title" 
+                      class="cover-image"
+                      (error)="onImageError($event)"
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+                    <div class="fallback-cover" style="display: none;">
+                      <div class="fallback-content">
+                        <span class="fallback-icon">📚</span>
+                        <span class="fallback-title">{{ book.title }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="book-info">
+                    <h4 class="book-title">{{ book.title }}</h4>
+                    <p class="book-author">{{ book.author }}</p>
+                    <p class="book-category">{{ book.category }}</p>
+                    <p class="book-price">R$ {{ book.price.toFixed(2) }}</p>
+                    <p class="book-stock">Estoque: {{ book.stockQuantity }}</p>
+                    <div class="book-actions">
+                      <button class="btn btn-small btn-primary" (click)="editBook(book)">Editar</button>
+                      <button class="btn btn-small btn-danger" (click)="deleteBook(book.id)">Excluir</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
