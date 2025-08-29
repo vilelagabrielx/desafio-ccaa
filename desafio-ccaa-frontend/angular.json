@@ -32,6 +32,18 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "budgets": [
+              {
+                "type": "initial",
+                "maximumWarning": "500kB",
+                "maximumError": "1MB"
+              },
+              {
+                "type": "anyComponentStyle",
+                "maximumWarning": "17kB",
+                "maximumError": "20kB"
+              }
             ]
           },
           "configurations": {
@@ -51,8 +63,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "optimization": false,
-              "extractLicenses": false,
+              "outputHashing": "none",
               "sourceMap": true
             }
           },

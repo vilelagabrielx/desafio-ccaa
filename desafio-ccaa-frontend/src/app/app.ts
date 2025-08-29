@@ -1,15 +1,14 @@
-import { Component, signal } from '@angular/core';
-import { BookCatalog } from './components/book-catalog/book-catalog';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [BookCatalog],
+  imports: [],
   template: `
-    <app-book-catalog></app-book-catalog>
-  `,
-  styleUrl: './app.scss'
+    <div style="padding: 20px; text-align: center;">
+      <h1>CCAA Books - Teste</h1>
+      <p>Teste de aplicação Angular funcionando!</p>
+    </div>
+  `
 })
-export class App {
-  protected readonly title = signal('CCAA Books - Catálogo de Livros');
-}
+export class App {}

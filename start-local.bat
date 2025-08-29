@@ -11,7 +11,7 @@ echo.
 cd desafio-ccaa-backend\src\DesafioCCAA.API
 
 echo 🚀 Executando: dotnet run
-start "Backend - Desafio CCAA" cmd /k "dotnet run --urls=http://localhost:5000;https://localhost:5001"
+start "Backend - Desafio CCAA" powershell -Command "cd '%~dp0desafio-ccaa-backend\src\DesafioCCAA.API'; $env:ASPNETCORE_ENVIRONMENT='Development'; dotnet run --urls=http://localhost:5000;https://localhost:5001"
 
 echo.
 echo ⏳ Aguardando 5 segundos para o backend inicializar...

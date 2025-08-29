@@ -53,6 +53,43 @@ Sistema completo de gerenciamento de livros com autenticação JWT, desenvolvido
 - SQL Server (LocalDB, Express ou Developer)
 - Visual Studio 2022 ou VS Code
 
+## 🔒 Segurança
+
+**⚠️ IMPORTANTE**: Este projeto foi configurado com as melhores práticas de segurança. Todas as credenciais sensíveis foram movidas para variáveis de ambiente.
+
+### Configuração Segura
+
+1. **Copie o arquivo de exemplo**:
+```bash
+cp env.example .env
+```
+
+2. **Configure suas credenciais** no arquivo `.env`:
+```bash
+# Database
+DB_HOST=seu-host
+DB_PASSWORD=sua-senha-segura
+
+# Auth0
+AUTH0_DOMAIN=seu-dominio
+AUTH0_CLIENT_ID=seu-client-id
+AUTH0_CLIENT_SECRET=seu-client-secret
+
+# JWT
+JWT_SECRET_KEY=sua-chave-super-secreta
+```
+
+3. **NUNCA commite o arquivo `.env`** - ele já está no `.gitignore`
+
+### Detalhes de Segurança
+- ✅ Credenciais movidas para variáveis de ambiente
+- ✅ Arquivo `.env` excluído do controle de versão
+- ✅ Configuração de exemplo sem dados reais
+- ✅ Validação de entrada com FluentValidation
+- ✅ Autenticação JWT segura
+
+Para mais detalhes, consulte [SECURITY_FIXES.md](./SECURITY_FIXES.md)
+
 ## 🛠️ Instalação e Configuração
 
 ### 1. Clone o repositório
@@ -66,15 +103,13 @@ cd desafio-ccaa
 dotnet restore
 ```
 
-### 3. Configure a connection string
-Edite o arquivo `src/DesafioCCAA.API/appsettings.json` e ajuste a connection string:
+### 3. Configure as variáveis de ambiente
+```bash
+# Copie o arquivo de exemplo
+cp env.example .env
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=seu-servidor;Database=DesafioCCAA;Trusted_Connection=true;MultipleActiveResultSets=true"
-  }
-}
+# Edite com suas credenciais reais
+nano .env
 ```
 
 ### 4. Execute as migrações

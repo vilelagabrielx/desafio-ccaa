@@ -13,6 +13,10 @@ using DesafioCCAA.Infrastructure.Data;
 using DesafioCCAA.Infrastructure.Repositories;
 using DesafioCCAA.Business.Entities;
 using Microsoft.AspNetCore.Identity;
+using DotNetEnv;
+
+// Load environment variables from .env file
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,11 +95,45 @@ var dbProvider = Environment.GetEnvironmentVariable("DB_PROVIDER") ??
                  builder.Configuration["Database:Provider"] ?? 
                  "PostgreSQL";
 
-var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
-                      builder.Configuration.GetConnectionString(dbProvider);
+// Debug: Check which configuration files are loaded
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"Content Root: {builder.Environment.ContentRootPath}");
+Console.WriteLine($"Application Name: {builder.Environment.ApplicationName}");
+
+// List all configuration sources
+Console.WriteLine("Configuration sources:");
+Console.WriteLine($"  - Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"  - Content Root: {builder.Environment.ContentRootPath}");
+
+// Build connection string from configuration or environment variables
+var connectionString = builder.Configuration.GetConnectionString("PostgreSQL");
+Console.WriteLine($"Connection string from config: {connectionString}");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    // Fallback to environment variables if no connection string in config
+    connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+        var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
+        var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "postgres";
+        var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "postgres";
+        var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+        
+        if (dbProvider.ToLower() == "postgresql" || dbProvider.ToLower() == "postgres")
+        {
+            connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUsername};Password={dbPassword};";
+        }
+        else if (dbProvider.ToLower() == "sqlserver" || dbProvider.ToLower() == "mssql")
+        {
+            connectionString = builder.Configuration.GetConnectionString("SQLServer");
+        }
+    }
+}
 
 Console.WriteLine($"Using Database Provider: {dbProvider}");
-Console.WriteLine($"Connection String: {connectionString?.Substring(0, Math.Min(50, connectionString.Length))}...");
+Console.WriteLine($"Connection String: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
