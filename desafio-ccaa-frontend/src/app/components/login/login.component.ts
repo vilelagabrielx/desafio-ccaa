@@ -1,361 +1,225 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService, LocalUserLogin } from '../../services/auth.service';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { loginAnimations } from './login.animations';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
+  animations: loginAnimations,
   template: `
     <div class="login-container">
-      <div class="login-card">
-        <div class="header">
-          <h1>🔐 Entrar</h1>
-          <p>Faça login com sua conta</p>
+      <div class="login-card" [@fadeInUp]>
+        <!-- Logo e Título -->
+        <div class="login-header">
+          <div class="logo">
+            <div class="logo-icon">📚</div>
+            <h1>CCAA Books</h1>
+          </div>
+          <p class="subtitle">Sistema de Gerenciamento de Livros</p>
         </div>
 
+        <!-- Formulário de Login -->
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-          <!-- E-mail -->
-          <div class="form-group">
-            <label for="email">E-mail/Login *</label>
-            <input 
-              type="email" 
-              id="email" 
-              formControlName="email"
-              placeholder="Digite seu e-mail"
-              [class.error]="isFieldInvalid('email')">
-            <div *ngIf="isFieldInvalid('email')" class="error-message">
-              <span *ngIf="loginForm.get('email')?.hasError('required')">E-mail é obrigatório</span>
-              <span *ngIf="loginForm.get('email')?.hasError('email')">E-mail inválido</span>
+          <h2>Entrar na sua conta</h2>
+          
+          <!-- Campo E-mail -->
+          <div class="form-group" [class.has-error]="isFieldInvalid('email')">
+            <label for="email">
+              E-mail
+              <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input 
+                type="email" 
+                id="email" 
+                formControlName="email" 
+                placeholder="Digite seu e-mail"
+                class="form-input"
+                [class.error]="isFieldInvalid('email')"
+                [class.success]="isFieldValid('email')"
+                autocomplete="email"
+                (blur)="onFieldBlur('email')"
+              >
+              <div class="input-icon">
+                <span *ngIf="isFieldValid('email')" class="icon-success">✓</span>
+                <span *ngIf="isFieldInvalid('email')" class="icon-error">✗</span>
+              </div>
+            </div>
+            <div *ngIf="isFieldInvalid('email')" class="error-message" [@slideDown]>
+              <span *ngIf="loginForm.get('email')?.hasError('required')">
+                <i class="fas fa-exclamation-circle"></i> E-mail é obrigatório
+              </span>
+              <span *ngIf="loginForm.get('email')?.hasError('email')">
+                <i class="fas fa-exclamation-circle"></i> Formato de e-mail inválido
+              </span>
             </div>
           </div>
 
-          <!-- Senha -->
-          <div class="form-group">
-            <label for="password">Senha *</label>
-            <input 
-              type="password" 
-              id="password" 
-              formControlName="password"
-              placeholder="Digite sua senha"
-              [class.error]="isFieldInvalid('password')">
-            <div *ngIf="isFieldInvalid('password')" class="error-message">
-              Senha é obrigatória
+          <!-- Campo Senha -->
+          <div class="form-group" [class.has-error]="isFieldInvalid('password')">
+            <label for="password">
+              Senha
+              <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input 
+                [type]="showPassword ? 'text' : 'password'" 
+                id="password" 
+                formControlName="password" 
+                placeholder="Digite sua senha"
+                class="form-input"
+                [class.error]="isFieldInvalid('password')"
+                [class.success]="isFieldValid('password')"
+                autocomplete="current-password"
+                (blur)="onFieldBlur('password')"
+              >
+              <div class="input-icon">
+                <button 
+                  type="button" 
+                  class="password-toggle"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                >
+                  <span *ngIf="!showPassword">👁️</span>
+                  <span *ngIf="showPassword">🙈</span>
+                </button>
+              </div>
+            </div>
+            <div *ngIf="isFieldInvalid('password')" class="error-message" [@slideDown]>
+              <span *ngIf="loginForm.get('password')?.hasError('required')">
+                <i class="fas fa-exclamation-circle"></i> Senha é obrigatória
+              </span>
+              <span *ngIf="loginForm.get('password')?.hasError('minlength')">
+                <i class="fas fa-exclamation-circle"></i> Senha deve ter pelo menos 6 caracteres
+              </span>
             </div>
           </div>
 
-          <!-- Botões -->
-          <div class="form-actions">
-            <button 
-              type="submit" 
-              class="btn btn-primary"
-              [disabled]="loginForm.invalid || isSubmitting">
-              <span *ngIf="!isSubmitting">Entrar</span>
-              <span *ngIf="isSubmitting">Entrando...</span>
-            </button>
-            
-            <button 
-              type="button" 
-              class="btn btn-secondary"
-              (click)="goToRegister()"
-              [disabled]="isSubmitting">
-              Criar nova conta
-            </button>
+          <!-- Lembrar de mim -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                formControlName="rememberMe"
+                class="checkbox-input"
+              >
+              <span class="checkmark"></span>
+              Lembrar de mim
+            </label>
           </div>
+
+          <!-- Botões de ação -->
+          <button 
+            type="submit" 
+            class="btn btn-primary btn-full"
+            [disabled]="loginForm.invalid || isSubmitting"
+            [class.loading]="isSubmitting"
+            [@pulse]="isSubmitting ? 'pulse' : 'idle'"
+          >
+            <span *ngIf="!isSubmitting" class="btn-content">
+              <i class="fas fa-sign-in-alt"></i>
+              Entrar com Auth0
+            </span>
+            <span *ngIf="isSubmitting" class="btn-content">
+              <div class="spinner"></div>
+              Entrando...
+            </span>
+          </button>
+
+          <div class="divider">
+            <span>ou</span>
+          </div>
+
+          <button 
+            type="button"
+            (click)="signupWithAuth0()" 
+            class="btn btn-secondary btn-full"
+            [disabled]="isSubmitting"
+          >
+            <i class="fas fa-user-plus"></i>
+            Criar nova conta
+          </button>
 
           <!-- Links de ajuda -->
-          <div class="help-links">
-            <a href="/reset-password" class="help-link">
+          <div class="form-footer">
+            <a href="#" class="forgot-password" (click)="forgotPassword($event)">
               <i class="fas fa-key"></i>
-              Esqueci minha senha
-            </a>
-            <a href="/auth0-signup" class="help-link">
-              <i class="fas fa-user-plus"></i>
-              Criar conta Auth0
+              Esqueceu sua senha?
             </a>
           </div>
         </form>
 
-        <!-- Separador -->
-        <div class="separator">
-          <span>ou</span>
-        </div>
-
-        <!-- Login com Auth0 -->
-        <div class="auth0-section">
-          <button 
-            type="button" 
-            class="btn btn-auth0"
-            (click)="loginWithAuth0()"
-            [disabled]="isSubmitting">
-            <i class="fas fa-external-link-alt"></i>
-            Entrar com Auth0
-          </button>
-          
-          <!-- Informações sobre verificação de email -->
-          <div class="auth0-info">
-            <small>
-              <i class="fas fa-info-circle"></i>
-              O Auth0 enviará um email de verificação para confirmar sua conta
-            </small>
+        <!-- Informações adicionais -->
+        <div class="login-info">
+          <div class="info-header">
+            <i class="fas fa-info-circle"></i>
+            <strong>Não tem uma conta?</strong>
           </div>
+          <p>
+            Crie uma conta de acesso no site, informando seu nome, data de nascimento, e-mail/login e senha de acesso.
+          </p>
         </div>
 
-        <!-- Mensagens de erro/sucesso -->
-        <div *ngIf="errorMessage" class="alert alert-error">
+        <!-- Mensagens de feedback -->
+        <div *ngIf="errorMessage" class="alert alert-error" [@slideDown]>
+          <i class="fas fa-exclamation-triangle"></i>
           {{ errorMessage }}
+          <button type="button" class="alert-close" (click)="clearError()">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         
-        <div *ngIf="successMessage" class="alert alert-success">
+        <div *ngIf="successMessage" class="alert alert-success" [@slideDown]>
+          <i class="fas fa-check-circle"></i>
           {{ successMessage }}
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background-color: #f8f9fa;
-      padding: 1rem;
-    }
-
-    .login-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .header h1 {
-      color: #333;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-
-    .header p {
-      color: #666;
-      margin: 0;
-    }
-
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    label {
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-
-    input {
-      padding: 0.75rem;
-      border: 2px solid #e3e3e3;
-      border-radius: 4px;
-      font-size: 1rem;
-      transition: border-color 0.2s ease;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    input.error {
-      border-color: #dc3545;
-    }
-
-    .error-message {
-      color: #dc3545;
-      font-size: 0.8rem;
-      margin-top: 0.25rem;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background-color: #007bff;
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background-color: #0056b3;
-    }
-
-    .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background-color: #545b62;
-    }
-
-    .separator {
-      text-align: center;
-      margin: 2rem 0;
-      position: relative;
-    }
-
-    .separator::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background-color: #e3e3e3;
-    }
-
-    .separator span {
-      background-color: white;
-      padding: 0 1rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .auth0-section {
-      text-align: center;
-    }
-
-    .auth0-info {
-      margin-top: 1rem;
-      padding: 0.75rem;
-      background-color: #e3f2fd;
-      border-radius: 4px;
-      border: 1px solid #bbdefb;
-    }
-
-    .auth0-info small {
-      color: #1976d2;
-      font-size: 0.8rem;
-    }
-
-    .auth0-info i {
-      margin-right: 0.5rem;
-    }
-
-    .help-links {
-      margin-top: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .help-link {
-      color: #007bff;
-      text-decoration: none;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.2s ease;
-    }
-
-    .help-link:hover {
-      color: #0056b3;
-      text-decoration: underline;
-    }
-
-    .help-link i {
-      font-size: 0.8rem;
-    }
-
-    .btn-auth0 {
-      background-color: #f39c12;
-      color: white;
-      width: 100%;
-    }
-
-    .btn-auth0:hover:not(:disabled) {
-      background-color: #e67e22;
-    }
-
-    .alert {
-      padding: 1rem;
-      border-radius: 4px;
-      margin-top: 1rem;
-      text-align: center;
-    }
-
-    .alert-error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    @media (max-width: 768px) {
-      .login-card {
-        padding: 1.5rem;
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-    }
-  `]
+  styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
+  showPassword = false;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
+    private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      rememberMe: [false]
     });
+  }
+
+  ngOnInit(): void {
+    // Validação em tempo real com debounce
+    this.loginForm.valueChanges
+      .pipe(
+        takeUntil(this.destroy$),
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(() => {
+        this.clearMessages();
+      });
+
+    // Restaurar dados salvos
+    this.restoreFormData();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
@@ -367,44 +231,59 @@ export class LoginComponent {
   }
 
   /**
-   * Submete o formulário de login
+   * Verifica se um campo é válido
+   */
+  isFieldValid(fieldName: string): boolean {
+    const field = this.loginForm.get(fieldName);
+    return field ? field.valid && field.dirty : false;
+  }
+
+  /**
+   * Manipula o evento blur dos campos
+   */
+  onFieldBlur(fieldName: string): void {
+    const field = this.loginForm.get(fieldName);
+    if (field) {
+      field.markAsTouched();
+    }
+  }
+
+  /**
+   * Alterna a visibilidade da senha
+   */
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  /**
+   * Submete o formulário
    */
   onSubmit(): void {
     if (this.loginForm.invalid) {
+      this.markAllFieldsAsTouched();
+      this.showValidationErrors();
       return;
     }
 
     this.isSubmitting = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.clearMessages();
+    this.saveFormData();
 
-    const credentials: LocalUserLogin = {
-      email: this.loginForm.value.email,
-      password: this.loginForm.value.password
-    };
-
-    this.authService.loginLocalUser(credentials).subscribe({
-      next: (user) => {
-        this.successMessage = 'Login realizado com sucesso! Redirecionando...';
-        this.isSubmitting = false;
-        
-        // Redirecionar após 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 2000);
-      },
-      error: (error) => {
-        this.errorMessage = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
-        this.isSubmitting = false;
-      }
-    });
+    // Simular delay para melhor UX
+    setTimeout(() => {
+      this.loginWithAuth0();
+    }, 500);
   }
 
   /**
-   * Navega para a página de registro
+   * Mostra erros de validação com animação
    */
-  goToRegister(): void {
-    this.router.navigate(['/register']);
+  private showValidationErrors(): void {
+    this.errorMessage = 'Por favor, corrija os erros no formulário.';
+    // Adicionar animação shake nos campos com erro
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 3000);
   }
 
   /**
@@ -412,5 +291,84 @@ export class LoginComponent {
    */
   loginWithAuth0(): void {
     this.authService.loginWithAuth0();
+  }
+
+  /**
+   * Faz signup via Auth0
+   */
+  signupWithAuth0(): void {
+    this.authService.signupWithAuth0({
+      email: this.loginForm.get('email')?.value,
+      password: this.loginForm.get('password')?.value
+    });
+  }
+
+  /**
+   * Esqueceu a senha
+   */
+  forgotPassword(event: Event): void {
+    event.preventDefault();
+    this.successMessage = 'Redirecionando para recuperação de senha...';
+    // Implementar lógica de recuperação
+  }
+
+  /**
+   * Marca todos os campos como tocados para mostrar erros
+   */
+  private markAllFieldsAsTouched(): void {
+    Object.keys(this.loginForm.controls).forEach(key => {
+      const control = this.loginForm.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  /**
+   * Limpa mensagens de erro e sucesso
+   */
+  private clearMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  /**
+   * Limpa mensagem de erro
+   */
+  clearError(): void {
+    this.errorMessage = '';
+  }
+
+  /**
+   * Salva dados do formulário no localStorage
+   */
+  private saveFormData(): void {
+    if (this.loginForm.get('rememberMe')?.value) {
+      const formData = {
+        email: this.loginForm.get('email')?.value,
+        rememberMe: true
+      };
+      localStorage.setItem('loginFormData', JSON.stringify(formData));
+    } else {
+      localStorage.removeItem('loginFormData');
+    }
+  }
+
+  /**
+   * Restaura dados salvos do formulário
+   */
+  private restoreFormData(): void {
+    const savedData = localStorage.getItem('loginFormData');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        if (data.rememberMe && data.email) {
+          this.loginForm.patchValue({
+            email: data.email,
+            rememberMe: true
+          });
+        }
+      } catch (error) {
+        console.warn('Erro ao restaurar dados do formulário:', error);
+      }
+    }
   }
 }

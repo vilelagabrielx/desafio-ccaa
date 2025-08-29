@@ -106,8 +106,129 @@ public class UserService(
 
     public async Task<ServiceResult<UserResponseDto>> GetCurrentUserAsync()
     {
-        // Implementation would depend on how you get the current user context
-        throw new NotImplementedException();
+        try
+        {
+            // Implementation will be added here
+            throw new NotImplementedException();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao obter usuário atual");
+            return ServiceResult<UserResponseDto>.Failure("Erro interno ao obter usuário atual");
+        }
+    }
+
+    /// <summary>
+    /// Sincroniza usuário do Auth0 com o sistema local
+    /// </summary>
+    public async Task<ServiceResult<UserResponseDto>> SyncAuth0UserAsync(Auth0UserSyncDto auth0User)
+    {
+        try
+        {
+            // Verificar se usuário já existe
+            var existingUser = await userRepository.GetByEmailAsync(auth0User.Email);
+            
+            if (existingUser != null)
+            {
+                // Atualizar usuário existente com Auth0Id se necessário
+                if (string.IsNullOrEmpty(existingUser.Auth0Id))
+                {
+                    existingUser.Auth0Id = auth0User.Auth0Id;
+                    existingUser.UpdatedAt = DateTime.UtcNow;
+                    await userRepository.UpdateAsync(existingUser);
+                    logger.LogInformation("Usuário existente atualizado com Auth0Id: {Email}", auth0User.Email);
+                }
+                
+                return ServiceResult<UserResponseDto>.Success(MapToUserResponseDto(existingUser));
+            }
+
+            // Criar novo usuário
+            var user = new User
+            {
+                UserName = auth0User.Email,
+                Email = auth0User.Email,
+                FirstName = auth0User.FirstName,
+                LastName = auth0User.LastName,
+                Auth0Id = auth0User.Auth0Id,
+                EmailConfirmed = auth0User.EmailVerified,
+                DateOfBirth = DateTime.UtcNow.AddYears(-18), // Default age
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            // Criar usuário sem senha (Auth0 gerencia autenticação)
+            var result = await userManager.CreateAsync(user);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                logger.LogError("Erro ao criar usuário Auth0: {Errors}", string.Join(", ", errors));
+                return ServiceResult<UserResponseDto>.ValidationFailure(errors);
+            }
+
+            var userResponse = MapToUserResponseDto(user);
+            logger.LogInformation("Usuário Auth0 sincronizado com sucesso: {Email}", auth0User.Email);
+            
+            return ServiceResult<UserResponseDto>.Success(userResponse);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao sincronizar usuário Auth0: {Email}", auth0User.Email);
+            return ServiceResult<UserResponseDto>.Failure("Erro interno ao sincronizar usuário Auth0");
+        }
+    }
+
+    /// <summary>
+    /// Garante que o usuário existe no sistema local
+    /// </summary>
+    public async Task<ServiceResult<UserResponseDto>> EnsureUserExistsAsync(string email, string auth0Id)
+    {
+        try
+        {
+            var user = await userRepository.GetByEmailAsync(email);
+            
+            if (user == null)
+            {
+                // Criar usuário básico se não existir
+                var newUser = new User
+                {
+                    UserName = email,
+                    Email = email,
+                    FirstName = "Usuário",
+                    LastName = "Auth0",
+                    Auth0Id = auth0Id,
+                    EmailConfirmed = true,
+                    DateOfBirth = DateTime.UtcNow.AddYears(-18),
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+
+                var result = await userManager.CreateAsync(newUser);
+                if (!result.Succeeded)
+                {
+                    var errors = result.Errors.Select(e => e.Description).ToList();
+                    logger.LogError("Erro ao criar usuário básico: {Errors}", string.Join(", ", errors));
+                    return ServiceResult<UserResponseDto>.ValidationFailure(errors);
+                }
+
+                user = newUser;
+                logger.LogInformation("Usuário básico criado automaticamente: {Email}", email);
+            }
+            else if (string.IsNullOrEmpty(user.Auth0Id))
+            {
+                // Atualizar usuário existente com Auth0Id
+                user.Auth0Id = auth0Id;
+                user.UpdatedAt = DateTime.UtcNow;
+                await userRepository.UpdateAsync(user);
+                logger.LogInformation("Usuário existente atualizado com Auth0Id: {Email}", email);
+            }
+
+            return ServiceResult<UserResponseDto>.Success(MapToUserResponseDto(user));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao garantir existência do usuário: {Email}", email);
+            return ServiceResult<UserResponseDto>.Failure("Erro interno ao garantir existência do usuário");
+        }
     }
 
     public async Task<ServiceResult<bool>> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto)

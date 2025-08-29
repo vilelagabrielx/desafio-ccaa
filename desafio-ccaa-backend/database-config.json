@@ -1,0 +1,56 @@
+{
+  "database": {
+    "postgresql": {
+      "host": "aws-1-us-east-1.pooler.supabase.com",
+      "port": 5432,
+      "database": "postgres",
+      "username": "postgres.dhzqrasofzdjfpfhhnqm",
+      "password": "ccaateste@123",
+      "ssl": {
+        "mode": "Require",
+        "trustServerCertificate": true
+      },
+      "timeout": 300,
+      "connectionString": "Host=aws-1-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.dhzqrasofzdjfpfhhnqm;Password=ccaateste@123;SSL Mode=Require;Trust Server Certificate=true;Command Timeout=300;"
+    },
+    "sqlserver": {
+      "server": "(localdb)\\mssqllocaldb",
+      "database": "DesafioCCAA",
+      "trustedConnection": true,
+      "multipleActiveResultSets": true,
+      "connectionString": "Server=(localdb)\\mssqllocaldb;Database=DesafioCCAA;Trusted_Connection=true;MultipleActiveResultSets=true"
+    },
+    "provider": "PostgreSQL",
+    "urls": {
+      "supabase": "postgresql://postgres.dhzqrasofzdjfpfhhnqm:ccaateste@123@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
+      "pooler": "aws-1-us-east-1.pooler.supabase.com",
+      "direct": "db.dhzqrasofzdjfpfhhnqm.supabase.co"
+    }
+  },
+  "auth0": {
+    "domain": "dev-5uh7sugfyt00g0qf.us.auth0.com",
+    "clientId": "SEU_CLIENT_ID_AQUI",
+    "clientSecret": "SEU_CLIENT_SECRET_AQUI",
+    "audience": "https://dev-5uh7sugfyt00g0qf.us.auth0.com/api/v2/",
+    "issuer": "https://dev-5uh7sugfyt00g0qf.us.auth0.com/"
+  },
+  "jwt": {
+    "key": "SUA_CHAVE_SECRETA_JWT_AQUI",
+    "issuer": "DesafioCCAA",
+    "audience": "DesafioCCAAUsers",
+    "expiryInDays": 7
+  },
+  "email": {
+    "smtp": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "username": "seu-email@gmail.com",
+      "password": "SUA_SENHA_DE_APP_AQUI"
+    }
+  },
+  "ports": {
+    "postgresql": 5432,
+    "recommended": 5432,
+    "description": "Porta única para todas as operações (Session Pooler - mais estável)"
+  }
+}

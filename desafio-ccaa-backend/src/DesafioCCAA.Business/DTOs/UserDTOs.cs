@@ -15,6 +15,16 @@ public record UserLoginDto
     public string Password { get; init; } = string.Empty;
 }
 
+public record Auth0UserSyncDto
+{
+    public string Auth0Id { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string FirstName { get; init; } = string.Empty;
+    public string LastName { get; init; } = string.Empty;
+    public string? Picture { get; init; }
+    public bool EmailVerified { get; init; }
+}
+
 public record UserResponseDto
 {
     public string Id { get; init; } = string.Empty;
@@ -44,4 +54,10 @@ public record ResetPasswordDto
     public string Token { get; init; } = string.Empty;
     public string NewPassword { get; init; } = string.Empty;
     public string ConfirmNewPassword { get; init; } = string.Empty;
+}
+
+public record EnsureUserExistsRequest
+{
+    public string Email { get; init; } = string.Empty;
+    public string Auth0Id { get; init; } = string.Empty;
 }

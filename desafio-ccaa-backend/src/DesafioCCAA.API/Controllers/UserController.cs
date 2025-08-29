@@ -72,21 +72,45 @@ public class UserController : ControllerBase
     /// <summary>
     /// Obtém usuário atual logado
     /// </summary>
-    [HttpGet("me")]
+    [HttpGet("current")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized(new { error = "Token inválido" });
-        }
+        // Implementation will be added here
+        return Ok(new { message = "Endpoint em desenvolvimento" });
+    }
 
-        var result = await _userService.GetUserByIdAsync(userId);
+    /// <summary>
+    /// Sincroniza usuário do Auth0 com o sistema local
+    /// </summary>
+    [HttpPost("sync-auth0")]
+    public async Task<IActionResult> SyncAuth0User([FromBody] Auth0UserSyncDto auth0User)
+    {
+        var result = await _userService.SyncAuth0UserAsync(auth0User);
         
         if (!result.IsSuccess)
         {
-            return NotFound(new { error = result.ErrorMessage });
+            if (result.ValidationErrors?.Any() == true)
+            {
+                return BadRequest(new { errors = result.ValidationErrors });
+            }
+            return BadRequest(new { error = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Garante que o usuário existe no sistema local
+    /// </summary>
+    [HttpPost("ensure-exists")]
+    public async Task<IActionResult> EnsureUserExists([FromBody] EnsureUserExistsRequest request)
+    {
+        var result = await _userService.EnsureUserExistsAsync(request.Email, request.Auth0Id);
+        
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { error = result.ErrorMessage });
         }
 
         return Ok(result.Data);

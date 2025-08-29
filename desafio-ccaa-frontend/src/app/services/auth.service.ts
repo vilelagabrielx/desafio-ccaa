@@ -338,9 +338,72 @@ export class AuthService {
     
     this.auth0.loginWithRedirect({
       appState: { 
-        target: '/'
+        target: '/',
+        mode: 'reset-password',
+        email: email
       }
     });
+  }
+
+  /**
+   * Sincroniza usuário Auth0 com o sistema local
+   */
+  syncAuth0User(auth0User: any): Observable<LocalUser> {
+    const syncData = {
+      auth0Id: auth0User.sub,
+      email: auth0User.email,
+      firstName: auth0User.given_name || auth0User.name?.split(' ')[0] || 'Usuário',
+      lastName: auth0User.family_name || auth0User.name?.split(' ').slice(1).join(' ') || 'Auth0',
+      picture: auth0User.picture,
+      emailVerified: auth0User.email_verified || false
+    };
+
+    return this.http.post<ApiResponse<LocalUser>>(
+      `${environment.api.baseUrl}/api/user/sync-auth0`,
+      syncData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return response.data;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (response.errors && response.errors.length > 0) {
+          throw new Error(response.errors.join(', '));
+        } else {
+          throw new Error('Erro desconhecido na sincronização');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro na sincronização Auth0:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Garante que o usuário existe no sistema local
+   */
+  ensureUserExists(email: string, auth0Id: string): Observable<LocalUser> {
+    return this.http.post<ApiResponse<LocalUser>>(
+      `${environment.api.baseUrl}/api/user/ensure-exists`,
+      { email, auth0Id },
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return response.data;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else {
+          throw new Error('Erro desconhecido ao garantir existência do usuário');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro ao garantir existência do usuário:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

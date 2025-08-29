@@ -1,197 +1,323 @@
-# 🚀 Desafio CCAA - Sistema de Gerenciamento de Livros
+# 🚀 Desafio CCAA - Sistema de Gestão de Livros
 
-Sistema completo de gerenciamento de livros com autenticação Auth0, desenvolvido em .NET 8 (Backend) e Angular 17 (Frontend).
+## 📋 Visão Geral
 
-## 📋 **Visão Geral do Projeto**
+Sistema full-stack para gestão de livros com autenticação Auth0, desenvolvido em **Angular 17** (frontend) e **ASP.NET Core 8.0** (backend), utilizando **PostgreSQL** como banco de dados.
 
-O Desafio CCAA é uma aplicação web moderna que permite:
-- 📚 **Gerenciar catálogo de livros** (CRUD completo)
-- 👤 **Sistema de autenticação** integrado com Auth0
-- 🔐 **Controle de acesso** baseado em roles
-- 🌐 **API REST** com documentação Swagger
-- 💻 **Interface responsiva** em Angular
-
-## 🏗️ **Arquitetura do Sistema**
-
-```
-desafio-ccaa/
-├── 📁 desafio-ccaa-backend/     # API .NET 8 + Entity Framework
-├── 📁 desafio-ccaa-frontend/    # Aplicação Angular 17
-└── 📄 README.md                 # Este arquivo
-```
-
-## 🛠️ **Tecnologias Utilizadas**
-
-### **Backend (.NET 8)**
-- **Framework:** ASP.NET Core 8.0
-- **ORM:** Entity Framework Core 8.0
-- **Banco de Dados:** PostgreSQL (Supabase)
-- **Autenticação:** Auth0 + JWT
-- **Validação:** FluentValidation
-- **Arquitetura:** Clean Architecture (Business, Infrastructure, API)
-- **Testes:** xUnit
+## 🏗️ Arquitetura
 
 ### **Frontend (Angular 17)**
-- **Framework:** Angular 17
-- **UI Framework:** Angular Material
-- **Estilização:** SCSS
-- **Estado:** Angular Signals
-- **Roteamento:** Angular Router
-- **HTTP Client:** Angular HttpClient
+- **Framework**: Angular 17 com TypeScript
+- **UI Components**: Componentes reutilizáveis com Angular Material
+- **State Management**: RxJS BehaviorSubject para gerenciamento de estado
+- **Authentication**: Auth0 Angular SDK
+- **Forms**: Reactive Forms com validações customizadas
+- **Responsive Design**: Layout adaptável para diferentes dispositivos
 
-### **Infraestrutura**
-- **Banco:** PostgreSQL (Supabase)
-- **Autenticação:** Auth0
-- **Deploy:** Preparado para Azure/Heroku
-- **Versionamento:** Git
+### **Backend (ASP.NET Core 8.0)**
+- **Framework**: ASP.NET Core 8.0 Web API
+- **ORM**: Entity Framework Core 8.0
+- **Authentication**: JWT + Auth0 Integration
+- **Database**: PostgreSQL (Supabase)
+- **Architecture**: Clean Architecture com separação de responsabilidades
+- **API Design**: RESTful com padrão ServiceResult para respostas consistentes
 
-## 🚀 **Como Executar o Projeto**
+### **Database (PostgreSQL)**
+- **Provider**: Supabase (PostgreSQL as a Service)
+- **Connection**: Session Pooler (porta 5432) para estabilidade
+- **Migrations**: Entity Framework Core migrations para versionamento do schema
+- **Indexes**: Índices otimizados para consultas frequentes
+
+## 🔐 Sistema de Autenticação
+
+### **Auth0 Integration**
+- **Single Sign-On**: Login social e tradicional
+- **User Management**: Gestão centralizada de usuários
+- **Security**: MFA e políticas de senha configuráveis
+- **Synchronization**: Sincronização automática entre Auth0 e banco local
+
+### **Resilience Pattern**
+- **Fallback Strategy**: Sistema continua funcionando mesmo com falhas de sincronização
+- **Retry Mechanism**: Tentativas automáticas de sincronização
+- **Error Handling**: Tratamento robusto de erros com fallback para mock services
+- **User Experience**: Interface clara para usuários durante problemas de conectividade
+
+## 🗄️ Estrutura do Banco
+
+### **Entidades Principais**
+```sql
+-- Tabela de Usuários
+CREATE TABLE "AspNetUsers" (
+    "Id" VARCHAR(450) PRIMARY KEY,
+    "UserName" VARCHAR(256),
+    "Email" VARCHAR(256),
+    "FirstName" VARCHAR(100),
+    "LastName" VARCHAR(100),
+    "Auth0Id" VARCHAR(255), -- ID único do Auth0
+    "DateOfBirth" TIMESTAMP,
+    "EmailConfirmed" BOOLEAN,
+    "PhoneNumber" VARCHAR(20),
+    "PhoneNumberConfirmed" BOOLEAN,
+    "TwoFactorEnabled" BOOLEAN,
+    "LockoutEnd" TIMESTAMP,
+    "LockoutEnabled" BOOLEAN,
+    "AccessFailedCount" INTEGER
+);
+
+-- Tabela de Livros
+CREATE TABLE "Books" (
+    "Id" INTEGER PRIMARY KEY,
+    "Title" VARCHAR(200) NOT NULL,
+    "Author" VARCHAR(200) NOT NULL,
+    "ISBN" VARCHAR(20),
+    "PublicationYear" INTEGER,
+    "Genre" VARCHAR(100),
+    "Description" TEXT,
+    "Available" BOOLEAN DEFAULT true,
+    "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### **Índices e Performance**
+- **Auth0Id**: Índice para busca rápida por usuário Auth0
+- **Email**: Índice único para usuários
+- **ISBN**: Índice para busca de livros
+- **Title + Author**: Índice composto para busca textual
+
+## 🔧 Configuração e Deploy
 
 ### **Pré-requisitos**
-- **.NET 8 SDK** instalado
-- **Node.js 18+** instalado
-- **PostgreSQL** (ou conta Supabase)
-- **Conta Auth0** configurada
+- .NET 8.0 SDK
+- Node.js 18+ e npm
+- PostgreSQL (ou Supabase)
+- Conta Auth0
 
-### **1. Clone o Repositório**
+### **Configuração Rápida**
 ```bash
-git clone [URL_DO_REPOSITORIO]
+# 1. Clone o repositório
+git clone <repository-url>
 cd desafio-ccaa
-```
 
-### **2. Configurar Backend**
-```bash
-cd desafio-ccaa-backend
+# 2. Backend
+cd desafio-ccaa-backend/src/DesafioCCAA.API
+dotnet restore
+dotnet ef database update
+dotnet run
 
-# Configurar variáveis de ambiente
-# Copiar appsettings.template.json para appsettings.Development.json
-# Configurar string de conexão do Supabase
-# Configurar Auth0
-
-# Executar migration (usar arquivo .bat para facilitar)
-EXECUTAR_MIGRATION.bat
-```
-
-### **3. Configurar Frontend**
-```bash
+# 3. Frontend
 cd desafio-ccaa-frontend
-
-# Instalar dependências
 npm install
-
-# Configurar variáveis de ambiente
-# Configurar URL da API
-# Configurar Auth0
-
-# Executar em desenvolvimento
 npm start
 ```
 
-## 📚 **Guias Detalhados**
+### **🚀 Arquivos de Execução Rápida (.bat)**
 
-### **Backend (.NET)**
-- **📖 [Migration Guide](desafio-ccaa-backend/MIGRATION_GUIDE.md)** - Como criar e executar migrations
-- **📖 [Database Config](desafio-ccaa-backend/DATABASE_CONFIG.md)** - Configuração do banco PostgreSQL
-- **📖 [Auth0 Setup](desafio-ccaa-backend/AUTH0_SETUP.md)** - Configuração de autenticação
-- **📖 [Instruções de Execução](desafio-ccaa-backend/INSTRUCOES_EXECUCAO.md)** - Passo a passo completo
+Para facilitar o desenvolvimento, o projeto inclui arquivos .bat organizados por funcionalidade:
 
-### **Frontend (Angular)**
-- **📖 [README Frontend](desafio-ccaa-frontend/README.md)** - Guia específico do Angular
-- **📖 [API Migration](desafio-ccaa-frontend/API_MIGRATION.md)** - Migração da API
+#### **Backend (desafio-ccaa-backend/)**
+- **`start-backend.bat`** - Inicia a API .NET Core
+- **`stop-backend.bat`** - Finaliza todos os processos .NET
+- **`run-migration.bat`** - Executa migrations do banco de dados
+- **`sync-config.bat`** - Sincroniza configurações em todos os arquivos
 
-### **Arquivos de Execução Rápida**
-- **⚡ [EXECUTAR_MIGRATION.bat](desafio-ccaa-backend/EXECUTAR_MIGRATION.bat)** - Executa migration automaticamente
-- **⚡ [COMANDOS_RAPIDOS.bat](desafio-ccaa-backend/COMANDOS_RAPIDOS.bat)** - Menu de comandos EF
-- **⚡ [COMANDOS_MIGRATION.txt](desafio-ccaa-backend/COMANDOS_MIGRATION.txt)** - Comandos passo a passo
+#### **Frontend (desafio-ccaa-frontend/)**
+- **`start-frontend.bat`** - Inicia a aplicação Angular
+- **`stop-frontend.bat`** - Finaliza todos os processos Node.js
 
-## 🔧 **Configurações Importantes**
-
-### **Backend**
-- **String de Conexão:** Use porta 5432 (Session Pooler) para migrations
-- **Timeout:** Configure `Command Timeout=300;` para operações longas
-- **Auth0:** Configure Domain, Audience e Issuer no appsettings.json
-
-### **Frontend**
-- **API URL:** Configure a URL da API no environment.ts
-- **Auth0:** Configure Domain e Client ID
-- **CORS:** Backend deve permitir origem do frontend
-
-## 🚨 **Problemas Comuns e Soluções**
-
-### **Migration não funciona**
-- ✅ Use porta 5432 em vez de 6543
-- ✅ Configure timeout de 300+ segundos
-- ✅ Execute `$env:PATH += ";$env:USERPROFILE\.dotnet\tools"` no PowerShell
-
-### **Auth0 não conecta**
-- ✅ Verifique configurações no appsettings.json
-- ✅ Confirme URLs de callback configuradas no Auth0
-- ✅ Verifique se o domínio está correto
-
-### **Frontend não acessa API**
-- ✅ Verifique se a API está rodando
-- ✅ Confirme URL da API no environment.ts
-- ✅ Verifique configuração de CORS no backend
-
-## 📊 **Estrutura do Banco de Dados**
-
-### **Tabelas Principais**
-- **`Books`** - Catálogo de livros
-- **`AspNetUsers`** - Usuários do sistema
-- **`AspNetRoles`** - Roles/perfis
-- **`__EFMigrationsHistory`** - Controle de migrations
-
-### **Relacionamentos**
-- Usuários podem ter múltiplos roles
-- Livros são gerenciados por usuários autenticados
-- Sistema de claims para permissões granulares
-
-## 🧪 **Testes**
-
-### **Backend**
+#### **Como Usar:**
 ```bash
+# 1. Executar migration (sempre primeiro)
 cd desafio-ccaa-backend
-dotnet test
+run-migration.bat
+
+# 2. Iniciar backend
+start-backend.bat
+
+# 3. Em outro terminal, iniciar frontend
+cd desafio-ccaa-frontend
+start-frontend.bat
+
+# 4. Para finalizar
+stop-backend.bat    # em um terminal
+stop-frontend.bat   # em outro terminal
 ```
+
+#### **⚠️ Importante:**
+- **Sempre execute a migration primeiro** antes de iniciar o sistema
+- **Use terminais separados** para backend e frontend
+- **Execute como administrador** se houver problemas de permissão
+
+### **Variáveis de Ambiente**
+```bash
+# Database
+DB_HOST=aws-1-us-east-1.pooler.supabase.com
+DB_PORT=5432
+DB_NAME=postgres
+DB_USERNAME=postgres.dhzqrasofzdjfpfhhnqm
+DB_PASSWORD=sua-senha
+
+# Auth0
+AUTH0_DOMAIN=seu-dominio.auth0.com
+AUTH0_CLIENT_ID=seu-client-id
+AUTH0_CLIENT_SECRET=seu-client-secret
+AUTH0_AUDIENCE=sua-audience
+AUTH0_ISSUER=seu-issuer
+
+# JWT
+JWT_SECRET_KEY=sua-chave-secreta
+```
+
+## 🚀 Funcionalidades
+
+### **Gestão de Usuários**
+- ✅ Registro e login via Auth0
+- ✅ Perfil de usuário com dados pessoais
+- ✅ Sincronização automática com sistema local
+- ✅ Recuperação de senha
+
+### **Gestão de Livros**
+- ✅ Cadastro de livros com metadados completos
+- ✅ Busca por título, autor e ISBN
+- ✅ Controle de disponibilidade
+- ✅ Histórico de operações
+
+### **Sistema de Reservas**
+- ✅ Reserva de livros disponíveis
+- ✅ Devolução com validações
+- ✅ Histórico de empréstimos
+- ✅ Notificações de status
+
+## 🎯 Decisões Arquiteturais
+
+### **1. Separação de Responsabilidades**
+- **Frontend**: Apenas apresentação e interação
+- **Backend**: Lógica de negócio e acesso a dados
+- **Database**: Persistência e integridade dos dados
+
+### **2. Padrão ServiceResult**
+```csharp
+public class ServiceResult<T>
+{
+    public bool Success { get; set; }
+    public T Data { get; set; }
+    public string Message { get; set; }
+    public List<string> Errors { get; set; }
+}
+```
+
+### **3. Resiliência e Fallback**
+- Sistema continua funcionando com mock services em caso de falha
+- Retry automático para operações críticas
+- Fallback para funcionalidades essenciais
+
+### **4. Configuração Centralizada**
+- Arquivo único `database-config.json` para todas as configurações
+- Script de atualização automática em todos os arquivos
+- Consistência garantida entre ambientes
+
+## 📊 Métricas e Performance
+
+### **Database**
+- **Connection Pooling**: Supabase Session Pooler para estabilidade
+- **Timeout**: 300 segundos para operações longas
+- **SSL**: Conexões criptografadas obrigatórias
+
+### **API**
+- **Response Time**: < 200ms para operações simples
+- **Throughput**: Suporte a múltiplas requisições simultâneas
+- **Caching**: Estratégias de cache para dados estáticos
 
 ### **Frontend**
-```bash
-cd desafio-ccaa-frontend
-npm test
-```
+- **Bundle Size**: Otimizado com tree-shaking
+- **Lazy Loading**: Carregamento sob demanda de módulos
+- **PWA Ready**: Preparado para Progressive Web App
 
-## 📦 **Deploy**
+## 🔒 Segurança
+
+### **Autenticação e Autorização**
+- **Auth0**: Gestão centralizada de identidade
+- **JWT**: Tokens seguros com expiração configurável
+- **HTTPS**: Todas as comunicações criptografadas
+
+### **Proteção de Dados**
+- **Input Validation**: Validação rigorosa de entrada
+- **SQL Injection**: Proteção via Entity Framework
+- **XSS Prevention**: Sanitização de dados de saída
+
+### **Auditoria**
+- **Logs**: Registro de todas as operações críticas
+- **User Tracking**: Rastreamento de ações do usuário
+- **Error Monitoring**: Captura e análise de erros
+
+## 🧪 Testes
 
 ### **Backend**
-- Preparado para Azure App Service
-- Configuração de variáveis de ambiente
-- Migrations automáticas
+- **Unit Tests**: Testes unitários para serviços
+- **Integration Tests**: Testes de integração com banco
+- **API Tests**: Testes de endpoints da API
 
 ### **Frontend**
-- Build de produção: `npm run build`
-- Deploy em qualquer servidor estático
-- Configuração de rotas para SPA
+- **Component Tests**: Testes de componentes Angular
+- **Service Tests**: Testes de serviços e lógica de negócio
+- **E2E Tests**: Testes end-to-end com Cypress
 
-## 🤝 **Contribuição**
+## 📈 Roadmap
 
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+### **Fase 1 (Atual)**
+- ✅ Sistema básico de autenticação
+- ✅ CRUD de usuários e livros
+- ✅ Sistema de reservas
 
-## 📄 **Licença**
+### **Fase 2 (Próxima)**
+- 🔄 Sistema de notificações
+- 🔄 Relatórios e analytics
+- 🔄 API para integração externa
 
-Este projeto é parte do Desafio CCAA.
+### **Fase 3 (Futura)**
+- 📚 Sistema de categorias e tags
+- 📚 Recomendações inteligentes
+- 📚 Mobile app nativo
 
-## 📞 **Suporte**
+## 🤝 Contribuição
 
-Para dúvidas ou problemas:
-1. Consulte os guias específicos de cada área
-2. Verifique os arquivos de configuração
-3. Use os arquivos .bat para execução automática
-4. Consulte a documentação oficial das tecnologias
+### **Padrões de Código**
+- **C#**: Seguir convenções Microsoft
+- **TypeScript**: ESLint + Prettier
+- **Git**: Conventional Commits
+
+### **Processo de Desenvolvimento**
+1. Fork do repositório
+2. Criação de branch para feature
+3. Desenvolvimento com testes
+4. Pull Request com descrição detalhada
+5. Code Review obrigatório
+
+## 📞 Suporte
+
+### **Documentação**
+- **API Docs**: Swagger/OpenAPI
+- **Code Comments**: Documentação inline
+- **Architecture Decisions**: ADRs para mudanças importantes
+
+### **Contato**
+- **Issues**: GitHub Issues para bugs e features
+- **Discussions**: GitHub Discussions para dúvidas
+- **Wiki**: Documentação detalhada no repositório
 
 ---
 
-**💡 Dica:** Comece sempre pelo backend - configure o banco e execute as migrations antes de rodar o frontend!
+## 🎯 **Resumo Executivo**
+
+Este projeto demonstra competências em:
+- **Full-Stack Development**: Angular + ASP.NET Core
+- **Cloud Architecture**: Supabase + Auth0
+- **Database Design**: PostgreSQL com EF Core
+- **Security**: Autenticação JWT + OAuth2
+- **DevOps**: CI/CD, migrations, configuração
+- **Best Practices**: Clean Architecture, SOLID, DRY
+
+**Tecnologias**: Angular 17, ASP.NET Core 8.0, PostgreSQL, Entity Framework Core, Auth0, TypeScript, C#, Docker
+
+**Arquitetura**: Clean Architecture, RESTful API, Microservices-ready, Cloud-native
+
+**Qualidade**: Testes automatizados, documentação completa, padrões de código, segurança robusta

@@ -1,0 +1,609 @@
+// Cores do CCAA
+$ccaa-red: #F06292;
+$ccaa-blue: #2196F3;
+$ccaa-dark-blue: #303F9F;
+$ccaa-white: #FFFFFF;
+$ccaa-light-gray: #F5F5F5;
+$ccaa-gray: #757575;
+$ccaa-dark-gray: #424242;
+$ccaa-success: #4CAF50;
+$ccaa-error: #F44336;
+$ccaa-warning: #FF9800;
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, $ccaa-red 0%, $ccaa-blue 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-card {
+  background: $ccaa-white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $ccaa-red, $ccaa-blue);
+  }
+}
+
+.login-header {
+  margin-bottom: 30px;
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+
+    .logo-icon {
+      font-size: 3rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, $ccaa-red, $ccaa-blue);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+  }
+
+  .subtitle {
+    color: $ccaa-gray;
+    font-size: 1rem;
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+.login-form {
+  margin-bottom: 30px;
+
+  h2 {
+    color: $ccaa-dark-gray;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+
+    &.has-error {
+      .form-input {
+        border-color: $ccaa-error;
+        box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+      }
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: $ccaa-dark-gray;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+
+      .required {
+        color: $ccaa-error;
+        margin-left: 4px;
+      }
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .form-input {
+        width: 100%;
+        padding: 15px 18px;
+        padding-right: 50px; // Espaço para o ícone
+        border: 2px solid $ccaa-light-gray;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: $ccaa-white;
+        color: $ccaa-dark-gray;
+
+        &:focus {
+          outline: none;
+          border-color: $ccaa-blue;
+          box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+          transform: translateY(-1px);
+        }
+
+        &::placeholder {
+          color: $ccaa-gray;
+          opacity: 0.7;
+        }
+
+        &.error {
+          border-color: $ccaa-error;
+          box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+        }
+
+        &.success {
+          border-color: $ccaa-success;
+          box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+      }
+
+      .input-icon {
+        position: absolute;
+        right: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .icon-success {
+          color: $ccaa-success;
+          font-weight: bold;
+          font-size: 1.2rem;
+        }
+
+        .icon-error {
+          color: $ccaa-error;
+          font-weight: bold;
+          font-size: 1.2rem;
+        }
+
+        .password-toggle {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 5px;
+          border-radius: 50%;
+          transition: all 0.2s ease;
+          font-size: 1.2rem;
+
+          &:hover {
+            background: rgba(0, 0, 0, 0.05);
+            transform: scale(1.1);
+          }
+
+          &:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+          }
+        }
+      }
+    }
+
+    .error-message {
+      color: $ccaa-error;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: slideDown 0.3s ease-out;
+
+      i {
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  .checkbox-group {
+    margin-bottom: 25px;
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: $ccaa-dark-gray;
+      user-select: none;
+
+      .checkbox-input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+      }
+
+      .checkmark {
+        height: 20px;
+        width: 20px;
+        background-color: $ccaa-white;
+        border: 2px solid $ccaa-light-gray;
+        border-radius: 4px;
+        margin-right: 10px;
+        position: relative;
+        transition: all 0.2s ease;
+
+        &:after {
+          content: '';
+          position: absolute;
+          display: none;
+          left: 6px;
+          top: 2px;
+          width: 4px;
+          height: 8px;
+          border: solid $ccaa-white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+      }
+
+      &:hover .checkmark {
+        border-color: $ccaa-blue;
+        background-color: rgba(33, 150, 243, 0.05);
+      }
+
+      .checkbox-input:checked ~ .checkmark {
+        background-color: $ccaa-blue;
+        border-color: $ccaa-blue;
+
+        &:after {
+          display: block;
+        }
+      }
+    }
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    &:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(0);
+    }
+
+    &.loading {
+      cursor: wait;
+      
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+    }
+
+    .btn-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, $ccaa-blue, $ccaa-dark-blue);
+    color: $ccaa-white;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+    }
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, $ccaa-red, #E91E63);
+    color: $ccaa-white;
+    box-shadow: 0 4px 15px rgba(240, 98, 146, 0.3);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(240, 98, 146, 0.4);
+    }
+  }
+
+  .divider {
+    position: relative;
+    text-align: center;
+    margin: 25px 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: $ccaa-light-gray;
+    }
+
+    span {
+      background: $ccaa-white;
+      padding: 0 20px;
+      color: $ccaa-gray;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+
+  .form-footer {
+    margin-top: 20px;
+    text-align: center;
+
+    .forgot-password {
+      color: $ccaa-blue;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      &:hover {
+        color: $ccaa-dark-blue;
+        text-decoration: underline;
+      }
+
+      i {
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+.login-info {
+  background: linear-gradient(135deg, rgba(240, 98, 146, 0.1), rgba(33, 150, 243, 0.1));
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(240, 98, 146, 0.2);
+  margin-bottom: 20px;
+
+  .info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: $ccaa-red;
+    font-weight: 600;
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+
+  p {
+    color: $ccaa-dark-gray;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+// Alertas de feedback
+.alert {
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  animation: slideDown 0.3s ease-out;
+
+  .alert-close {
+    position: absolute;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    padding: 5px;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &.alert-error {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: $ccaa-error;
+    border: 1px solid rgba(244, 67, 54, 0.2);
+  }
+
+  &.alert-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: $ccaa-success;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+  }
+
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .login-container {
+    padding: 15px;
+  }
+
+  .login-card {
+    padding: 30px 25px;
+    border-radius: 16px;
+  }
+
+  .login-header {
+    .logo {
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .logo-icon {
+        font-size: 2.5rem;
+      }
+    }
+  }
+
+  .login-form {
+    h2 {
+      font-size: 1.3rem;
+    }
+
+    .btn {
+      padding: 14px 20px;
+      font-size: 0.95rem;
+    }
+
+    .form-group {
+      .input-wrapper {
+        .form-input {
+          padding-right: 45px;
+        }
+
+        .input-icon {
+          right: 12px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 25px 20px;
+  }
+
+  .login-header {
+    .logo {
+      flex-direction: column;
+      gap: 10px;
+
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+  }
+
+  .login-form {
+    .btn {
+      padding: 12px 18px;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Animações
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 100px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.login-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+// Estados de foco e hover aprimorados
+.form-input:focus + .input-icon .password-toggle {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+// Melhorias de acessibilidade
+@media (prefers-reduced-motion: reduce) {
+  .login-card,
+  .error-message,
+  .alert {
+    animation: none;
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+
+  .form-input:focus {
+    transform: none;
+  }
+}
+
+// Suporte para modo escuro (se implementado no futuro)
+@media (prefers-color-scheme: dark) {
+  .login-card {
+    background: #1a1a1a;
+    color: $ccaa-white;
+  }
+
+  .form-input {
+    background: #2a2a2a;
+    color: $ccaa-white;
+    border-color: #444;
+
+    &::placeholder {
+      color: #888;
+    }
+  }
+
+  .login-info {
+    background: rgba(240, 98, 146, 0.05);
+    border-color: rgba(240, 98, 146, 0.1);
+  }
+}
