@@ -5,6 +5,7 @@ import { routes } from './app.routes';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { authConfig } from '../auth.config';
 import { AuthInterceptor } from './services/auth.interceptor';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,6 +13,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([AuthInterceptor])
     ),
     provideRouter(routes),
-    provideAuth0(authConfig)
+    provideAuth0(authConfig),
+    provideAnimations()
   ]
 };

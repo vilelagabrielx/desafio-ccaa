@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { Auth0Service } from '../../services/auth0.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-callback',
@@ -124,7 +124,6 @@ export class CallbackComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private auth0Service: Auth0Service,
     private router: Router
   ) {}
 
@@ -134,47 +133,62 @@ export class CallbackComponent implements OnInit {
 
   private async processAuth0Callback(): Promise<void> {
     try {
+      console.log('🔄 Iniciando processamento do callback Auth0...');
+      
       // Aguardar um pouco para mostrar a tela de loading
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Obter usuário do Auth0
-      const auth0User = await this.auth0Service.getUser();
+      // Obter usuário do Auth0 via AuthService
+      console.log('🔍 Obtendo usuário do Auth0...');
+      const auth0User = await this.authService.getAuth0User();
       
       if (!auth0User) {
         throw new Error('Usuário Auth0 não encontrado');
       }
+      
+      console.log('✅ Usuário Auth0 obtido:', auth0User);
 
       // Sincronizar com sistema local
+      console.log('🔄 Sincronizando com sistema local...');
       await this.syncUserWithLocalSystem(auth0User);
 
-      // Redirecionar para página principal
-      this.router.navigate(['/']);
+      // Aguardar um pouco para garantir que o estado seja atualizado
+      console.log('⏳ Aguardando atualização do estado...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirecionar para o sistema da livraria
+      console.log('🚀 Redirecionando para o sistema da livraria...');
+      this.router.navigate(['/book-catalog']);
 
     } catch (error) {
-      console.error('Erro no callback Auth0:', error);
+      console.error('❌ Erro no callback Auth0:', error);
       this.handleError(error);
     }
   }
 
   private async syncUserWithLocalSystem(auth0User: any): Promise<void> {
     try {
+      console.log('🔄 Tentando sincronização completa...');
       // Tentar sincronização completa primeiro
-      await this.authService.syncAuth0User(auth0User).toPromise();
+      await firstValueFrom(this.authService.syncAuth0User(auth0User));
       console.log('✅ Usuário sincronizado com sucesso');
       
     } catch (syncError) {
       console.warn('⚠️ Falha na sincronização completa, tentando fallback:', syncError);
+      console.log('📊 Detalhes do erro de sincronização:', syncError);
       
       // Fallback: garantir que usuário existe
       try {
-        await this.authService.ensureUserExists(
+        console.log('🔄 Tentando fallback - garantir existência do usuário...');
+        await firstValueFrom(this.authService.ensureUserExists(
           auth0User.email, 
           auth0User.sub
-        ).toPromise();
+        ));
         console.log('✅ Usuário criado via fallback');
         
       } catch (fallbackError) {
         console.error('❌ Falha no fallback:', fallbackError);
+        console.log('📊 Detalhes do erro de fallback:', fallbackError);
         throw new Error('Não foi possível sincronizar usuário com o sistema local');
       }
     }

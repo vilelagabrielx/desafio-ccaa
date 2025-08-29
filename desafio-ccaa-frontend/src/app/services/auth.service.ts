@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { AuthService as Auth0Service } from '@auth0/auth0-angular';
-import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError } from 'rxjs';
+import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
@@ -303,6 +303,22 @@ export class AuthService {
   }
 
   /**
+   * Faz login via Google através do Auth0
+   */
+  loginWithGoogle(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    this.auth0.loginWithRedirect({
+      appState: { 
+        target: '/'
+      },
+      authorizationParams: {
+        connection: 'google-oauth2'
+      }
+    });
+  }
+
+  /**
    * Reenvia email de verificação
    */
   resendVerificationEmail(): void {
@@ -349,6 +365,9 @@ export class AuthService {
    * Sincroniza usuário Auth0 com o sistema local
    */
   syncAuth0User(auth0User: any): Observable<LocalUser> {
+    console.log('🔄 AuthService: Iniciando sincronização Auth0...');
+    console.log('📊 AuthService: Dados do usuário Auth0:', auth0User);
+    
     const syncData = {
       auth0Id: auth0User.sub,
       email: auth0User.email,
@@ -357,6 +376,9 @@ export class AuthService {
       picture: auth0User.picture,
       emailVerified: auth0User.email_verified || false
     };
+    
+    console.log('📤 AuthService: Dados para sincronização:', syncData);
+    console.log('🌐 AuthService: URL da API:', `${environment.api.baseUrl}/api/user/sync-auth0`);
 
     return this.http.post<ApiResponse<LocalUser>>(
       `${environment.api.baseUrl}/api/user/sync-auth0`,
@@ -364,18 +386,29 @@ export class AuthService {
       { headers: this.getAuthHeaders() }
     ).pipe(
       map(response => {
+        console.log('📥 AuthService: Resposta da API:', response);
         if (response.data) {
+          console.log('✅ AuthService: Sincronização bem-sucedida');
           return response.data;
         } else if (response.error) {
+          console.error('❌ AuthService: Erro na resposta:', response.error);
           throw new Error(response.error);
         } else if (response.errors && response.errors.length > 0) {
+          console.error('❌ AuthService: Erros na resposta:', response.errors);
           throw new Error(response.errors.join(', '));
         } else {
+          console.error('❌ AuthService: Resposta inválida da API');
           throw new Error('Erro desconhecido na sincronização');
         }
       }),
       catchError(error => {
-        console.error('Erro na sincronização Auth0:', error);
+        console.error('❌ AuthService: Erro na sincronização Auth0:', error);
+        console.log('📊 AuthService: Detalhes do erro:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url
+        });
         return throwError(() => error);
       })
     );
@@ -392,6 +425,8 @@ export class AuthService {
     ).pipe(
       map(response => {
         if (response.data) {
+          // Atualizar o estado do usuário local
+          this.currentLocalUserSubject.next(response.data);
           return response.data;
         } else if (response.error) {
           throw new Error(response.error);
@@ -580,5 +615,32 @@ export class AuthService {
         return throwError(() => error);
       })
     );
+  }
+
+  /**
+   * Obtém usuário atual do Auth0
+   */
+  async getAuth0User(): Promise<any> {
+    try {
+      console.log('🔍 AuthService: Obtendo usuário Auth0...');
+      
+      // Verificar se está autenticado primeiro
+      const isAuthenticated = await firstValueFrom(this.auth0.isAuthenticated$);
+      console.log('🔍 AuthService: Está autenticado?', isAuthenticated);
+      
+      if (!isAuthenticated) {
+        console.log('❌ AuthService: Usuário não está autenticado');
+        return null;
+      }
+      
+      // Obter usuário
+      const user = await firstValueFrom(this.auth0.user$);
+      console.log('✅ AuthService: Usuário obtido:', user);
+      
+      return user;
+    } catch (error) {
+      console.error('❌ AuthService: Erro ao obter usuário Auth0:', error);
+      return null;
+    }
   }
 }

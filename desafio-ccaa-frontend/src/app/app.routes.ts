@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
 import { LoginComponent, CallbackComponent } from './components';
+import { BookCatalog } from './components/book-catalog/book-catalog';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/login',
+    redirectTo: '/book-catalog',
     pathMatch: 'full'
   },
   {
@@ -16,8 +17,12 @@ export const routes: Routes = [
     component: CallbackComponent
   },
   {
+    path: 'book-catalog',
+    component: BookCatalog
+  },
+  {
     path: 'home',
-    redirectTo: '/',
+    redirectTo: '/book-catalog',
     pathMatch: 'full'
   }
 ];

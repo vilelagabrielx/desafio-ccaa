@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using DesafioCCAA.Business.DTOs;
 using DesafioCCAA.Business.Interfaces;
 
@@ -7,6 +8,7 @@ namespace DesafioCCAA.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableCors("DevelopmentPolicy")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -33,7 +35,7 @@ public class UserController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, result.Data);
+        return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, new { data = result.Data });
     }
 
     /// <summary>
@@ -66,7 +68,7 @@ public class UserController : ControllerBase
             return NotFound(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -97,7 +99,7 @@ public class UserController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -113,7 +115,7 @@ public class UserController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>

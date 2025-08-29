@@ -136,6 +136,16 @@ import { loginAnimations } from './login.animations';
 
           <button 
             type="button"
+            (click)="loginWithGoogle()" 
+            class="btn btn-google btn-full"
+            [disabled]="isSubmitting"
+          >
+            <span class="google-icon">🔍</span>
+            Entrar com Google
+          </button>
+
+          <button 
+            type="button"
             (click)="signupWithAuth0()" 
             class="btn btn-secondary btn-full"
             [disabled]="isSubmitting"
@@ -291,6 +301,13 @@ export class LoginComponent implements OnInit, OnDestroy {
    */
   loginWithAuth0(): void {
     this.authService.loginWithAuth0();
+  }
+
+  /**
+   * Faz login com Google
+   */
+  loginWithGoogle(): void {
+    this.authService.loginWithGoogle();
   }
 
   /**

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using DesafioCCAA.Business.DTOs;
 using DesafioCCAA.Business.Interfaces;
 
@@ -7,6 +8,7 @@ namespace DesafioCCAA.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableCors("DevelopmentPolicy")]
 [Authorize]
 public class BookController : ControllerBase
 {
@@ -36,7 +38,7 @@ public class BookController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return CreatedAtAction(nameof(GetBookById), new { id = result.Data!.Id }, result.Data);
+        return CreatedAtAction(nameof(GetBookById), new { id = result.Data!.Id }, new { data = result.Data });
     }
 
     /// <summary>
@@ -53,7 +55,7 @@ public class BookController : ControllerBase
             return NotFound(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -75,7 +77,7 @@ public class BookController : ControllerBase
             return NotFound(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -97,7 +99,7 @@ public class BookController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -114,7 +116,7 @@ public class BookController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>
@@ -136,7 +138,7 @@ public class BookController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(result.Data);
+        return Ok(new { data = result.Data });
     }
 
     /// <summary>

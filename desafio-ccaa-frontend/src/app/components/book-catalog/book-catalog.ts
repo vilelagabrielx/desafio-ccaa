@@ -1,8 +1,10 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Book, BookGenre, BookPublisher } from '../../models/book.model';
 import { BookService } from '../../services/book.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-book-catalog',
@@ -20,6 +22,10 @@ export class BookCatalog implements OnInit {
   showAddForm = signal(false);
   newBook = signal<Partial<Book>>({});
 
+  // User information
+  userProfile = signal<any>(null);
+  isAuthenticated = signal(false);
+
   // Computed signals for category counts
   categoryCounts = computed(() => {
     const booksList = this.books();
@@ -35,11 +41,33 @@ export class BookCatalog implements OnInit {
   mobileMenuOpen = signal(false);
   sidebarOpen = signal(false);
 
-  constructor(private bookService: BookService) {}
+  constructor(
+    private bookService: BookService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadBooks();
     this.loadCategories();
+    this.loadUserProfile();
+  }
+
+  loadUserProfile(): void {
+    this.authService.getUserProfile().subscribe(profile => {
+      if (profile) {
+        this.userProfile.set(profile);
+        this.isAuthenticated.set(true);
+      } else {
+        this.isAuthenticated.set(false);
+        this.userProfile.set(null);
+      }
+    });
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   loadBooks(): void {

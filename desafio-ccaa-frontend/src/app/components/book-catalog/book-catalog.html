@@ -55,8 +55,22 @@
         
         <!-- Usuário Mobile -->
         <div class="mobile-user">
-          <span class="user-icon">👤</span>
-          <span class="user-text">Administrador</span>
+          @if (isAuthenticated()) {
+            <div class="user-info">
+              @if (userProfile()?.picture) {
+                <img [src]="userProfile()?.picture" [alt]="userProfile()?.name" class="user-avatar">
+              } @else {
+                <span class="user-icon">👤</span>
+              }
+              <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
+              <button class="logout-btn" (click)="logout(); toggleMobileMenu()" title="Sair">
+                🚪
+              </button>
+            </div>
+          } @else {
+            <span class="user-icon">👤</span>
+            <span class="user-text">Não logado</span>
+          }
         </div>
       </div>
       
@@ -85,8 +99,22 @@
       
       <!-- Usuário Desktop -->
       <div class="user-section desktop-only">
-        <span class="user-icon">👤</span>
-        <span class="user-text">Administrador</span>
+        @if (isAuthenticated()) {
+          <div class="user-info">
+            @if (userProfile()?.picture) {
+              <img [src]="userProfile()?.picture" [alt]="userProfile()?.name" class="user-avatar">
+            } @else {
+              <span class="user-icon">👤</span>
+            }
+            <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
+            <button class="logout-btn" (click)="logout()" title="Sair">
+              🚪
+            </button>
+          </div>
+        } @else {
+          <span class="user-icon">👤</span>
+          <span class="user-text">Não logado</span>
+        }
       </div>
     </div>
   </div>
