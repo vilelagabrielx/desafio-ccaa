@@ -17,10 +17,10 @@ export const environment = {
   // 🔧 CONFIGURAÇÃO: Auth0
   auth0: {
     domain: 'dev-5uh7sugfyt00g0qf.us.auth0.com',
-    clientId: 'YOUR_CLIENT_ID', // Substitua pelo Client ID da sua aplicação Angular no Auth0
+    clientId: '6WLBR8IcBjgjAcg7ItbEa62WRkVIXedn', // Client ID da aplicação Auth0
     audience: 'https://dev-5uh7sugfyt00g0qf.us.auth0.com/api/v2/',
-    redirectUri: typeof window !== 'undefined' ? window.location.origin : 'https://seudominio.com',
-    logoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : 'https://seudominio.com',
+    redirectUri: 'https://seudominio.com',
+    logoutRedirectUri: 'https://seudominio.com',
   },
   
   // 🔧 CONFIGURAÇÃO: Logging

@@ -4,6 +4,8 @@ import { RegisterComponent } from './components/register/register.component';
 import { LoginComponent } from './components/login/login.component';
 import { CallbackComponent } from './components/callback/callback.component';
 import { AccessDeniedComponent } from './components/access-denied/access-denied.component';
+import { Auth0SignupComponent } from './components/auth0-signup/auth0-signup.component';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { AuthGuard } from './services/auth.guard';
 
 export const routes: Routes = [
@@ -23,9 +25,19 @@ export const routes: Routes = [
     title: 'Desafio CCAA - Criar Conta'
   },
   {
+    path: 'auth0-signup',
+    component: Auth0SignupComponent,
+    title: 'Desafio CCAA - Criar Conta Auth0'
+  },
+  {
     path: 'login',
     component: LoginComponent,
     title: 'Desafio CCAA - Entrar'
+  },
+  {
+    path: 'reset-password',
+    component: ResetPasswordComponent,
+    title: 'Desafio CCAA - Reset de Senha'
   },
   {
     path: 'callback',

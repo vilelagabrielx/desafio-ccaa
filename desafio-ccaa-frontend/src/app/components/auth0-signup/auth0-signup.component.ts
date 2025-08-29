@@ -2,24 +2,51 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService, LocalUserLogin } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-auth0-signup',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="login-container">
-      <div class="login-card">
+    <div class="signup-container">
+      <div class="signup-card">
         <div class="header">
-          <h1>🔐 Entrar</h1>
-          <p>Faça login com sua conta</p>
+          <h1>🚀 Criar Conta</h1>
+          <p>Crie sua conta com Auth0</p>
         </div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="signup-form">
+          <!-- Nome -->
+          <div class="form-group">
+            <label for="name">Nome Completo *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name"
+              placeholder="Digite seu nome completo"
+              [class.error]="isFieldInvalid('name')">
+            <div *ngIf="isFieldInvalid('name')" class="error-message">
+              Nome é obrigatório
+            </div>
+          </div>
+
+          <!-- Data de Nascimento -->
+          <div class="form-group">
+            <label for="dateOfBirth">Data de Nascimento *</label>
+            <input 
+              type="date" 
+              id="dateOfBirth" 
+              formControlName="dateOfBirth"
+              [class.error]="isFieldInvalid('dateOfBirth')">
+            <div *ngIf="isFieldInvalid('dateOfBirth')" class="error-message">
+              Data de nascimento é obrigatória
+            </div>
+          </div>
+
           <!-- E-mail -->
           <div class="form-group">
-            <label for="email">E-mail/Login *</label>
+            <label for="email">E-mail *</label>
             <input 
               type="email" 
               id="email" 
@@ -27,8 +54,8 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
               placeholder="Digite seu e-mail"
               [class.error]="isFieldInvalid('email')">
             <div *ngIf="isFieldInvalid('email')" class="error-message">
-              <span *ngIf="loginForm.get('email')?.hasError('required')">E-mail é obrigatório</span>
-              <span *ngIf="loginForm.get('email')?.hasError('email')">E-mail inválido</span>
+              <span *ngIf="signupForm.get('email')?.hasError('required')">E-mail é obrigatório</span>
+              <span *ngIf="signupForm.get('email')?.hasError('email')">E-mail inválido</span>
             </div>
           </div>
 
@@ -42,7 +69,23 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
               placeholder="Digite sua senha"
               [class.error]="isFieldInvalid('password')">
             <div *ngIf="isFieldInvalid('password')" class="error-message">
-              Senha é obrigatória
+              <span *ngIf="signupForm.get('password')?.hasError('required')">Senha é obrigatória</span>
+              <span *ngIf="signupForm.get('password')?.hasError('minlength')">Senha deve ter pelo menos 8 caracteres</span>
+            </div>
+          </div>
+
+          <!-- Confirmar Senha -->
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar Senha *</label>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              formControlName="confirmPassword"
+              placeholder="Confirme sua senha"
+              [class.error]="isFieldInvalid('confirmPassword')">
+            <div *ngIf="isFieldInvalid('confirmPassword')" class="error-message">
+              <span *ngIf="signupForm.get('confirmPassword')?.hasError('required')">Confirmação de senha é obrigatória</span>
+              <span *ngIf="signupForm.hasError('passwordMismatch')">Senhas não coincidem</span>
             </div>
           </div>
 
@@ -51,55 +94,27 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
             <button 
               type="submit" 
               class="btn btn-primary"
-              [disabled]="loginForm.invalid || isSubmitting">
-              <span *ngIf="!isSubmitting">Entrar</span>
-              <span *ngIf="isSubmitting">Entrando...</span>
+              [disabled]="signupForm.invalid || isSubmitting">
+              <span *ngIf="!isSubmitting">Criar Conta</span>
+              <span *ngIf="isSubmitting">Criando...</span>
             </button>
             
             <button 
               type="button" 
               class="btn btn-secondary"
-              (click)="goToRegister()"
+              (click)="goToLogin()"
               [disabled]="isSubmitting">
-              Criar nova conta
+              Já tenho conta
             </button>
-          </div>
-
-          <!-- Links de ajuda -->
-          <div class="help-links">
-            <a href="/reset-password" class="help-link">
-              <i class="fas fa-key"></i>
-              Esqueci minha senha
-            </a>
-            <a href="/auth0-signup" class="help-link">
-              <i class="fas fa-user-plus"></i>
-              Criar conta Auth0
-            </a>
           </div>
         </form>
 
-        <!-- Separador -->
-        <div class="separator">
-          <span>ou</span>
-        </div>
-
-        <!-- Login com Auth0 -->
-        <div class="auth0-section">
-          <button 
-            type="button" 
-            class="btn btn-auth0"
-            (click)="loginWithAuth0()"
-            [disabled]="isSubmitting">
-            <i class="fas fa-external-link-alt"></i>
-            Entrar com Auth0
-          </button>
-          
-          <!-- Informações sobre verificação de email -->
-          <div class="auth0-info">
-            <small>
-              <i class="fas fa-info-circle"></i>
-              O Auth0 enviará um email de verificação para confirmar sua conta
-            </small>
+        <!-- Informações sobre verificação -->
+        <div class="info-section">
+          <div class="info-card">
+            <i class="fas fa-envelope"></i>
+            <h3>Verificação de Email</h3>
+            <p>Após criar sua conta, você receberá um email de verificação. Confirme seu email para ativar sua conta.</p>
           </div>
         </div>
 
@@ -115,7 +130,7 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
     </div>
   `,
   styles: [`
-    .login-container {
+    .signup-container {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -124,13 +139,13 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
       padding: 1rem;
     }
 
-    .login-card {
+    .signup-card {
       background: white;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       padding: 2rem;
       width: 100%;
-      max-width: 400px;
+      max-width: 500px;
     }
 
     .header {
@@ -149,10 +164,11 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
       margin: 0;
     }
 
-    .login-form {
+    .signup-form {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .form-group {
@@ -230,85 +246,33 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
       background-color: #545b62;
     }
 
-    .separator {
-      text-align: center;
-      margin: 2rem 0;
-      position: relative;
+    .info-section {
+      margin-top: 2rem;
     }
 
-    .separator::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background-color: #e3e3e3;
-    }
-
-    .separator span {
-      background-color: white;
-      padding: 0 1rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .auth0-section {
-      text-align: center;
-    }
-
-    .auth0-info {
-      margin-top: 1rem;
-      padding: 0.75rem;
+    .info-card {
       background-color: #e3f2fd;
-      border-radius: 4px;
       border: 1px solid #bbdefb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
     }
 
-    .auth0-info small {
+    .info-card i {
+      font-size: 2rem;
       color: #1976d2;
-      font-size: 0.8rem;
+      margin-bottom: 1rem;
     }
 
-    .auth0-info i {
-      margin-right: 0.5rem;
+    .info-card h3 {
+      color: #1976d2;
+      margin-bottom: 0.5rem;
     }
 
-    .help-links {
-      margin-top: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .help-link {
-      color: #007bff;
-      text-decoration: none;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: color 0.2s ease;
-    }
-
-    .help-link:hover {
-      color: #0056b3;
-      text-decoration: underline;
-    }
-
-    .help-link i {
-      font-size: 0.8rem;
-    }
-
-    .btn-auth0 {
-      background-color: #f39c12;
-      color: white;
-      width: 100%;
-    }
-
-    .btn-auth0:hover:not(:disabled) {
-      background-color: #e67e22;
+    .info-card p {
+      color: #1976d2;
+      margin: 0;
+      line-height: 1.5;
     }
 
     .alert {
@@ -331,7 +295,7 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
     }
 
     @media (max-width: 768px) {
-      .login-card {
+      .signup-card {
         padding: 1.5rem;
       }
 
@@ -341,8 +305,8 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
     }
   `]
 })
-export class LoginComponent {
-  loginForm: FormGroup;
+export class Auth0SignupComponent {
+  signupForm: FormGroup;
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
@@ -352,25 +316,42 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router
   ) {
-    this.loginForm = this.fb.group({
+    this.signupForm = this.fb.group({
+      name: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
-    });
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  /**
+   * Valida se as senhas coincidem
+   */
+  passwordMatchValidator(group: FormGroup): {[key: string]: any} | null {
+    const password = group.get('password');
+    const confirmPassword = group.get('confirmPassword');
+    
+    if (password && confirmPassword && password.value !== confirmPassword.value) {
+      return { 'passwordMismatch': true };
+    }
+    
+    return null;
   }
 
   /**
    * Verifica se um campo é inválido
    */
   isFieldInvalid(fieldName: string): boolean {
-    const field = this.loginForm.get(fieldName);
+    const field = this.signupForm.get(fieldName);
     return field ? field.invalid && (field.dirty || field.touched) : false;
   }
 
   /**
-   * Submete o formulário de login
+   * Submete o formulário de signup
    */
   onSubmit(): void {
-    if (this.loginForm.invalid) {
+    if (this.signupForm.invalid) {
       return;
     }
 
@@ -378,39 +359,14 @@ export class LoginComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const credentials: LocalUserLogin = {
-      email: this.loginForm.value.email,
-      password: this.loginForm.value.password
-    };
-
-    this.authService.loginLocalUser(credentials).subscribe({
-      next: (user) => {
-        this.successMessage = 'Login realizado com sucesso! Redirecionando...';
-        this.isSubmitting = false;
-        
-        // Redirecionar após 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 2000);
-      },
-      error: (error) => {
-        this.errorMessage = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
-        this.isSubmitting = false;
-      }
-    });
+    // Redirecionar para Auth0 com dados do formulário
+    this.authService.signupWithAuth0(this.signupForm.value);
   }
 
   /**
-   * Navega para a página de registro
+   * Navega para a página de login
    */
-  goToRegister(): void {
-    this.router.navigate(['/register']);
-  }
-
-  /**
-   * Faz login via Auth0
-   */
-  loginWithAuth0(): void {
-    this.authService.loginWithAuth0();
+  goToLogin(): void {
+    this.router.navigate(['/login']);
   }
 }

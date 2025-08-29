@@ -29,8 +29,8 @@ export const appConfig: ApplicationConfig = {
         redirect_uri: environment.auth0.redirectUri,
         audience: environment.auth0.audience,
         // 🔐 Configurações de verificação de email
-        prompt: 'consent',
         scope: 'openid profile email',
+        response_type: 'code',
       },
       cacheLocation: 'localstorage',
       useRefreshTokens: true,

@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { AuthService as Auth0Service } from '@auth0/auth0-angular';
 import { Observable, map, switchMap, of, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { isPlatformBrowser } from '@angular/common';
 
 export interface UserProfile {
   id: string;
@@ -42,16 +43,21 @@ export class AuthService {
 
   constructor(
     private auth0: Auth0Service,
-    private http: HttpClient
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Verificar se há usuário local salvo
-    this.checkLocalUser();
+    // Verificar se há usuário local salvo apenas no browser
+    if (isPlatformBrowser(this.platformId)) {
+      this.checkLocalUser();
+    }
   }
 
   /**
    * Verifica se há usuário local salvo no localStorage
    */
   private checkLocalUser(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
     const savedUser = localStorage.getItem('localUser');
     if (savedUser) {
       try {
@@ -79,8 +85,10 @@ export class AuthService {
           createdAt: new Date().toISOString()
         };
 
-        // Salvar no localStorage (em produção, seria na API)
-        localStorage.setItem('localUser', JSON.stringify(newUser));
+        // Salvar no localStorage (em produção, seria na API) apenas no browser
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.setItem('localUser', JSON.stringify(newUser));
+        }
         this.currentLocalUserSubject.next(newUser);
 
         observer.next(newUser);
@@ -96,6 +104,11 @@ export class AuthService {
     // Em uma implementação real, isso seria uma chamada para a API
     return new Observable(observer => {
       setTimeout(() => {
+        if (!isPlatformBrowser(this.platformId)) {
+          observer.error('Login local não disponível no servidor');
+          return;
+        }
+
         const savedUser = localStorage.getItem('localUser');
         if (savedUser) {
           const user = JSON.parse(savedUser);
@@ -117,7 +130,9 @@ export class AuthService {
    * Faz logout do usuário local
    */
   logoutLocalUser(): void {
-    localStorage.removeItem('localUser');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('localUser');
+    }
     this.currentLocalUserSubject.next(null);
   }
 
@@ -212,11 +227,12 @@ export class AuthService {
    * Faz login via Auth0
    */
   loginWithAuth0(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
     this.auth0.loginWithRedirect({
-      appState: { target: typeof window !== 'undefined' ? window.location.pathname : '/' },
-      // 🔐 Configurações para verificação de email
-      prompt: 'consent',
-      scope: 'openid profile email'
+      appState: { 
+        target: '/'
+      }
     });
   }
 
@@ -224,10 +240,40 @@ export class AuthService {
    * Reenvia email de verificação
    */
   resendVerificationEmail(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
     this.auth0.loginWithRedirect({
-      appState: { target: typeof window !== 'undefined' ? window.location.pathname : '/' },
-      prompt: 'consent',
-      scope: 'openid profile email'
+      appState: { 
+        target: '/'
+      }
+    });
+  }
+
+  /**
+   * Faz signup via Auth0
+   */
+  signupWithAuth0(userData: any): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    this.auth0.loginWithRedirect({
+      appState: { 
+        target: '/',
+        mode: 'signup',
+        userData: userData
+      }
+    });
+  }
+
+  /**
+   * Reset de senha via Auth0
+   */
+  resetPasswordWithAuth0(email: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    this.auth0.loginWithRedirect({
+      appState: { 
+        target: '/'
+      }
     });
   }
 
@@ -238,7 +284,7 @@ export class AuthService {
     const localUser = this.currentLocalUserSubject.value;
     if (localUser) {
       this.logoutLocalUser();
-    } else {
+    } else if (isPlatformBrowser(this.platformId)) {
       this.auth0.logout({
         logoutParams: {
           returnTo: environment.auth0.logoutRedirectUri
