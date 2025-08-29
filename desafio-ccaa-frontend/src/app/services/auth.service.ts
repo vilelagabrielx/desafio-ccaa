@@ -213,7 +213,21 @@ export class AuthService {
    */
   loginWithAuth0(): void {
     this.auth0.loginWithRedirect({
-      appState: { target: typeof window !== 'undefined' ? window.location.pathname : '/' }
+      appState: { target: typeof window !== 'undefined' ? window.location.pathname : '/' },
+      // 🔐 Configurações para verificação de email
+      prompt: 'consent',
+      scope: 'openid profile email'
+    });
+  }
+
+  /**
+   * Reenvia email de verificação
+   */
+  resendVerificationEmail(): void {
+    this.auth0.loginWithRedirect({
+      appState: { target: typeof window !== 'undefined' ? window.location.pathname : '/' },
+      prompt: 'consent',
+      scope: 'openid profile email'
     });
   }
 

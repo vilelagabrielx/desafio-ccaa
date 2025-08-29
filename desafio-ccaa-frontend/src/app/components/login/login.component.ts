@@ -81,6 +81,14 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
             <i class="fas fa-external-link-alt"></i>
             Entrar com Auth0
           </button>
+          
+          <!-- Informações sobre verificação de email -->
+          <div class="auth0-info">
+            <small>
+              <i class="fas fa-info-circle"></i>
+              O Auth0 enviará um email de verificação para confirmar sua conta
+            </small>
+          </div>
         </div>
 
         <!-- Mensagens de erro/sucesso -->
@@ -235,6 +243,23 @@ import { AuthService, LocalUserLogin } from '../../services/auth.service';
 
     .auth0-section {
       text-align: center;
+    }
+
+    .auth0-info {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #e3f2fd;
+      border-radius: 4px;
+      border: 1px solid #bbdefb;
+    }
+
+    .auth0-info small {
+      color: #1976d2;
+      font-size: 0.8rem;
+    }
+
+    .auth0-info i {
+      margin-right: 0.5rem;
     }
 
     .btn-auth0 {

@@ -28,9 +28,15 @@ export const appConfig: ApplicationConfig = {
       authorizationParams: {
         redirect_uri: environment.auth0.redirectUri,
         audience: environment.auth0.audience,
+        // 🔐 Configurações de verificação de email
+        prompt: 'consent',
+        scope: 'openid profile email',
       },
       cacheLocation: 'localstorage',
       useRefreshTokens: true,
+      // 📧 Configurações para verificação de email
+      skipRedirectCallback: false,
+      errorPath: '/callback',
     }),
   ]
 };
