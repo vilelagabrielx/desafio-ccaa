@@ -18,7 +18,6 @@ export const environment = {
   auth0: {
     domain: 'dev-5uh7sugfyt00g0qf.us.auth0.com',
     clientId: '6WLBR8IcBjgjAcg7ItbEa62WRkVIXedn', // Client ID da aplicação Auth0
-    audience: 'https://dev-5uh7sugfyt00g0qf.us.auth0.com/api/v2/',
     redirectUri: 'https://seudominio.com',
     logoutRedirectUri: 'https://seudominio.com',
   },

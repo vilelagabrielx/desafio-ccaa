@@ -7,7 +7,7 @@
     "types": [
       "node"
     ],
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "target": "ES2022",
     "useDefineForClassFields": false
   },

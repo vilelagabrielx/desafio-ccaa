@@ -11,7 +11,8 @@
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
-          "style": "scss"
+          "style": "scss",
+          "standalone": true
         }
       },
       "root": "",
@@ -21,7 +22,12 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": "dist/desafio-ccaa-app",
+            "index": "src/index.html",
             "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -33,18 +39,7 @@
             "styles": [
               "src/styles.scss"
             ],
-            "budgets": [
-              {
-                "type": "initial",
-                "maximumWarning": "500kB",
-                "maximumError": "1MB"
-              },
-              {
-                "type": "anyComponentStyle",
-                "maximumWarning": "17kB",
-                "maximumError": "20kB"
-              }
-            ]
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -64,7 +59,9 @@
             },
             "development": {
               "outputHashing": "none",
-              "sourceMap": true
+              "sourceMap": true,
+              "optimization": false,
+              "extractLicenses": false
             }
           },
           "defaultConfiguration": "production"
@@ -87,6 +84,10 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -97,7 +98,8 @@
             ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+            "scripts": []
           }
         }
       }
