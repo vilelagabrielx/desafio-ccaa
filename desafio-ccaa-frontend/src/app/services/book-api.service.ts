@@ -3,17 +3,15 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
 import { Book } from '../models/book.model';
 import { IBookService } from './book.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class BookApiService implements IBookService {
-  // 🔧 CONFIGURAÇÃO: Altere a URL base conforme sua API
-  private readonly API_BASE_URL = 'https://api.seudominio.com/books'; // Exemplo
+  private readonly API_BASE_URL = `${environment.api.baseUrl}/api/book`;
   
-  // 🔧 CONFIGURAÇÃO: Headers para autenticação (se necessário)
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json',
-      // 'Authorization': 'Bearer YOUR_TOKEN_HERE' // Descomente se precisar de auth
     })
   };
 
@@ -78,7 +76,7 @@ export class BookApiService implements IBookService {
 
   getBooksByCategory(category: string): Observable<Book[]> {
     const params = new HttpParams().set('genre', category);
-    return this.http.get<Book[]>(`${this.API_BASE_URL}`, { 
+    return this.http.get<Book[]>(this.API_BASE_URL, { 
       ...this.httpOptions, 
       params 
     })
@@ -87,17 +85,9 @@ export class BookApiService implements IBookService {
       );
   }
 
-  // 🔧 MÉTODO AUXILIAR: Tratamento de erros
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(`${operation} failed:`, error);
-      
-      // 🔧 CONFIGURAÇÃO: Aqui você pode implementar:
-      // - Logging para serviços externos (Sentry, LogRocket, etc.)
-      // - Notificações para o usuário
-      // - Fallback para dados mock em caso de erro
-      
-      // Por enquanto, retorna o resultado padrão
       return of(result as T);
     };
   }

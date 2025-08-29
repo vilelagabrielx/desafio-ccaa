@@ -1,8 +1,8 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { AuthService as Auth0Service } from '@auth0/auth0-angular';
-import { Observable, map, switchMap, of, BehaviorSubject } from 'rxjs';
+import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 
 export interface UserProfile {
@@ -15,10 +15,11 @@ export interface UserProfile {
 }
 
 export interface LocalUserRegistration {
-  name: string;
-  dateOfBirth: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 export interface LocalUserLogin {
@@ -28,10 +29,18 @@ export interface LocalUserLogin {
 
 export interface LocalUser {
   id: string;
-  name: string;
-  dateOfBirth: string;
+  firstName: string;
+  lastName: string;
   email: string;
+  fullName: string;
   createdAt: string;
+  isActive: boolean;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  errors?: string[];
 }
 
 @Injectable({
@@ -40,100 +49,164 @@ export interface LocalUser {
 export class AuthService {
   private currentLocalUserSubject = new BehaviorSubject<LocalUser | null>(null);
   public currentLocalUser$ = this.currentLocalUserSubject.asObservable();
+  private authToken: string | null = null;
 
   constructor(
     private auth0: Auth0Service,
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Verificar se há usuário local salvo apenas no browser
+    // Verificar se há token salvo apenas no browser
     if (isPlatformBrowser(this.platformId)) {
-      this.checkLocalUser();
+      this.checkSavedToken();
     }
   }
 
   /**
-   * Verifica se há usuário local salvo no localStorage
+   * Verifica se há token salvo no localStorage
    */
-  private checkLocalUser(): void {
+  private checkSavedToken(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     
-    const savedUser = localStorage.getItem('localUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        this.currentLocalUserSubject.next(user);
-      } catch (error) {
-        localStorage.removeItem('localUser');
-      }
+    const savedToken = localStorage.getItem('authToken');
+    if (savedToken) {
+      this.authToken = savedToken;
+      this.getCurrentUserFromApi().subscribe({
+        next: (user) => {
+          if (user) {
+            this.currentLocalUserSubject.next(user);
+          } else {
+            this.clearAuthData();
+          }
+        },
+        error: () => {
+          this.clearAuthData();
+        }
+      });
     }
   }
 
   /**
-   * Registra um novo usuário localmente
+   * Salva o token de autenticação
    */
-  registerLocalUser(userData: LocalUserRegistration): Observable<LocalUser> {
-    // Em uma implementação real, isso seria uma chamada para a API
-    // Por enquanto, simulamos o registro
-    return new Observable(observer => {
-      setTimeout(() => {
-        const newUser: LocalUser = {
-          id: Date.now().toString(),
-          name: userData.name,
-          dateOfBirth: userData.dateOfBirth,
-          email: userData.email,
-          createdAt: new Date().toISOString()
-        };
-
-        // Salvar no localStorage (em produção, seria na API) apenas no browser
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('localUser', JSON.stringify(newUser));
-        }
-        this.currentLocalUserSubject.next(newUser);
-
-        observer.next(newUser);
-        observer.complete();
-      }, 1000); // Simular delay da API
-    });
+  private saveAuthToken(token: string): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.authToken = token;
+      localStorage.setItem('authToken', token);
+    }
   }
 
   /**
-   * Faz login com usuário local
+   * Limpa todos os dados de autenticação
+   */
+  private clearAuthData(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('authToken');
+    }
+    this.authToken = null;
+    this.currentLocalUserSubject.next(null);
+  }
+
+  /**
+   * Obtém os headers de autenticação
+   */
+  private getAuthHeaders(): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    
+    if (this.authToken) {
+      headers = headers.set('Authorization', `Bearer ${this.authToken}`);
+    }
+    
+    return headers;
+  }
+
+  /**
+   * Registra um novo usuário via API
+   */
+  registerLocalUser(userData: LocalUserRegistration): Observable<LocalUser> {
+    return this.http.post<ApiResponse<LocalUser>>(
+      `${environment.api.baseUrl}/api/user/register`,
+      userData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return response.data;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (response.errors && response.errors.length > 0) {
+          throw new Error(response.errors.join(', '));
+        } else {
+          throw new Error('Erro desconhecido no registro');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro no registro:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Faz login via API
    */
   loginLocalUser(credentials: LocalUserLogin): Observable<LocalUser> {
-    // Em uma implementação real, isso seria uma chamada para a API
-    return new Observable(observer => {
-      setTimeout(() => {
-        if (!isPlatformBrowser(this.platformId)) {
-          observer.error('Login local não disponível no servidor');
-          return;
-        }
-
-        const savedUser = localStorage.getItem('localUser');
-        if (savedUser) {
-          const user = JSON.parse(savedUser);
-          if (user.email === credentials.email && user.password === credentials.password) {
-            this.currentLocalUserSubject.next(user);
-            observer.next(user);
-            observer.complete();
-          } else {
-            observer.error('Credenciais inválidas');
-          }
+    return this.http.post<{ token: string }>(
+      `${environment.api.baseUrl}/api/user/login`,
+      credentials,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      switchMap(response => {
+        if (response.token) {
+          this.saveAuthToken(response.token);
+          return this.getCurrentUserFromApi();
         } else {
-          observer.error('Usuário não encontrado');
+          throw new Error('Token não recebido');
         }
-      }, 1000);
-    });
+      }),
+      catchError(error => {
+        console.error('Erro no login:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Obtém o usuário atual da API
+   */
+  private getCurrentUserFromApi(): Observable<LocalUser> {
+    if (!this.authToken) {
+      return throwError(() => new Error('Token não disponível'));
+    }
+
+    return this.http.get<ApiResponse<LocalUser>>(
+      `${environment.api.baseUrl}/api/user/me`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          this.currentLocalUserSubject.next(response.data);
+          return response.data;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else {
+          throw new Error('Usuário não encontrado');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro ao obter usuário atual:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
    * Faz logout do usuário local
    */
   logoutLocalUser(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem('localUser');
-    }
-    this.currentLocalUserSubject.next(null);
+    this.clearAuthData();
   }
 
   /**
@@ -170,9 +243,8 @@ export class AuthService {
             return {
               id: localUser.id,
               email: localUser.email,
-              name: localUser.name,
-              emailVerified: true,
-              dateOfBirth: localUser.dateOfBirth
+              name: localUser.fullName,
+              emailVerified: true
             };
           }
           return null;
@@ -182,7 +254,7 @@ export class AuthService {
   }
 
   /**
-   * Obtém o token de acesso (para Auth0) ou simula para usuário local
+   * Obtém o token de acesso (para Auth0) ou retorna o token local
    */
   getAccessToken(): Observable<string | null> {
     return this.auth0.getAccessTokenSilently().pipe(
@@ -190,14 +262,8 @@ export class AuthService {
       switchMap(token => {
         if (token) return of(token);
         
-        // Se não há token Auth0, verifica se é usuário local
-        const localUser = this.currentLocalUserSubject.value;
-        if (localUser) {
-          // Para usuário local, retorna um token simulado
-          // Em produção, você pode implementar JWT local
-          return of(`local_${localUser.id}_${Date.now()}`);
-        }
-        return of(null);
+        // Se não há token Auth0, retorna o token local
+        return of(this.authToken);
       })
     );
   }
@@ -329,5 +395,127 @@ export class AuthService {
    */
   isAuth0User(): Observable<boolean> {
     return this.auth0.isAuthenticated$;
+  }
+
+  /**
+   * Altera senha do usuário via API
+   */
+  changePassword(currentPassword: string, newPassword: string, confirmNewPassword: string): Observable<boolean> {
+    const changePasswordData = {
+      currentPassword,
+      newPassword,
+      confirmNewPassword
+    };
+
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${environment.api.baseUrl}/api/user/change-password`,
+      changePasswordData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return true;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (response.errors && response.errors.length > 0) {
+          throw new Error(response.errors.join(', '));
+        } else {
+          throw new Error('Erro desconhecido na alteração de senha');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro na alteração de senha:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Solicita reset de senha via API
+   */
+  forgotPassword(email: string): Observable<boolean> {
+    const forgotPasswordData = { email };
+
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${environment.api.baseUrl}/api/user/forgot-password`,
+      forgotPasswordData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return true;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else {
+          throw new Error('Erro desconhecido na solicitação de reset de senha');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro na solicitação de reset de senha:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Reseta senha com token via API
+   */
+  resetPassword(email: string, token: string, newPassword: string, confirmNewPassword: string): Observable<boolean> {
+    const resetPasswordData = {
+      email,
+      token,
+      newPassword,
+      confirmNewPassword
+    };
+
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${environment.api.baseUrl}/api/user/reset-password`,
+      resetPasswordData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          return true;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (response.errors && response.errors.length > 0) {
+          throw new Error(response.errors.join(', '));
+        } else {
+          throw new Error('Erro desconhecido no reset de senha');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro no reset de senha:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Atualiza perfil do usuário via API
+   */
+  updateProfile(profileData: Partial<LocalUser>): Observable<LocalUser> {
+    return this.http.put<ApiResponse<LocalUser>>(
+      `${environment.api.baseUrl}/api/user/profile`,
+      profileData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      map(response => {
+        if (response.data) {
+          this.currentLocalUserSubject.next(response.data);
+          return response.data;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (response.errors && response.errors.length > 0) {
+          throw new Error(response.errors.join(', '));
+        } else {
+          throw new Error('Erro desconhecido na atualização do perfil');
+        }
+      }),
+      catchError(error => {
+        console.error('Erro na atualização do perfil:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }

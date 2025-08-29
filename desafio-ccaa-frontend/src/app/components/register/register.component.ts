@@ -19,28 +19,29 @@ import { AuthService, LocalUserRegistration } from '../../services/auth.service'
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
           <!-- Nome -->
           <div class="form-group">
-            <label for="name">Nome Completo *</label>
+            <label for="firstName">Nome *</label>
             <input 
               type="text" 
-              id="name" 
-              formControlName="name"
-              placeholder="Digite seu nome completo"
-              [class.error]="isFieldInvalid('name')">
-            <div *ngIf="isFieldInvalid('name')" class="error-message">
+              id="firstName" 
+              formControlName="firstName"
+              placeholder="Digite seu nome"
+              [class.error]="isFieldInvalid('firstName')">
+            <div *ngIf="isFieldInvalid('firstName')" class="error-message">
               Nome é obrigatório
             </div>
           </div>
 
-          <!-- Data de Nascimento -->
+          <!-- Sobrenome -->
           <div class="form-group">
-            <label for="dateOfBirth">Data de Nascimento *</label>
+            <label for="lastName">Sobrenome *</label>
             <input 
-              type="date" 
-              id="dateOfBirth" 
-              formControlName="dateOfBirth"
-              [class.error]="isFieldInvalid('dateOfBirth')">
-            <div *ngIf="isFieldInvalid('dateOfBirth')" class="error-message">
-              Data de nascimento é obrigatória
+              type="text" 
+              id="lastName" 
+              formControlName="lastName"
+              placeholder="Digite seu sobrenome"
+              [class.error]="isFieldInvalid('lastName')">
+            <div *ngIf="isFieldInvalid('lastName')" class="error-message">
+              Sobrenome é obrigatório
             </div>
           </div>
 
@@ -278,8 +279,8 @@ export class RegisterComponent {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      name: ['', [Validators.required]],
-      dateOfBirth: ['', [Validators.required]],
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
@@ -289,16 +290,17 @@ export class RegisterComponent {
   /**
    * Validador personalizado para verificar se as senhas coincidem
    */
-  passwordMatchValidator(form: FormGroup) {
-    const password = form.get('password');
-    const confirmPassword = form.get('confirmPassword');
+  passwordMatchValidator(group: FormGroup) {
+    const password = group.get('password')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
     
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ passwordMismatch: true });
+    if (password === confirmPassword) {
+      group.get('confirmPassword')?.setErrors(null);
+      return null;
+    } else {
+      group.get('confirmPassword')?.setErrors({ passwordMismatch: true });
       return { passwordMismatch: true };
     }
-    
-    return null;
   }
 
   /**
@@ -322,10 +324,11 @@ export class RegisterComponent {
     this.successMessage = '';
 
     const userData: LocalUserRegistration = {
-      name: this.registerForm.value.name,
-      dateOfBirth: this.registerForm.value.dateOfBirth,
+      firstName: this.registerForm.value.firstName,
+      lastName: this.registerForm.value.lastName,
       email: this.registerForm.value.email,
-      password: this.registerForm.value.password
+      password: this.registerForm.value.password,
+      confirmPassword: this.registerForm.value.confirmPassword
     };
 
     this.authService.registerLocalUser(userData).subscribe({

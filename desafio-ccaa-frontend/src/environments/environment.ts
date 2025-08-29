@@ -3,13 +3,13 @@ export const environment = {
   
   // 🔧 CONFIGURAÇÃO: Serviços
   services: {
-    useMock: true, // true = Mock, false = API
-    fallbackToMock: true, // Se true, usa mock em caso de erro da API
+    useMock: false, // true = Mock, false = API
+    fallbackToMock: false, // Se true, usa mock em caso de erro da API
   },
   
   // 🔧 CONFIGURAÇÃO: API
   api: {
-    baseUrl: 'https://api.seudominio.com', // Altere para sua API real
+    baseUrl: 'http://localhost:5000', // API local do backend
     timeout: 30000, // Timeout em ms
     retryAttempts: 3, // Tentativas de retry
   },

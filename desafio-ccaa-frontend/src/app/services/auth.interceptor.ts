@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 export const AuthInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
@@ -35,7 +36,7 @@ export const AuthInterceptor: HttpInterceptorFn = (request, next) => {
  */
 function shouldAddToken(request: any): boolean {
   // Adiciona token apenas para requisições da API
-  const apiUrl = 'https://api.seudominio.com'; // Substitua pela URL real da sua API
+  const apiUrl = environment.api.baseUrl;
   
   // Se a URL da requisição começar com a URL da API, adiciona o token
   if (request.url.startsWith(apiUrl)) {
