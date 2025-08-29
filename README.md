@@ -1,132 +1,197 @@
-# 📚 CCAA Books - Catálogo de Livros
+# 🚀 Desafio CCAA - Sistema de Gerenciamento de Livros
 
-Sistema CRUD completo para gerenciamento de catálogos de livros, desenvolvido em Angular como teste técnico para a CCAA. O projeto utiliza design inspirado na Livraria Cultura e paleta de cores da marca CCAA.
+Sistema completo de gerenciamento de livros com autenticação Auth0, desenvolvido em .NET 8 (Backend) e Angular 17 (Frontend).
 
-## ✨ Funcionalidades
+## 📋 **Visão Geral do Projeto**
 
-- **Listagem de Livros**: Visualização em grid responsivo com cards de livros
-- **Busca e Filtros**: Sistema de busca por título, autor ou categoria
-- **Categorias**: Sidebar com categorias organizadas e contadores
-- **CRUD Completo**: 
-  - ✅ **Create**: Adicionar novos livros
-  - ✅ **Read**: Visualizar todos os livros
-  - ✅ **Update**: Editar livros existentes (preparado para implementação)
-  - ✅ **Delete**: Excluir livros
-- **Dados Mockados**: 5 livros de exemplo incluídos
-- **Design Responsivo**: Interface adaptável para mobile e desktop
+O Desafio CCAA é uma aplicação web moderna que permite:
+- 📚 **Gerenciar catálogo de livros** (CRUD completo)
+- 👤 **Sistema de autenticação** integrado com Auth0
+- 🔐 **Controle de acesso** baseado em roles
+- 🌐 **API REST** com documentação Swagger
+- 💻 **Interface responsiva** em Angular
 
-## 🎨 Decisões Técnicas de Design
+## 🏗️ **Arquitetura do Sistema**
 
-### Layout e UX (Inspirado na Livraria Cultura):
-- **Header com Gradiente**: Barra superior com gradiente e busca centralizada
-- **Sidebar de Categorias**: Navegação lateral com contadores de livros por categoria
-- **Cards de Destaque**: Seções promocionais em destaque no topo
-- **Grid Responsivo**: Layout em grid para exibição dos livros
-- **Breadcrumbs**: Navegação hierárquica para melhor experiência do usuário
-- **Formulário Modal**: Formulário de adição integrado na interface principal
+```
+desafio-ccaa/
+├── 📁 desafio-ccaa-backend/     # API .NET 8 + Entity Framework
+├── 📁 desafio-ccaa-frontend/    # Aplicação Angular 17
+└── 📄 README.md                 # Este arquivo
+```
 
-### Paleta de Cores (Inspirada no CCAA):
-- **Vermelho CCAA**: `#F06292` (coral vibrante) - Usado para preços e destaques
-- **Azul CCAA**: `#2196F3` (azul sky) - Cor principal para botões e links
-- **Azul Escuro**: `#303F9F` (índigo) - Usado para elementos secundários
-- **Branco**: `#FFFFFF` - Fundo principal e texto sobre cores
-- **Cinza Claro**: `#F5F5F5` - Fundo secundário e elementos neutros
-- **Cinza**: `#757575` - Texto secundário e ícones
-- **Cinza Escuro**: `#424242` - Texto principal e títulos
+## 🛠️ **Tecnologias Utilizadas**
 
-### Justificativas Técnicas:
-- **Gradiente Header**: Cria identidade visual forte e moderna
-- **Cards com Sombras**: Profundidade visual e hierarquia clara
-- **Hover Effects**: Interatividade e feedback visual para o usuário
-- **Responsividade**: Layout adaptável para diferentes dispositivos
-- **Tipografia Clara**: Hierarquia visual bem definida para melhor legibilidade
+### **Backend (.NET 8)**
+- **Framework:** ASP.NET Core 8.0
+- **ORM:** Entity Framework Core 8.0
+- **Banco de Dados:** PostgreSQL (Supabase)
+- **Autenticação:** Auth0 + JWT
+- **Validação:** FluentValidation
+- **Arquitetura:** Clean Architecture (Business, Infrastructure, API)
+- **Testes:** xUnit
 
-## 🚀 Como Executar
+### **Frontend (Angular 17)**
+- **Framework:** Angular 17
+- **UI Framework:** Angular Material
+- **Estilização:** SCSS
+- **Estado:** Angular Signals
+- **Roteamento:** Angular Router
+- **HTTP Client:** Angular HttpClient
 
-### Pré-requisitos:
-- Node.js (versão 18+)
-- npm ou yarn
-- Angular CLI
+### **Infraestrutura**
+- **Banco:** PostgreSQL (Supabase)
+- **Autenticação:** Auth0
+- **Deploy:** Preparado para Azure/Heroku
+- **Versionamento:** Git
 
-### Instalação:
+## 🚀 **Como Executar o Projeto**
+
+### **Pré-requisitos**
+- **.NET 8 SDK** instalado
+- **Node.js 18+** instalado
+- **PostgreSQL** (ou conta Supabase)
+- **Conta Auth0** configurada
+
+### **1. Clone o Repositório**
 ```bash
+git clone [URL_DO_REPOSITORIO]
+cd desafio-ccaa
+```
+
+### **2. Configurar Backend**
+```bash
+cd desafio-ccaa-backend
+
+# Configurar variáveis de ambiente
+# Copiar appsettings.template.json para appsettings.Development.json
+# Configurar string de conexão do Supabase
+# Configurar Auth0
+
+# Executar migration (usar arquivo .bat para facilitar)
+EXECUTAR_MIGRATION.bat
+```
+
+### **3. Configurar Frontend**
+```bash
+cd desafio-ccaa-frontend
+
 # Instalar dependências
 npm install
 
-# Executar servidor de desenvolvimento
-ng serve
+# Configurar variáveis de ambiente
+# Configurar URL da API
+# Configurar Auth0
 
-# Acessar no navegador
-# http://localhost:4200
+# Executar em desenvolvimento
+npm start
 ```
 
-### Comandos Disponíveis:
+## 📚 **Guias Detalhados**
+
+### **Backend (.NET)**
+- **📖 [Migration Guide](desafio-ccaa-backend/MIGRATION_GUIDE.md)** - Como criar e executar migrations
+- **📖 [Database Config](desafio-ccaa-backend/DATABASE_CONFIG.md)** - Configuração do banco PostgreSQL
+- **📖 [Auth0 Setup](desafio-ccaa-backend/AUTH0_SETUP.md)** - Configuração de autenticação
+- **📖 [Instruções de Execução](desafio-ccaa-backend/INSTRUCOES_EXECUCAO.md)** - Passo a passo completo
+
+### **Frontend (Angular)**
+- **📖 [README Frontend](desafio-ccaa-frontend/README.md)** - Guia específico do Angular
+- **📖 [API Migration](desafio-ccaa-frontend/API_MIGRATION.md)** - Migração da API
+
+### **Arquivos de Execução Rápida**
+- **⚡ [EXECUTAR_MIGRATION.bat](desafio-ccaa-backend/EXECUTAR_MIGRATION.bat)** - Executa migration automaticamente
+- **⚡ [COMANDOS_RAPIDOS.bat](desafio-ccaa-backend/COMANDOS_RAPIDOS.bat)** - Menu de comandos EF
+- **⚡ [COMANDOS_MIGRATION.txt](desafio-ccaa-backend/COMANDOS_MIGRATION.txt)** - Comandos passo a passo
+
+## 🔧 **Configurações Importantes**
+
+### **Backend**
+- **String de Conexão:** Use porta 5432 (Session Pooler) para migrations
+- **Timeout:** Configure `Command Timeout=300;` para operações longas
+- **Auth0:** Configure Domain, Audience e Issuer no appsettings.json
+
+### **Frontend**
+- **API URL:** Configure a URL da API no environment.ts
+- **Auth0:** Configure Domain e Client ID
+- **CORS:** Backend deve permitir origem do frontend
+
+## 🚨 **Problemas Comuns e Soluções**
+
+### **Migration não funciona**
+- ✅ Use porta 5432 em vez de 6543
+- ✅ Configure timeout de 300+ segundos
+- ✅ Execute `$env:PATH += ";$env:USERPROFILE\.dotnet\tools"` no PowerShell
+
+### **Auth0 não conecta**
+- ✅ Verifique configurações no appsettings.json
+- ✅ Confirme URLs de callback configuradas no Auth0
+- ✅ Verifique se o domínio está correto
+
+### **Frontend não acessa API**
+- ✅ Verifique se a API está rodando
+- ✅ Confirme URL da API no environment.ts
+- ✅ Verifique configuração de CORS no backend
+
+## 📊 **Estrutura do Banco de Dados**
+
+### **Tabelas Principais**
+- **`Books`** - Catálogo de livros
+- **`AspNetUsers`** - Usuários do sistema
+- **`AspNetRoles`** - Roles/perfis
+- **`__EFMigrationsHistory`** - Controle de migrations
+
+### **Relacionamentos**
+- Usuários podem ter múltiplos roles
+- Livros são gerenciados por usuários autenticados
+- Sistema de claims para permissões granulares
+
+## 🧪 **Testes**
+
+### **Backend**
 ```bash
-ng serve          # Servidor de desenvolvimento
-ng build          # Build para produção
-ng test           # Executar testes
-ng generate       # Gerar componentes/serviços
+cd desafio-ccaa-backend
+dotnet test
 ```
 
-## 📁 Estrutura do Projeto
-
-```
-src/
-├── app/
-│   ├── components/
-│   │   └── book-catalog/          # Componente principal
-│   │       ├── book-catalog.ts     # Lógica do componente
-│   │       ├── book-catalog.html   # Template HTML
-│   │       └── book-catalog.scss   # Estilos SCSS
-│   ├── models/
-│   │   └── book.model.ts          # Interfaces TypeScript
-│   ├── services/
-│   │   └── book.ts                # Serviço CRUD
-│   ├── app.ts                     # Componente raiz
-│   └── styles.scss                # Estilos globais
+### **Frontend**
+```bash
+cd desafio-ccaa-frontend
+npm test
 ```
 
-## 🔧 Tecnologias Utilizadas
+## 📦 **Deploy**
 
-- **Angular 20.2.0** - Framework principal
-- **TypeScript 5.9.2** - Linguagem de programação
-- **SCSS** - Pré-processador CSS com variáveis e mixins
-- **RxJS** - Programação reativa para operações assíncronas
-- **Angular Signals** - Sistema de estado moderno e performático
-- **Standalone Components** - Arquitetura Angular moderna e modular
+### **Backend**
+- Preparado para Azure App Service
+- Configuração de variáveis de ambiente
+- Migrations automáticas
 
-## 📊 Dados de Exemplo
+### **Frontend**
+- Build de produção: `npm run build`
+- Deploy em qualquer servidor estático
+- Configuração de rotas para SPA
 
-O sistema inclui 5 livros de exemplo:
+## 🤝 **Contribuição**
 
-1. **O Senhor dos Anéis: A Sociedade do Anel** - J.R.R. Tolkien
-2. **Dom Casmurro** - Machado de Assis
-3. **O Poder do Hábito** - Charles Duhigg
-4. **Steve Jobs: A Biografia** - Walter Isaacson
-5. **Batman: Ano Um** - Frank Miller
-
-## 🎯 Próximos Passos
-
-- [ ] Implementar funcionalidade de edição
-- [ ] Adicionar validações de formulário
-- [ ] Implementar paginação
-- [ ] Adicionar testes unitários
-- [ ] Integração com API real
-- [ ] Sistema de autenticação
-- [ ] Upload de imagens de capa
-
-## 🤝 Contribuição
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
-## 📝 Licença
+## 📄 **Licença**
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto é parte do Desafio CCAA.
+
+## 📞 **Suporte**
+
+Para dúvidas ou problemas:
+1. Consulte os guias específicos de cada área
+2. Verifique os arquivos de configuração
+3. Use os arquivos .bat para execução automática
+4. Consulte a documentação oficial das tecnologias
 
 ---
 
-**Desenvolvido como teste técnico para CCAA com ❤️ usando Angular, design inspirado na Livraria Cultura e cores da marca CCAA**
+**💡 Dica:** Comece sempre pelo backend - configure o banco e execute as migrations antes de rodar o frontend!

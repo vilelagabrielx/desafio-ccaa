@@ -1,1 +1,90 @@
-node_modules/*
+# Gitignore para Desafio CCAA
+# Ignora todos os arquivos .md exceto o README.md principal
+
+# Arquivos de documentação (exceto README principal)
+*.md
+!README.md
+
+# Arquivos de configuração do Entity Framework
+**/Migrations/
+**/Migrations/*.cs
+**/Migrations/*.Designer.cs
+**/Migrations/*.ModelSnapshot.cs
+
+# Arquivos de configuração de ambiente
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
+
+# Arquivos de configuração local
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+
+# Arquivos de build e output
+**/bin/
+**/obj/
+**/dist/
+**/build/
+**/out/
+
+# Arquivos de dependências
+**/node_modules/
+**/packages/
+**/.nuget/
+
+# Arquivos de IDE
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.sln.docstates
+
+# Arquivos de log
+**/*.log
+**/logs/
+
+# Arquivos temporários
+**/temp/
+**/tmp/
+**/*.tmp
+**/*.temp
+
+# Arquivos de sistema
+**/Thumbs.db
+**/ehthumbs.db
+**/Desktop.ini
+
+# Arquivos de backup
+**/*.bak
+**/*.backup
+**/*.old
+
+# Arquivos de cache
+**/.cache/
+**/cache/
+
+# Arquivos de teste
+**/TestResults/
+**/coverage/
+**/.coverage
+
+# Arquivos de deploy
+**/publish/
+**/deploy/
+
+# Arquivos específicos do projeto
+**/EXECUTAR_MIGRATION.bat
+**/COMANDOS_RAPIDOS.bat
+**/COMANDOS_MIGRATION.txt
+**/MIGRATION_GUIDE.md
+**/DATABASE_CONFIG.md
+**/AUTH0_SETUP.md
+**/INSTRUCOES_EXECUCAO.md
+**/API_MIGRATION.md
+
+# Manter apenas o README.md principal
+!README.md

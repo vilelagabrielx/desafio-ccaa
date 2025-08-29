@@ -1,0 +1,99 @@
+====================================================
+COMANDOS PARA EXECUTAR MIGRATION - DESAFIO CCAA
+====================================================
+
+⚠️ IMPORTANTE: Execute estes comandos no PowerShell, na raiz do projeto (desafio-ccaa-backend)
+
+====================================================
+PASSO 1: VERIFICAR SE AS FERRAMENTAS ESTÃO FUNCIONANDO
+====================================================
+
+# ⚠️ OBRIGATÓRIO: Adicionar ao PATH (sempre execute este comando primeiro!)
+$env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+
+# Verificar se o EF está funcionando
+dotnet ef --version
+
+# Se der erro, verificar instalação
+dotnet tool list --global
+
+# Verificar se agora funciona
+dotnet ef --version
+
+====================================================
+PASSO 2: VERIFICAR CONECTIVIDADE COM O BANCO
+====================================================
+
+# ⚠️ IMPORTANTE: Ping pode não funcionar (normal para Supabase)
+# ping aws-1-us-east-1.pooler.supabase.com
+
+# Verificar se o projeto compila
+dotnet build
+
+====================================================
+PASSO 3: CRIAR A MIGRATION
+====================================================
+
+# Criar a migration (se ainda não existir)
+dotnet ef migrations add InitialCreate --project src/DesafioCCAA.Infrastructure --startup-project src/DesafioCCAA.API
+
+====================================================
+PASSO 4: APLICAR A MIGRATION NO BANCO (CRIAR TABELAS)
+====================================================
+
+# ⚠️ ESTE É O COMANDO MAIS IMPORTANTE!
+# Ele vai criar as tabelas no banco PostgreSQL
+dotnet ef database update --project src/DesafioCCAA.Infrastructure --startup-project src/DesafioCCAA.API
+
+====================================================
+PASSO 5: VERIFICAR SE FUNCIONOU
+====================================================
+
+# Ver status das migrations
+dotnet ef migrations list --project src/DesafioCCAA.Infrastructure --startup-project src/DesafioCCAA.API
+
+====================================================
+COMANDOS ALTERNATIVOS (se der problema)
+====================================================
+
+# Se der erro "Migration already exists"
+dotnet ef migrations remove --project src/DesafioCCAA.Infrastructure --startup-project src/DesafioCCAA.API
+
+# Se der erro de timeout, verificar configuração
+# Verificar se o arquivo appsettings.Development.json tem:
+# "Command Timeout=120;" na string de conexão
+
+====================================================
+EXPLICAÇÃO DOS PARÂMETROS
+====================================================
+
+--project src/DesafioCCAA.Infrastructure    = Projeto que contém o DbContext
+--startup-project src/DesafioCCAA.API       = Projeto que contém a configuração (Program.cs)
+
+====================================================
+O QUE CADA COMANDO FAZ
+====================================================
+
+1. dotnet ef --version                    = Verifica se as ferramentas estão instaladas
+2. dotnet build                           = Compila o projeto para verificar erros
+3. dotnet ef migrations add               = Cria arquivos de migration (NÃO cria tabelas)
+4. dotnet ef database update              = Cria as tabelas no banco de dados
+5. dotnet ef migrations list              = Mostra status das migrations
+
+====================================================
+DICAS IMPORTANTES
+====================================================
+
+✅ Execute os comandos na ordem
+✅ Deixe o comando "database update" terminar (pode demorar alguns minutos)
+✅ Se der erro, leia a mensagem e use os comandos alternativos
+✅ O banco é PostgreSQL (Supabase) - pode ter latência alta
+
+====================================================
+CONTATO EM CASO DE PROBLEMAS
+====================================================
+
+Se der algum erro específico, copie a mensagem de erro completa
+e consulte o arquivo MIGRATION_GUIDE.md para soluções detalhadas.
+
+====================================================
