@@ -9,6 +9,9 @@ export interface Book {
   photoPath?: string;
   createdAt: Date;
   updatedAt?: Date;
+  isActive: boolean;
+  userId: string;
+  userFullName?: string; // Para exibição no frontend
 }
 
 export enum BookGenre {
@@ -57,6 +60,28 @@ export enum BookPublisher {
   Other = 'Other'
 }
 
+// Interface para criação de livro (sem ID e timestamps)
+export interface CreateBookDto {
+  title: string;
+  isbn: string;
+  genre: BookGenre;
+  author: string;
+  publisher: BookPublisher;
+  synopsis: string;
+  photoPath?: string;
+}
+
+// Interface para atualização de livro
+export interface UpdateBookDto {
+  title?: string;
+  isbn?: string;
+  genre?: BookGenre;
+  author?: string;
+  publisher?: BookPublisher;
+  synopsis?: string;
+  photoPath?: string;
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -65,4 +90,5 @@ export interface User {
   email: string;
   createdAt: Date;
   updatedAt?: Date;
+  isActive: boolean;
 }

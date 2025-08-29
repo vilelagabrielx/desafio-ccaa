@@ -211,16 +211,16 @@
                       >
                     </div>
                     <div class="form-group">
-                      <label for="category">Categoria *</label>
+                      <label for="genre">Gênero *</label>
                       <select 
-                        id="category"
-                        [(ngModel)]="newBook().category" 
-                        name="category"
+                        id="genre"
+                        [(ngModel)]="newBook().genre" 
+                        name="genre"
                         required
                       >
-                        <option value="">Selecione uma categoria</option>
-                        @for (category of categoryCounts(); track category.id) {
-                          <option [value]="category.name">{{ category.name }}</option>
+                        <option value="">Selecione um gênero</option>
+                        @for (genre of getBookGenres(); track genre) {
+                          <option [value]="genre">{{ genre }}</option>
                         }
                       </select>
                     </div>
@@ -228,70 +228,44 @@
                   
                   <div class="form-row">
                     <div class="form-group">
-                      <label for="price">Preço *</label>
-                      <div class="input-with-icon">
-                        <span class="currency-icon">R$</span>
-                        <input 
-                          id="price"
-                          type="number" 
-                          [(ngModel)]="newBook().price" 
-                          name="price"
-                          placeholder="0.00" 
-                          step="0.01"
-                          min="0"
-                          required
-                        >
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="stock">Estoque *</label>
-                      <input 
-                        id="stock"
-                        type="number" 
-                        [(ngModel)]="newBook().stockQuantity" 
-                        name="stock"
-                        placeholder="0"
-                        min="0"
+                      <label for="publisher">Editora *</label>
+                      <select 
+                        id="publisher"
+                        [(ngModel)]="newBook().publisher" 
+                        name="publisher"
                         required
                       >
+                        <option value="">Selecione uma editora</option>
+                        @for (publisher of getBookPublishers(); track publisher) {
+                          <option [value]="publisher">{{ publisher }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="synopsis">Sinopse *</label>
+                      <textarea 
+                        id="synopsis"
+                        [(ngModel)]="newBook().synopsis" 
+                        name="synopsis"
+                        placeholder="Breve sinopse do livro..."
+                        rows="3"
+                        required
+                      ></textarea>
                     </div>
                   </div>
                   
                   <div class="form-group full-width">
-                    <label for="description">Descrição</label>
-                    <textarea 
-                      id="description"
-                      [(ngModel)]="newBook().description" 
-                      name="description"
-                      placeholder="Breve descrição do livro..."
-                      rows="3"
-                    ></textarea>
+                    <label for="photoPath">Caminho da Foto</label>
+                    <input 
+                      id="photoPath"
+                      type="text" 
+                      [(ngModel)]="newBook().photoPath" 
+                      name="photoPath"
+                      placeholder="URL da imagem ou caminho do arquivo"
+                    >
                   </div>
                   
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="publisher">Editora</label>
-                      <input 
-                        id="publisher"
-                        type="text" 
-                        [(ngModel)]="newBook().publisher" 
-                        name="publisher"
-                        placeholder="Nome da editora"
-                      >
-                    </div>
-                    <div class="form-group">
-                      <label for="year">Ano de Publicação</label>
-                      <input 
-                        id="year"
-                        type="number" 
-                        [(ngModel)]="newBook().publicationYear" 
-                        name="year"
-                        placeholder="2024"
-                        min="1900"
-                        max="2030"
-                      >
-                    </div>
-                  </div>
+                  <!-- Removido - publisher e synopsis já estão em campos separados acima -->
                   
                   <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" (click)="closeModal()">
@@ -322,7 +296,7 @@
                 <div class="book-card">
                   <div class="book-cover">
                     <img 
-                      [src]="book.coverImage" 
+                      [src]="book.photoPath" 
                       [alt]="book.title" 
                       class="cover-image"
                       (error)="onImageError($event)"
@@ -338,9 +312,9 @@
                   <div class="book-info">
                     <h4 class="book-title">{{ book.title }}</h4>
                     <p class="book-author">{{ book.author }}</p>
-                    <p class="book-category">{{ book.category }}</p>
-                    <p class="book-price">R$ {{ book.price.toFixed(2) }}</p>
-                    <p class="book-stock">Estoque: {{ book.stockQuantity }}</p>
+                    <p class="book-genre">{{ book.genre }}</p>
+                    <p class="book-publisher">{{ book.publisher }}</p>
+                    <p class="book-synopsis">{{ book.synopsis }}</p>
                     <div class="book-actions">
                       <button class="btn btn-small btn-primary" (click)="editBook(book)">Editar</button>
                       <button class="btn btn-small btn-danger" (click)="deleteBook(book.id)">Excluir</button>

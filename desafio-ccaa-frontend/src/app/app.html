@@ -1,1 +1,30 @@
-<app-book-catalog></app-book-catalog>
+<div class="app-container">
+  <!-- Header com autenticação -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <h1>📚 Desafio CCAA</h1>
+      </div>
+      
+      <nav class="nav-menu">
+        <a routerLink="/" class="nav-link">Início</a>
+        <a routerLink="/books" class="nav-link">Livros</a>
+        <a routerLink="/profile" class="nav-link">Perfil</a>
+      </nav>
+      
+      <div class="auth-section">
+        <app-auth></app-auth>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteúdo principal -->
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>&copy; 2024 Desafio CCAA. Todos os direitos reservados.</p>
+  </footer>
+</div>

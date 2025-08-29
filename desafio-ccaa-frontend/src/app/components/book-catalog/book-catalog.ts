@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Book, BookCategory } from '../../models/book.model';
+import { Book, BookGenre, BookPublisher } from '../../models/book.model';
 import { BookService } from '../../services/book';
 
 @Component({
@@ -13,21 +13,21 @@ import { BookService } from '../../services/book';
 })
 export class BookCatalog implements OnInit {
   books = signal<Book[]>([]);
-  categories = signal<BookCategory[]>([]);
+  categories = signal<{ id: number; name: string; count: number }[]>([]);
   filteredBooks = signal<Book[]>([]);
   searchQuery = signal('');
   selectedCategory = signal<string>('');
   showAddForm = signal(false);
   newBook = signal<Partial<Book>>({});
 
-    // Computed signals for category counts
+  // Computed signals for category counts
   categoryCounts = computed(() => {
     const booksList = this.books();
     const categoriesList = this.categories();
 
     return categoriesList.map(category => ({
       ...category,
-      count: booksList.filter(book => book.category === category.name).length
+      count: booksList.filter(book => book.genre === category.name).length
     }));
   });
 
@@ -90,23 +90,17 @@ export class BookCatalog implements OnInit {
 
   saveBook(): void {
     const bookData = this.newBook();
-    if (bookData.title && bookData.author && bookData.isbn) {
-      // Generate a fallback cover image if none provided
-      const coverImage = bookData.coverImage || this.generateFallbackCover(bookData.title!, bookData.author!);
-      
+    if (bookData.title && bookData.author && bookData.isbn && bookData.genre && bookData.publisher && bookData.synopsis) {
       this.bookService.createBook({
         title: bookData.title!,
         author: bookData.author!,
         isbn: bookData.isbn!,
-        publisher: bookData.publisher || '',
-        publicationYear: bookData.publicationYear || new Date().getFullYear(),
-        category: bookData.category || 'Outros',
-        subcategory: bookData.subcategory,
-        price: bookData.price || 0,
-        description: bookData.description || '',
-        coverImage: coverImage,
-        stockQuantity: bookData.stockQuantity || 0,
-        isAvailable: bookData.isAvailable !== false
+        genre: bookData.genre!,
+        publisher: bookData.publisher!,
+        synopsis: bookData.synopsis!,
+        photoPath: bookData.photoPath,
+        isActive: true,
+        userId: '1' // TODO: Pegar do usuário logado
       }).subscribe(() => {
         this.loadBooks();
         this.showAddForm.set(false);
@@ -127,7 +121,7 @@ export class BookCatalog implements OnInit {
 
   isFormValid(): boolean {
     const book = this.newBook();
-    return !!(book.title && book.author && book.isbn && book.category && book.price !== undefined && book.stockQuantity !== undefined);
+    return !!(book.title && book.author && book.isbn && book.genre && book.publisher && book.synopsis);
   }
 
   // Mobile methods
@@ -162,19 +156,12 @@ export class BookCatalog implements OnInit {
     }
   }
 
-  private generateFallbackCover(title: string, author: string): string {
-    // Generate a simple SVG cover with book title and author
-    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B', '#E91E63', '#00BCD4', '#8BC34A'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    
-    const svg = `
-      <svg width="150" height="200" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100%" height="100%" fill="${randomColor}"/>
-        <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle" dy=".3em">${title}</text>
-        <text x="50%" y="65%" font-family="Arial, sans-serif" font-size="12" fill="#FFFFFF" text-anchor="middle" dy=".3em">${author}</text>
-      </svg>
-    `;
-    
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  // Helper methods para acessar os enums no template
+  getBookGenres(): string[] {
+    return Object.values(BookGenre);
+  }
+
+  getBookPublishers(): string[] {
+    return Object.values(BookPublisher);
   }
 }

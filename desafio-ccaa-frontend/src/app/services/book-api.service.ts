@@ -1,14 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
-import { Book, BookCategory } from '../models/book.model';
+import { Book } from '../models/book.model';
 import { IBookService } from './book.interface';
 
 @Injectable()
 export class BookApiService implements IBookService {
   // 🔧 CONFIGURAÇÃO: Altere a URL base conforme sua API
   private readonly API_BASE_URL = 'https://api.seudominio.com/books'; // Exemplo
-  private readonly API_CATEGORIES_URL = 'https://api.seudominio.com/categories'; // Exemplo
   
   // 🔧 CONFIGURAÇÃO: Headers para autenticação (se necessário)
   private readonly httpOptions = {
@@ -57,11 +56,11 @@ export class BookApiService implements IBookService {
       );
   }
 
-  // Categories
-  getAllCategories(): Observable<BookCategory[]> {
-    return this.http.get<BookCategory[]>(this.API_CATEGORIES_URL, this.httpOptions)
+  // Categories (baseado no enum BookGenre)
+  getAllCategories(): Observable<{ id: number; name: string; count: number }[]> {
+    return this.http.get<{ id: number; name: string; count: number }[]>(`${this.API_BASE_URL}/categories`, this.httpOptions)
       .pipe(
-        catchError(this.handleError<BookCategory[]>('getAllCategories', []))
+        catchError(this.handleError<{ id: number; name: string; count: number }[]>('getAllCategories', []))
       );
   }
 
@@ -78,8 +77,8 @@ export class BookApiService implements IBookService {
   }
 
   getBooksByCategory(category: string): Observable<Book[]> {
-    const params = new HttpParams().set('category', category);
-    return this.http.get<Book[]>(this.API_BASE_URL, { 
+    const params = new HttpParams().set('genre', category);
+    return this.http.get<Book[]>(`${this.API_BASE_URL}`, { 
       ...this.httpOptions, 
       params 
     })
