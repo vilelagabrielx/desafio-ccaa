@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { AuthService as Auth0Service } from '@auth0/auth0-angular';
-import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError, firstValueFrom } from 'rxjs';
+import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError, firstValueFrom, take } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
@@ -213,10 +213,23 @@ export class AuthService {
    * Verifica se o usuário está autenticado (local ou Auth0)
    */
   isAuthenticated(): Observable<boolean> {
+    console.log('🔍 AuthService: isAuthenticated() chamado');
+    console.log('🔍 AuthService: Estado atual do usuário local:', this.currentLocalUserSubject.value);
+    
     return this.auth0.isAuthenticated$.pipe(
       map(auth0Authenticated => {
         const localAuthenticated = this.currentLocalUserSubject.value !== null;
-        return auth0Authenticated || localAuthenticated;
+        const isAuth = auth0Authenticated || localAuthenticated;
+        
+        console.log('🔍 AuthService: Verificando autenticação:', {
+          auth0Authenticated,
+          localAuthenticated,
+          isAuth,
+          localUser: this.currentLocalUserSubject.value,
+          auth0User: this.auth0.user$
+        });
+        
+        return isAuth;
       })
     );
   }
@@ -365,7 +378,7 @@ export class AuthService {
    * Sincroniza usuário Auth0 com o sistema local
    */
   syncAuth0User(auth0User: any): Observable<LocalUser> {
-    console.log('🔄 AuthService: Iniciando sincronização Auth0...');
+    console.log('�� AuthService: Iniciando sincronização Auth0...');
     console.log('📊 AuthService: Dados do usuário Auth0:', auth0User);
     
     const syncData = {
@@ -383,12 +396,16 @@ export class AuthService {
     return this.http.post<ApiResponse<LocalUser>>(
       `${environment.api.baseUrl}/api/user/sync-auth0`,
       syncData,
-      { headers: this.getAuthHeaders() }
+      { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
     ).pipe(
       map(response => {
         console.log('📥 AuthService: Resposta da API:', response);
         if (response.data) {
           console.log('✅ AuthService: Sincronização bem-sucedida');
+          // IMPORTANTE: Definir o usuário local após sincronização bem-sucedida
+          console.log('🔄 AuthService: Definindo usuário local:', response.data);
+          this.currentLocalUserSubject.next(response.data);
+          console.log('✅ AuthService: Usuário local definido. Valor atual:', this.currentLocalUserSubject.value);
           return response.data;
         } else if (response.error) {
           console.error('❌ AuthService: Erro na resposta:', response.error);
@@ -421,7 +438,7 @@ export class AuthService {
     return this.http.post<ApiResponse<LocalUser>>(
       `${environment.api.baseUrl}/api/user/ensure-exists`,
       { email, auth0Id },
-      { headers: this.getAuthHeaders() }
+      { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
     ).pipe(
       map(response => {
         if (response.data) {
@@ -445,16 +462,60 @@ export class AuthService {
    * Faz logout (Auth0 ou local)
    */
   logout(): void {
-    const localUser = this.currentLocalUserSubject.value;
-    if (localUser) {
-      this.logoutLocalUser();
-    } else if (isPlatformBrowser(this.platformId)) {
-      this.auth0.logout({
-        logoutParams: {
-          returnTo: environment.auth0.logoutRedirectUri
-        }
-      });
+    console.log('🚪 AuthService: Iniciando logout...');
+    
+    // Limpar estado local primeiro
+    this.clearAuthData();
+    
+    // TEMPORARIAMENTE: Desabilitar logout do Auth0 para evitar erro 400
+    // TODO: Corrigir configuração do Auth0 antes de reabilitar
+    console.log('⚠️ AuthService: Logout do Auth0 temporariamente desabilitado para evitar erro 400');
+    
+    // Redirecionar para login imediatamente
+    this.redirectToLogin();
+    
+    console.log('✅ AuthService: Logout concluído');
+  }
+
+  /**
+   * Logout simples sem Auth0 (fallback)
+   */
+  simpleLogout(): void {
+    console.log('🚪 AuthService: Logout simples iniciado...');
+    
+    // Limpar estado local
+    this.clearAuthData();
+    
+    // Redirecionar para login imediatamente
+    this.redirectToLogin();
+    
+    console.log('✅ AuthService: Logout simples concluído');
+  }
+
+  /**
+   * Testa a conexão com o Auth0
+   */
+  testAuth0(): void {
+    console.log('🧪 AuthService: Testando conexão com Auth0...');
+    console.log('🔧 AuthService: Configurações:', {
+      domain: environment.auth0.domain,
+      clientId: environment.auth0.clientId,
+      redirectUri: environment.auth0.redirectUri
+    });
+    
+    // Verificar se está no browser
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('❌ AuthService: Não está no browser');
+      return;
     }
+    
+    // Tentar fazer login para testar
+    this.auth0.loginWithRedirect({
+      appState: { 
+        target: '/',
+        test: true
+      }
+    });
   }
 
   /**
@@ -641,6 +702,15 @@ export class AuthService {
     } catch (error) {
       console.error('❌ AuthService: Erro ao obter usuário Auth0:', error);
       return null;
+    }
+  }
+
+  /**
+   * Redireciona para a página de login
+   */
+  private redirectToLogin(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      window.location.href = '/login';
     }
   }
 }

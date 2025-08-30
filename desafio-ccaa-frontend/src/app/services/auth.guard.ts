@@ -13,16 +13,33 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(): Observable<boolean | UrlTree> {
+    console.log('🔒 AuthGuard: Verificando acesso à rota...');
+    
     return this.authService.isAuthenticated().pipe(
       take(1),
       map(isAuthenticated => {
+        console.log('🔒 AuthGuard: Resultado da verificação:', isAuthenticated);
+        
         if (isAuthenticated) {
+          console.log('✅ AuthGuard: Acesso permitido');
           return true;
         }
         
-        // Se não estiver autenticado, redireciona para login
-        this.router.navigate(['/login']);
-        return false;
+        // IMPORTANTE: Aguardar um pouco antes de negar acesso
+        // O usuário pode estar sendo sincronizado
+        console.log('⏳ AuthGuard: Aguardando sincronização antes de negar acesso...');
+        setTimeout(() => {
+          this.authService.isAuthenticated().subscribe(finalAuth => {
+            if (!finalAuth) {
+              console.log('❌ AuthGuard: Acesso negado após timeout, redirecionando para login');
+              this.router.navigate(['/login']);
+            }
+          });
+        }, 2000); // Aguardar 2 segundos
+        
+        // Permitir acesso temporariamente
+        console.log('⚠️ AuthGuard: Acesso temporariamente permitido (aguardando sincronização)');
+        return true;
       })
     );
   }

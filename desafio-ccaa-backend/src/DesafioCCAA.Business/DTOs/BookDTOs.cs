@@ -57,3 +57,9 @@ public record BookSearchResultDto
     public int PageSize { get; init; }
     public int TotalPages { get; init; }
 }
+
+public record CategoryDto
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+}

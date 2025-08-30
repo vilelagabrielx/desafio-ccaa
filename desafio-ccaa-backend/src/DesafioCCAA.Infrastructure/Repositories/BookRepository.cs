@@ -70,6 +70,15 @@ public class BookRepository : IBookRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Book>> GetBooksByUserIdAsync(string userId)
+    {
+        return await _context.Books
+            .Include(b => b.User)
+            .Where(b => b.UserId == userId && b.IsActive)
+            .OrderByDescending(b => b.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<Book>> SearchAsync(BookSearchDto searchDto)
     {
         var query = _context.Books

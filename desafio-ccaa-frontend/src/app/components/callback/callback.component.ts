@@ -135,10 +135,19 @@ export class CallbackComponent implements OnInit {
     try {
       console.log('🔄 Iniciando processamento do callback Auth0...');
       
-      // Aguardar um pouco para mostrar a tela de loading
+      // Aguardar um pouco para o Auth0 estabelecer a sessão
+      console.log('⏳ Aguardando Auth0 estabelecer sessão...');
       await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Obter usuário do Auth0 via AuthService
+      
+      // Verificar se está autenticado
+      const isAuthenticated = await firstValueFrom(this.authService.isAuthenticated());
+      console.log('🔍 Verificando autenticação após callback:', isAuthenticated);
+      
+      if (!isAuthenticated) {
+        throw new Error('Usuário não foi autenticado após callback');
+      }
+      
+      // Obter usuário do Auth0
       console.log('🔍 Obtendo usuário do Auth0...');
       const auth0User = await this.authService.getAuth0User();
       
@@ -154,7 +163,32 @@ export class CallbackComponent implements OnInit {
 
       // Aguardar um pouco para garantir que o estado seja atualizado
       console.log('⏳ Aguardando atualização do estado...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Verificar novamente se está autenticado após sincronização
+      const finalAuthCheck = await firstValueFrom(this.authService.isAuthenticated());
+      console.log('🔍 Verificação final de autenticação:', finalAuthCheck);
+      
+      if (!finalAuthCheck) {
+        throw new Error('Usuário não está autenticado após sincronização');
+      }
+
+      // Verificação final antes do redirecionamento
+      const preRedirectCheck = await firstValueFrom(this.authService.isAuthenticated());
+      console.log('🔍 Verificação pré-redirecionamento:', preRedirectCheck);
+      
+      if (!preRedirectCheck) {
+        throw new Error('Usuário perdeu autenticação antes do redirecionamento');
+      }
+
+      // Verificar se já estamos na rota correta
+      const currentUrl = this.router.url;
+      console.log('🔍 URL atual:', currentUrl);
+      
+      if (currentUrl === '/books' || currentUrl === '/book-catalog') {
+        console.log('✅ Já estamos na rota correta, não redirecionando');
+        return;
+      }
 
       // Redirecionar para o sistema da livraria
       console.log('🚀 Redirecionando para o sistema da livraria...');

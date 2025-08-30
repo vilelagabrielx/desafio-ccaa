@@ -184,4 +184,40 @@ public class BookController : ControllerBase
 
         return File(result.Data!, "application/pdf", $"relatorio-livros-{DateTime.Now:yyyyMMdd-HHmmss}.pdf");
     }
+
+    /// <summary>
+    /// Obtém todos os livros (público)
+    /// </summary>
+    [HttpGet("all")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAllBooks()
+    {
+        try
+        {
+            var books = await _bookService.GetAllBooksAsync();
+            return Ok(new { data = books });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao buscar livros", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtém todas as categorias disponíveis
+    /// </summary>
+    [HttpGet("categories")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCategories()
+    {
+        try
+        {
+            var categories = await _bookService.GetCategoriesAsync();
+            return Ok(new { data = categories });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao buscar categorias", details = ex.Message });
+        }
+    }
 }

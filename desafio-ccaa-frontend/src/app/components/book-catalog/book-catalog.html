@@ -63,8 +63,9 @@
                 <span class="user-icon">👤</span>
               }
               <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
-              <button class="logout-btn" (click)="logout(); toggleMobileMenu()" title="Sair">
-                🚪
+              <button class="logout-btn" (click)="logout(); toggleMobileMenu()" title="Sair da conta">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Sair</span>
               </button>
             </div>
           } @else {
@@ -107,8 +108,9 @@
               <span class="user-icon">👤</span>
             }
             <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
-            <button class="logout-btn" (click)="logout()" title="Sair">
-              🚪
+            <button class="logout-btn" (click)="logout()" title="Sair da conta">
+              <span class="logout-icon">🚪</span>
+              <span class="logout-text">Sair</span>
             </button>
           </div>
         } @else {

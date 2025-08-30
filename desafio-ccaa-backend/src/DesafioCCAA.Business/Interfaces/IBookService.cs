@@ -13,4 +13,6 @@ public interface IBookService
     Task<ServiceResult<BookResponseDto>> UpdateBookAsync(int bookId, string userId, UpdateBookDto updateBookDto, IFormFile? photoFile);
     Task<ServiceResult<bool>> DeleteBookAsync(int bookId, string userId);
     Task<ServiceResult<byte[]>> GenerateBooksReportPdfAsync(string userId);
+    Task<List<BookResponseDto>> GetAllBooksAsync();
+    Task<List<CategoryDto>> GetCategoriesAsync();
 }

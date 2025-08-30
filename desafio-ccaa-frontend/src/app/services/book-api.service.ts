@@ -19,8 +19,16 @@ export class BookApiService implements IBookService {
 
   // CRUD Operations
   getAllBooks(): Observable<Book[]> {
-    return this.http.get<Book[]>(this.API_BASE_URL, this.httpOptions)
+    return this.http.get<{ data: Book[] }>(`${this.API_BASE_URL}/all`, this.httpOptions)
       .pipe(
+        map(response => {
+          // Garantir que sempre retorne um array válido
+          if (response && Array.isArray(response.data)) {
+            return response.data;
+          }
+          console.warn('API retornou formato inesperado para livros:', response);
+          return [];
+        }),
         catchError(this.handleError<Book[]>('getAllBooks', []))
       );
   }
@@ -56,8 +64,16 @@ export class BookApiService implements IBookService {
 
   // Categories (baseado no enum BookGenre)
   getAllCategories(): Observable<{ id: number; name: string; count: number }[]> {
-    return this.http.get<{ id: number; name: string; count: number }[]>(`${this.API_BASE_URL}/categories`, this.httpOptions)
+    return this.http.get<{ data: { id: number; name: string; count: number }[] }>(`${this.API_BASE_URL}/categories`, this.httpOptions)
       .pipe(
+        map(response => {
+          // Garantir que sempre retorne um array válido
+          if (response && Array.isArray(response.data)) {
+            return response.data;
+          }
+          console.warn('API retornou formato inesperado para categorias:', response);
+          return [];
+        }),
         catchError(this.handleError<{ id: number; name: string; count: number }[]>('getAllCategories', []))
       );
   }
@@ -76,7 +92,7 @@ export class BookApiService implements IBookService {
 
   getBooksByCategory(category: string): Observable<Book[]> {
     const params = new HttpParams().set('genre', category);
-    return this.http.get<Book[]>(this.API_BASE_URL, { 
+    return this.http.get<Book[]>(`${this.API_BASE_URL}/all`, { 
       ...this.httpOptions, 
       params 
     })

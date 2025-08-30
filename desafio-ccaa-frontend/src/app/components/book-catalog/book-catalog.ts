@@ -48,38 +48,80 @@ export class BookCatalog implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadBooks();
-    this.loadCategories();
-    this.loadUserProfile();
+    console.log('🔍 BookCatalog: ngOnInit iniciado');
+    
+    // Aguardar autenticação antes de carregar dados
+    this.authService.isAuthenticated().subscribe(isAuth => {
+      console.log('🔍 BookCatalog: Verificação de autenticação:', isAuth);
+      
+      if (isAuth) {
+        console.log('🔍 BookCatalog: Usuário autenticado, carregando dados...');
+        this.isAuthenticated.set(true);
+        this.loadBooks();
+        this.loadCategories();
+        this.loadUserProfile();
+      } else {
+        console.log('❌ BookCatalog: Usuário não autenticado');
+        this.isAuthenticated.set(false);
+        
+        // IMPORTANTE: Não redirecionar imediatamente, aguardar um pouco
+        // O usuário pode estar sendo sincronizado
+        console.log('⏳ Aguardando sincronização antes de redirecionar...');
+        setTimeout(() => {
+          this.authService.isAuthenticated().subscribe(finalAuth => {
+            if (!finalAuth) {
+              console.log('🔄 BookCatalog: Redirecionando para login após timeout...');
+              this.router.navigate(['/login']);
+            }
+          });
+        }, 3000); // Aguardar 3 segundos
+      }
+    });
   }
 
   loadUserProfile(): void {
     this.authService.getUserProfile().subscribe(profile => {
       if (profile) {
+        console.log('✅ BookCatalog: Perfil carregado:', profile);
         this.userProfile.set(profile);
-        this.isAuthenticated.set(true);
+        // Não alterar isAuthenticated aqui, pois já foi definido no ngOnInit
       } else {
-        this.isAuthenticated.set(false);
-        this.userProfile.set(null);
+        console.log('⚠️ BookCatalog: Perfil não carregado ainda, mas usuário está autenticado');
+        // Não definir isAuthenticated como false aqui
+        // O usuário pode estar autenticado mas o perfil ainda não foi carregado
       }
     });
   }
 
   logout(): void {
+    console.log('🚪 Fazendo logout...');
+    
+    // Limpar estado local primeiro
+    this.isAuthenticated.set(false);
+    this.userProfile.set(null);
+    
+    // Fazer logout via AuthService
     this.authService.logout();
+    
+    // Redirecionar para login imediatamente
+    console.log('🔄 Redirecionando para login...');
     this.router.navigate(['/login']);
   }
 
   loadBooks(): void {
     this.bookService.getAllBooks().subscribe(books => {
-      this.books.set(books);
-      this.filteredBooks.set(books);
+      // Garantir que sempre seja um array válido
+      const booksArray = Array.isArray(books) ? books : [];
+      this.books.set(booksArray);
+      this.filteredBooks.set(booksArray);
     });
   }
 
   loadCategories(): void {
     this.bookService.getAllCategories().subscribe(categories => {
-      this.categories.set(categories);
+      // Garantir que sempre seja um array válido
+      const categoriesArray = Array.isArray(categories) ? categories : [];
+      this.categories.set(categoriesArray);
     });
   }
 

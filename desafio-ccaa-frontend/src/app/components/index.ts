@@ -2,3 +2,8 @@ export * from './login';
 export * from './callback';
 export * from './password-strength';
 export * from './book-catalog';
+export * from './register';
+export * from './reset-password';
+export * from './access-denied';
+export * from './profile';
+export * from './auth';

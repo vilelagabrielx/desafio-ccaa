@@ -206,6 +206,15 @@ export class AuthComponent implements OnInit {
   ngOnInit(): void {}
 
   logout(): void {
-    this.authService.logout();
+    console.log('🚪 AuthComponent: Iniciando logout...');
+    
+    try {
+      // Tentar logout normal primeiro
+      this.authService.logout();
+    } catch (error) {
+      console.warn('⚠️ AuthComponent: Erro no logout normal, usando logout simples:', error);
+      // Se falhar, usar logout simples
+      this.authService.simpleLogout();
+    }
   }
 }

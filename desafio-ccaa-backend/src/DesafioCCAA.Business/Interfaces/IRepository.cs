@@ -23,6 +23,7 @@ public interface IUserRepository : IRepository<User>
 public interface IBookRepository : IRepository<Book>
 {
     Task<IEnumerable<Book>> GetByUserIdAsync(string userId);
+    Task<IEnumerable<Book>> GetBooksByUserIdAsync(string userId);
     Task<IEnumerable<Book>> SearchAsync(BookSearchDto searchDto);
     Task<int> GetTotalCountAsync(BookSearchDto searchDto);
     Task<Book?> GetByIdWithUserAsync(int id);

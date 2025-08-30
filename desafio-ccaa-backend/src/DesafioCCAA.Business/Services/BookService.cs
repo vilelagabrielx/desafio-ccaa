@@ -226,12 +226,10 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
     {
         try
         {
-            var books = await bookRepository.GetByUserIdAsync(userId);
-            var user = await userRepository.GetByIdAsync(int.Parse(userId));
-
-            if (user is null)
+            var books = await bookRepository.GetBooksByUserIdAsync(userId);
+            if (!books.Any())
             {
-                return ServiceResult<byte[]>.Failure("Usuário não encontrado");
+                return ServiceResult<byte[]>.Failure("Nenhum livro encontrado para gerar relatório");
             }
 
             using var memoryStream = new MemoryStream();
@@ -240,19 +238,17 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
             var document = new Document(pdf);
 
             // Add title
-            var title = new Paragraph($"Relatório de Livros - {user.FullName}")
-                .SetFontSize(18)
+            var title = new Paragraph("Relatório de Livros")
+                .SetFontSize(16)
                 .SetBold()
                 .SetTextAlignment(TextAlignment.CENTER);
             document.Add(title);
-            document.Add(new Paragraph(" ")); // Spacing
 
-            // Add generation date
-            var date = new Paragraph($"Gerado em: {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
+            // Add subtitle
+            var subtitle = new Paragraph($"Gerado em: {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
                 .SetFontSize(10)
-                .SetTextAlignment(TextAlignment.RIGHT);
-            document.Add(date);
-            document.Add(new Paragraph(" ")); // Spacing
+                .SetTextAlignment(TextAlignment.CENTER);
+            document.Add(subtitle);
 
             if (!books.Any())
             {
@@ -304,6 +300,50 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
         {
             logger.LogError(ex, "Erro ao gerar relatório PDF para: {UserId}", userId);
             return ServiceResult<byte[]>.Failure("Erro interno ao gerar relatório");
+        }
+    }
+
+    public async Task<List<BookResponseDto>> GetAllBooksAsync()
+    {
+        try
+        {
+            var books = await bookRepository.GetAllAsync();
+            var bookResponses = books.Select(MapToBookResponseDto).ToList();
+            
+            logger.LogInformation("Todos os livros recuperados com sucesso. Total: {Count}", bookResponses.Count);
+            return bookResponses;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao buscar todos os livros");
+            return new List<BookResponseDto>();
+        }
+    }
+
+    public async Task<List<CategoryDto>> GetCategoriesAsync()
+    {
+        try
+        {
+            var categories = new List<CategoryDto>();
+            var genreValues = Enum.GetValues<BookGenre>();
+            
+            for (int i = 0; i < genreValues.Length; i++)
+            {
+                var genre = genreValues[i];
+                categories.Add(new CategoryDto 
+                { 
+                    Id = (int)genre, 
+                    Name = genre.ToString() 
+                });
+            }
+            
+            logger.LogInformation("Categorias recuperadas com sucesso. Total: {Count}", categories.Count);
+            return categories;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao buscar categorias");
+            return new List<CategoryDto>();
         }
     }
 
