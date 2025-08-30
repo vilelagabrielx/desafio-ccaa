@@ -50,33 +50,21 @@ export class BookCatalog implements OnInit {
   ngOnInit(): void {
     console.log('🔍 BookCatalog: ngOnInit iniciado');
     
-    // Aguardar autenticação antes de carregar dados
-    this.authService.isAuthenticated().subscribe(isAuth => {
-      console.log('🔍 BookCatalog: Verificação de autenticação:', isAuth);
-      
-      if (isAuth) {
-        console.log('🔍 BookCatalog: Usuário autenticado, carregando dados...');
-        this.isAuthenticated.set(true);
-        this.loadBooks();
-        this.loadCategories();
-        this.loadUserProfile();
-      } else {
-        console.log('❌ BookCatalog: Usuário não autenticado');
-        this.isAuthenticated.set(false);
-        
-        // IMPORTANTE: Não redirecionar imediatamente, aguardar um pouco
-        // O usuário pode estar sendo sincronizado
-        console.log('⏳ Aguardando sincronização antes de redirecionar...');
-        setTimeout(() => {
-          this.authService.isAuthenticated().subscribe(finalAuth => {
-            if (!finalAuth) {
-              console.log('🔄 BookCatalog: Redirecionando para login após timeout...');
-              this.router.navigate(['/login']);
-            }
-          });
-        }, 3000); // Aguardar 3 segundos
-      }
-    });
+    // Verificar autenticação
+    const isAuth = this.authService.isAuthenticated();
+    console.log('🔍 BookCatalog: Verificação de autenticação:', isAuth);
+    
+    if (isAuth) {
+      console.log('🔍 BookCatalog: Usuário autenticado, carregando dados...');
+      this.isAuthenticated.set(true);
+      this.loadBooks();
+      this.loadCategories();
+      this.loadUserProfile();
+    } else {
+      console.log('❌ BookCatalog: Usuário não autenticado, redirecionando...');
+      this.isAuthenticated.set(false);
+      this.router.navigate(['/login']);
+    }
   }
 
   loadUserProfile(): void {

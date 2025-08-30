@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { LoginComponent, CallbackComponent } from './components';
+import { LoginComponent } from './components';
 import { BookCatalog } from './components/book-catalog/book-catalog';
 import { AuthGuard } from './services/auth.guard';
 import { RegisterComponent } from './components/register/register.component';
@@ -24,10 +24,7 @@ export const routes: Routes = [
     path: 'register',
     component: RegisterComponent
   },
-  {
-    path: 'callback',
-    component: CallbackComponent
-  },
+
   {
     path: 'reset-password',
     component: ResetPasswordComponent

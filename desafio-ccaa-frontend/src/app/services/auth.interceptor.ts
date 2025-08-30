@@ -1,6 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -12,23 +11,21 @@ export const AuthInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  return authService.getApiToken().pipe(
-    take(1),
-    switchMap(token => {
-      if (token) {
-        // Adiciona o token de autorização no header
-        const authReq = request.clone({
-          setHeaders: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        return next(authReq);
+  // Obtém o token JWT local
+  const token = authService.getToken();
+  
+  if (token) {
+    // Adiciona o token de autorização no header
+    const authReq = request.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
       }
-      
-      // Se não há token, continua sem autorização
-      return next(request);
-    })
-  );
+    });
+    return next(authReq);
+  }
+  
+  // Se não há token, continua sem autorização
+  return next(request);
 };
 
 /**

@@ -27,5 +27,10 @@ public class UserRegistrationDtoValidator : AbstractValidator<UserRegistrationDt
 
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.Password).WithMessage("Confirmação de senha deve ser igual à senha");
+
+        RuleFor(x => x.DateOfBirth)
+            .NotEmpty().WithMessage("Data de nascimento é obrigatória")
+            .LessThan(DateTime.Today).WithMessage("Data de nascimento deve ser anterior à data atual")
+            .GreaterThan(DateTime.Today.AddYears(-120)).WithMessage("Data de nascimento inválida");
     }
 }

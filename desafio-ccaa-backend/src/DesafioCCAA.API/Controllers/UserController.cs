@@ -24,6 +24,15 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegistrationDto registrationDto)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .SelectMany(x => x.Value.Errors)
+                .Select(x => x.ErrorMessage)
+                .ToList();
+            return BadRequest(new { errors });
+        }
+        
         var result = await _userService.RegisterAsync(registrationDto);
         
         if (!result.IsSuccess)
@@ -78,41 +87,17 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
-        // Implementation will be added here
-        return Ok(new { message = "Endpoint em desenvolvimento" });
-    }
-
-    /// <summary>
-    /// Sincroniza usuário do Auth0 com o sistema local
-    /// </summary>
-    [HttpPost("sync-auth0")]
-    public async Task<IActionResult> SyncAuth0User([FromBody] Auth0UserSyncDto auth0User)
-    {
-        var result = await _userService.SyncAuth0UserAsync(auth0User);
-        
-        if (!result.IsSuccess)
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
         {
-            if (result.ValidationErrors?.Any() == true)
-            {
-                return BadRequest(new { errors = result.ValidationErrors });
-            }
-            return BadRequest(new { error = result.ErrorMessage });
+            return Unauthorized(new { error = "Token inválido" });
         }
 
-        return Ok(new { data = result.Data });
-    }
-
-    /// <summary>
-    /// Garante que o usuário existe no sistema local
-    /// </summary>
-    [HttpPost("ensure-exists")]
-    public async Task<IActionResult> EnsureUserExists([FromBody] EnsureUserExistsRequest request)
-    {
-        var result = await _userService.EnsureUserExistsAsync(request.Email, request.Auth0Id);
+        var result = await _userService.GetUserByIdAsync(userId);
         
         if (!result.IsSuccess)
         {
-            return BadRequest(new { error = result.ErrorMessage });
+            return NotFound(new { error = result.ErrorMessage });
         }
 
         return Ok(new { data = result.Data });
@@ -186,7 +171,7 @@ public class UserController : ControllerBase
     /// </summary>
     [HttpPut("profile")]
     [Authorize]
-    public async Task<IActionResult> UpdateProfile([FromBody] UserResponseDto updateDto)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateDto)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))

@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-Sistema full-stack para gestão de livros com autenticação Auth0, desenvolvido em **Angular 17** (frontend) e **ASP.NET Core 8.0** (backend), utilizando **PostgreSQL** como banco de dados.
+Sistema full-stack para gestão de livros com autenticação local, desenvolvido em **Angular 17** (frontend) e **ASP.NET Core 8.0** (backend), utilizando **PostgreSQL** como banco de dados.
 
 ## 🏗️ Arquitetura
 
@@ -10,14 +10,14 @@ Sistema full-stack para gestão de livros com autenticação Auth0, desenvolvido
 - **Framework**: Angular 17 com TypeScript
 - **UI Components**: Componentes reutilizáveis com Angular Material
 - **State Management**: RxJS BehaviorSubject para gerenciamento de estado
-- **Authentication**: Auth0 Angular SDK
+- **Authentication**: JWT + ASP.NET Core Identity
 - **Forms**: Reactive Forms com validações customizadas
 - **Responsive Design**: Layout adaptável para diferentes dispositivos
 
 ### **Backend (ASP.NET Core 8.0)**
 - **Framework**: ASP.NET Core 8.0 Web API
 - **ORM**: Entity Framework Core 8.0
-- **Authentication**: JWT + Auth0 Integration
+- **Authentication**: JWT + ASP.NET Core Identity
 - **Database**: PostgreSQL (Supabase)
 - **Architecture**: Clean Architecture com separação de responsabilidades
 - **API Design**: RESTful com padrão ServiceResult para respostas consistentes
@@ -30,17 +30,18 @@ Sistema full-stack para gestão de livros com autenticação Auth0, desenvolvido
 
 ## 🔐 Sistema de Autenticação
 
-### **Auth0 Integration**
-- **Single Sign-On**: Login social e tradicional
-- **User Management**: Gestão centralizada de usuários
-- **Security**: MFA e políticas de senha configuráveis
-- **Synchronization**: Sincronização automática entre Auth0 e banco local
+### **ASP.NET Core Identity + JWT**
+- **Local Authentication**: Sistema de autenticação próprio
+- **User Management**: Gestão local de usuários com Identity
+- **Security**: JWT tokens com expiração configurável
+- **Password Policies**: Políticas de senha configuráveis via Identity
 
-### **Resilience Pattern**
-- **Fallback Strategy**: Sistema continua funcionando mesmo com falhas de sincronização
-- **Retry Mechanism**: Tentativas automáticas de sincronização
-- **Error Handling**: Tratamento robusto de erros com fallback para mock services
-- **User Experience**: Interface clara para usuários durante problemas de conectividade
+### **Email System**
+- **PickupDirectory**: Sistema de envio de e-mails via arquivos .eml locais
+- **Password Reset**: Recuperação de senha com tokens seguros
+- **Email Templates**: Templates HTML para notificações
+
+**Nota**: O envio de e-mail está configurado via PickupDirectory, que grava arquivos .eml localmente. Em produção bastaria trocar para um provedor real como SendGrid/SMTP.
 
 ## 🗄️ Estrutura do Banco
 
@@ -53,7 +54,6 @@ CREATE TABLE "AspNetUsers" (
     "Email" VARCHAR(256),
     "FirstName" VARCHAR(100),
     "LastName" VARCHAR(100),
-    "Auth0Id" VARCHAR(255), -- ID único do Auth0
     "DateOfBirth" TIMESTAMP,
     "EmailConfirmed" BOOLEAN,
     "PhoneNumber" VARCHAR(20),
@@ -61,7 +61,10 @@ CREATE TABLE "AspNetUsers" (
     "TwoFactorEnabled" BOOLEAN,
     "LockoutEnd" TIMESTAMP,
     "LockoutEnabled" BOOLEAN,
-    "AccessFailedCount" INTEGER
+    "AccessFailedCount" INTEGER,
+    "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "UpdatedAt" TIMESTAMP,
+    "IsActive" BOOLEAN DEFAULT true
 );
 
 -- Tabela de Livros
@@ -79,7 +82,6 @@ CREATE TABLE "Books" (
 ```
 
 ### **Índices e Performance**
-- **Auth0Id**: Índice para busca rápida por usuário Auth0
 - **Email**: Índice único para usuários
 - **ISBN**: Índice para busca de livros
 - **Title + Author**: Índice composto para busca textual
@@ -90,7 +92,6 @@ CREATE TABLE "Books" (
 - .NET 8.0 SDK
 - Node.js 18+ e npm
 - PostgreSQL (ou Supabase)
-- Conta Auth0
 
 ### **Configuração Rápida**
 ```bash
@@ -156,24 +157,24 @@ DB_NAME=postgres
 DB_USERNAME=postgres.dhzqrasofzdjfpfhhnqm
 DB_PASSWORD=sua-senha
 
-# Auth0
-AUTH0_DOMAIN=seu-dominio.auth0.com
-AUTH0_CLIENT_ID=seu-client-id
-AUTH0_CLIENT_SECRET=seu-client-secret
-AUTH0_AUDIENCE=sua-audience
-AUTH0_ISSUER=seu-issuer
-
 # JWT
 JWT_SECRET_KEY=sua-chave-secreta
+JWT_ISSUER=DesafioCCAA
+JWT_AUDIENCE=DesafioCCAAUsers
+JWT_EXPIRY_DAYS=7
+
+# Email
+EMAIL_PICKUP_DIRECTORY=C:\temp\emails
 ```
 
 ## 🚀 Funcionalidades
 
 ### **Gestão de Usuários**
-- ✅ Registro e login via Auth0
+- ✅ Registro e login local
 - ✅ Perfil de usuário com dados pessoais
-- ✅ Sincronização automática com sistema local
-- ✅ Recuperação de senha
+- ✅ Recuperação de senha via e-mail
+- ✅ Alteração de senha
+- ✅ Atualização de perfil
 
 ### **Gestão de Livros**
 - ✅ Cadastro de livros com metadados completos
@@ -205,15 +206,15 @@ public class ServiceResult<T>
 }
 ```
 
-### **3. Resiliência e Fallback**
-- Sistema continua funcionando com mock services em caso de falha
-- Retry automático para operações críticas
-- Fallback para funcionalidades essenciais
+### **3. Autenticação Local**
+- Sistema próprio de autenticação com Identity
+- JWT tokens para sessões seguras
+- Controle total sobre políticas de segurança
 
-### **4. Configuração Centralizada**
-- Arquivo único `database-config.json` para todas as configurações
-- Script de atualização automática em todos os arquivos
-- Consistência garantida entre ambientes
+### **4. Sistema de E-mails**
+- PickupDirectory para desenvolvimento
+- Fácil migração para provedores reais
+- Templates HTML para notificações
 
 ## 📊 Métricas e Performance
 
@@ -235,7 +236,7 @@ public class ServiceResult<T>
 ## 🔒 Segurança
 
 ### **Autenticação e Autorização**
-- **Auth0**: Gestão centralizada de identidade
+- **ASP.NET Core Identity**: Sistema robusto de gestão de usuários
 - **JWT**: Tokens seguros com expiração configurável
 - **HTTPS**: Todas as comunicações criptografadas
 
@@ -264,7 +265,7 @@ public class ServiceResult<T>
 ## 📈 Roadmap
 
 ### **Fase 1 (Atual)**
-- ✅ Sistema básico de autenticação
+- ✅ Sistema básico de autenticação local
 - ✅ CRUD de usuários e livros
 - ✅ Sistema de reservas
 
@@ -310,13 +311,13 @@ public class ServiceResult<T>
 
 Este projeto demonstra competências em:
 - **Full-Stack Development**: Angular + ASP.NET Core
-- **Cloud Architecture**: Supabase + Auth0
+- **Cloud Architecture**: Supabase
 - **Database Design**: PostgreSQL com EF Core
-- **Security**: Autenticação JWT + OAuth2
+- **Security**: Autenticação JWT + Identity
 - **DevOps**: CI/CD, migrations, configuração
 - **Best Practices**: Clean Architecture, SOLID, DRY
 
-**Tecnologias**: Angular 17, ASP.NET Core 8.0, PostgreSQL, Entity Framework Core, Auth0, TypeScript, C#, Docker
+**Tecnologias**: Angular 17, ASP.NET Core 8.0, PostgreSQL, Entity Framework Core, ASP.NET Core Identity, TypeScript, C#, Docker
 
 **Arquitetura**: Clean Architecture, RESTful API, Microservices-ready, Cloud-native
 

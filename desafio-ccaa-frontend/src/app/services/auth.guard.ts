@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, Router, UrlTree } from '@angular/router';
-import { Observable, map, take } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -15,33 +15,17 @@ export class AuthGuard implements CanActivate {
   canActivate(): Observable<boolean | UrlTree> {
     console.log('🔒 AuthGuard: Verificando acesso à rota...');
     
-    return this.authService.isAuthenticated().pipe(
-      take(1),
-      map(isAuthenticated => {
-        console.log('🔒 AuthGuard: Resultado da verificação:', isAuthenticated);
-        
-        if (isAuthenticated) {
-          console.log('✅ AuthGuard: Acesso permitido');
-          return true;
-        }
-        
-        // IMPORTANTE: Aguardar um pouco antes de negar acesso
-        // O usuário pode estar sendo sincronizado
-        console.log('⏳ AuthGuard: Aguardando sincronização antes de negar acesso...');
-        setTimeout(() => {
-          this.authService.isAuthenticated().subscribe(finalAuth => {
-            if (!finalAuth) {
-              console.log('❌ AuthGuard: Acesso negado após timeout, redirecionando para login');
-              this.router.navigate(['/login']);
-            }
-          });
-        }, 2000); // Aguardar 2 segundos
-        
-        // Permitir acesso temporariamente
-        console.log('⚠️ AuthGuard: Acesso temporariamente permitido (aguardando sincronização)');
-        return true;
-      })
-    );
+    const isAuthenticated = this.authService.isAuthenticated();
+    console.log('🔒 AuthGuard: Resultado da verificação:', isAuthenticated);
+    
+    if (isAuthenticated) {
+      console.log('✅ AuthGuard: Acesso permitido');
+      return of(true);
+    }
+    
+    console.log('❌ AuthGuard: Acesso negado, redirecionando para login');
+    this.router.navigate(['/login']);
+    return of(false);
   }
 }
 
@@ -61,23 +45,20 @@ export class PermissionGuard implements CanActivate {
     const requiredPermission = route.data?.['permission'];
     
     if (!requiredPermission) {
-      return this.authService.isAuthenticated().pipe(
-        take(1),
-        map(isAuthenticated => isAuthenticated)
-      );
+      const isAuthenticated = this.authService.isAuthenticated();
+      return of(isAuthenticated);
     }
 
-    return this.authService.hasPermission(requiredPermission).pipe(
-      take(1),
-      map(hasPermission => {
-        if (hasPermission) {
-          return true;
-        }
-        
-        // Se não tiver permissão, redireciona para página de acesso negado
-        this.router.navigate(['/access-denied']);
-        return false;
-      })
-    );
+    // Para JWT local, por enquanto todos os usuários autenticados têm todas as permissões
+    // Em uma implementação mais avançada, você poderia verificar roles/permissões no token JWT
+    const isAuthenticated = this.authService.isAuthenticated();
+    
+    if (isAuthenticated) {
+      return of(true);
+    }
+    
+    // Se não tiver permissão, redireciona para página de acesso negado
+    this.router.navigate(['/access-denied']);
+    return of(false);
   }
 }

@@ -296,8 +296,17 @@ export class ResetPasswordComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
-    // Redirecionar para Auth0 para reset de senha
-    this.authService.resetPasswordWithAuth0(this.resetForm.value.email);
+    // Solicitar reset de senha
+    this.authService.forgotPassword(this.resetForm.value.email).subscribe({
+      next: () => {
+        this.successMessage = 'Instruções de recuperação enviadas para seu e-mail.';
+        this.isSubmitting = false;
+      },
+      error: (error) => {
+        this.errorMessage = error.message || 'Erro ao solicitar recuperação de senha.';
+        this.isSubmitting = false;
+      }
+    });
   }
 
   /**

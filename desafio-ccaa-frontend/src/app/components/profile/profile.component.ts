@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService, UserProfile } from '../../services/auth.service';
+import { AuthService, LocalUser } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -24,14 +24,14 @@ import { Observable } from 'rxjs';
               [alt]="user.name"
               class="avatar">
             <div *ngIf="!user.picture" class="avatar-placeholder">
-              {{ user.name.charAt(0).toUpperCase() }}
+              {{ user.fullName.charAt(0).toUpperCase() }}
             </div>
           </div>
 
           <div class="info-grid">
             <div class="info-item">
               <label>Nome:</label>
-              <span>{{ user.name }}</span>
+              <span>{{ user.fullName }}</span>
             </div>
 
             <div class="info-item">
@@ -39,15 +39,15 @@ import { Observable } from 'rxjs';
               <span>{{ user.email }}</span>
             </div>
 
-            <div *ngIf="user.dateOfBirth" class="info-item">
-              <label>Data de Nascimento:</label>
-              <span>{{ user.dateOfBirth | date:'dd/MM/yyyy' }}</span>
+            <div class="info-item">
+              <label>Data de Criação:</label>
+              <span>{{ user.createdAt | date:'dd/MM/yyyy' }}</span>
             </div>
 
             <div class="info-item">
-              <label>E-mail Verificado:</label>
-              <span [class]="user.emailVerified ? 'verified' : 'not-verified'">
-                {{ user.emailVerified ? '✅ Sim' : '❌ Não' }}
+              <label>Status:</label>
+              <span [class]="user.isActive ? 'verified' : 'not-verified'">
+                {{ user.isActive ? '✅ Ativo' : '❌ Inativo' }}
               </span>
             </div>
 
@@ -269,7 +269,7 @@ import { Observable } from 'rxjs';
   `]
 })
 export class ProfileComponent implements OnInit {
-  userProfile$: Observable<UserProfile | null>;
+  userProfile$: Observable<LocalUser | null>;
 
   constructor(private authService: AuthService) {
     this.userProfile$ = this.authService.getUserProfile();

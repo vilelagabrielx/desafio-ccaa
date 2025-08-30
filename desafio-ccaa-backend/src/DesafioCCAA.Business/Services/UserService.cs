@@ -8,6 +8,8 @@ using System.Text;
 using DesafioCCAA.Business.DTOs;
 using DesafioCCAA.Business.Entities;
 using DesafioCCAA.Business.Interfaces;
+using System.Net.Mail;
+using System.Net;
 
 namespace DesafioCCAA.Business.Services;
 
@@ -34,6 +36,7 @@ public class UserService(
                 Email = registrationDto.Email,
                 FirstName = registrationDto.FirstName,
                 LastName = registrationDto.LastName,
+                DateOfBirth = DateTime.SpecifyKind(registrationDto.DateOfBirth, DateTimeKind.Utc),
                 EmailConfirmed = true
             };
 
@@ -108,126 +111,14 @@ public class UserService(
     {
         try
         {
-            // Implementation will be added here
-            throw new NotImplementedException();
+            // This method should be called from a controller with [Authorize] attribute
+            // The user ID should be extracted from the JWT token claims
+            throw new NotImplementedException("Este método deve ser implementado no controller");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro ao obter usuário atual");
             return ServiceResult<UserResponseDto>.Failure("Erro interno ao obter usuário atual");
-        }
-    }
-
-    /// <summary>
-    /// Sincroniza usuário do Auth0 com o sistema local
-    /// </summary>
-    public async Task<ServiceResult<UserResponseDto>> SyncAuth0UserAsync(Auth0UserSyncDto auth0User)
-    {
-        try
-        {
-            // Verificar se usuário já existe
-            var existingUser = await userRepository.GetByEmailAsync(auth0User.Email);
-            
-            if (existingUser != null)
-            {
-                // Atualizar usuário existente com Auth0Id se necessário
-                if (string.IsNullOrEmpty(existingUser.Auth0Id))
-                {
-                    existingUser.Auth0Id = auth0User.Auth0Id;
-                    existingUser.UpdatedAt = DateTime.UtcNow;
-                    await userRepository.UpdateAsync(existingUser);
-                    logger.LogInformation("Usuário existente atualizado com Auth0Id: {Email}", auth0User.Email);
-                }
-                
-                return ServiceResult<UserResponseDto>.Success(MapToUserResponseDto(existingUser));
-            }
-
-            // Criar novo usuário
-            var user = new User
-            {
-                UserName = auth0User.Email,
-                Email = auth0User.Email,
-                FirstName = auth0User.FirstName,
-                LastName = auth0User.LastName,
-                Auth0Id = auth0User.Auth0Id,
-                EmailConfirmed = auth0User.EmailVerified,
-                DateOfBirth = DateTime.UtcNow.AddYears(-18), // Default age
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
-
-            // Criar usuário sem senha (Auth0 gerencia autenticação)
-            var result = await userManager.CreateAsync(user);
-            if (!result.Succeeded)
-            {
-                var errors = result.Errors.Select(e => e.Description).ToList();
-                logger.LogError("Erro ao criar usuário Auth0: {Errors}", string.Join(", ", errors));
-                return ServiceResult<UserResponseDto>.ValidationFailure(errors);
-            }
-
-            var userResponse = MapToUserResponseDto(user);
-            logger.LogInformation("Usuário Auth0 sincronizado com sucesso: {Email}", auth0User.Email);
-            
-            return ServiceResult<UserResponseDto>.Success(userResponse);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao sincronizar usuário Auth0: {Email}", auth0User.Email);
-            return ServiceResult<UserResponseDto>.Failure("Erro interno ao sincronizar usuário Auth0");
-        }
-    }
-
-    /// <summary>
-    /// Garante que o usuário existe no sistema local
-    /// </summary>
-    public async Task<ServiceResult<UserResponseDto>> EnsureUserExistsAsync(string email, string auth0Id)
-    {
-        try
-        {
-            var user = await userRepository.GetByEmailAsync(email);
-            
-            if (user == null)
-            {
-                // Criar usuário básico se não existir
-                var newUser = new User
-                {
-                    UserName = email,
-                    Email = email,
-                    FirstName = "Usuário",
-                    LastName = "Auth0",
-                    Auth0Id = auth0Id,
-                    EmailConfirmed = true,
-                    DateOfBirth = DateTime.UtcNow.AddYears(-18),
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true
-                };
-
-                var result = await userManager.CreateAsync(newUser);
-                if (!result.Succeeded)
-                {
-                    var errors = result.Errors.Select(e => e.Description).ToList();
-                    logger.LogError("Erro ao criar usuário básico: {Errors}", string.Join(", ", errors));
-                    return ServiceResult<UserResponseDto>.ValidationFailure(errors);
-                }
-
-                user = newUser;
-                logger.LogInformation("Usuário básico criado automaticamente: {Email}", email);
-            }
-            else if (string.IsNullOrEmpty(user.Auth0Id))
-            {
-                // Atualizar usuário existente com Auth0Id
-                user.Auth0Id = auth0Id;
-                user.UpdatedAt = DateTime.UtcNow;
-                await userRepository.UpdateAsync(user);
-                logger.LogInformation("Usuário existente atualizado com Auth0Id: {Email}", email);
-            }
-
-            return ServiceResult<UserResponseDto>.Success(MapToUserResponseDto(user));
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao garantir existência do usuário: {Email}", email);
-            return ServiceResult<UserResponseDto>.Failure("Erro interno ao garantir existência do usuário");
         }
     }
 
@@ -266,7 +157,10 @@ public class UserService(
             if (user is not null)
             {
                 var token = await userManager.GeneratePasswordResetTokenAsync(user);
-                // Here you would send the token via email
+                
+                // Send email using PickupDirectory
+                await SendPasswordResetEmailAsync(user.Email!, user.FullName, token);
+                
                 logger.LogInformation("Token de reset de senha gerado para: {Email}", forgotPasswordDto.Email);
             }
 
@@ -308,7 +202,7 @@ public class UserService(
         }
     }
 
-    public async Task<ServiceResult<bool>> UpdateProfileAsync(string userId, UserResponseDto updateDto)
+    public async Task<ServiceResult<bool>> UpdateProfileAsync(string userId, UpdateProfileDto updateDto)
     {
         try
         {
@@ -320,6 +214,7 @@ public class UserService(
 
             user.FirstName = updateDto.FirstName;
             user.LastName = updateDto.LastName;
+            user.UpdatedAt = DateTime.UtcNow;
 
             var result = await userRepository.UpdateAsync(user);
             if (result is null)
@@ -349,6 +244,7 @@ public class UserService(
             }
 
             user.IsActive = false;
+            user.UpdatedAt = DateTime.UtcNow;
 
             var result = await userRepository.UpdateAsync(user);
             if (result is null)
@@ -392,6 +288,66 @@ public class UserService(
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+
+    private async Task SendPasswordResetEmailAsync(string email, string fullName, string token)
+    {
+        try
+        {
+            var pickupDirectory = configuration["Email:PickupDirectory"] ?? "C:\\temp\\emails";
+            
+            // Ensure directory exists
+            if (!Directory.Exists(pickupDirectory))
+            {
+                Directory.CreateDirectory(pickupDirectory);
+            }
+
+            var message = new MailMessage
+            {
+                From = new MailAddress("noreply@desafioccaa.com", "Desafio CCAA"),
+                Subject = "Reset de Senha",
+                Body = $@"
+                    <html>
+                    <body>
+                        <h2>Reset de Senha</h2>
+                        <p>Olá {fullName},</p>
+                        <p>Você solicitou um reset de senha para sua conta.</p>
+                        <p>Use o token abaixo para redefinir sua senha:</p>
+                        <h3>{token}</h3>
+                        <p>Este token expira em 1 hora.</p>
+                        <p>Se você não solicitou este reset, ignore este e-mail.</p>
+                        <br>
+                        <p>Atenciosamente,<br>Equipe Desafio CCAA</p>
+                    </body>
+                    </html>",
+                IsBodyHtml = true
+            };
+            
+            message.To.Add(new MailAddress(email, fullName));
+
+            // Save to pickup directory
+            var fileName = $"password_reset_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid()}.eml";
+            var filePath = Path.Combine(pickupDirectory, fileName);
+            
+            // Create .eml file content manually
+            var emlContent = $@"From: {message.From}
+To: {string.Join(", ", message.To.Select(t => t.ToString()))}
+Subject: {message.Subject}
+MIME-Version: 1.0
+Content-Type: {message.BodyEncoding?.WebName ?? "text/html; charset=utf-8"}
+
+{message.Body}";
+            
+            // Save to file
+            await File.WriteAllTextAsync(filePath, emlContent);
+            
+            logger.LogInformation("E-mail de reset de senha salvo em: {FilePath}", filePath);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao enviar e-mail de reset de senha para: {Email}", email);
+            // Don't throw - email failure shouldn't break the password reset flow
+        }
     }
 
     private static UserResponseDto MapToUserResponseDto(User user) =>

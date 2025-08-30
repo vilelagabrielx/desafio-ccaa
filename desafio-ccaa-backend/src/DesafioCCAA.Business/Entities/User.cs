@@ -6,7 +6,6 @@ public class User : IdentityUser
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string? Auth0Id { get; set; } // ID único do Auth0
     public DateTime DateOfBirth { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

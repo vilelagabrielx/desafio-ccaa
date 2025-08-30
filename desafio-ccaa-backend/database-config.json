@@ -27,13 +27,6 @@
       "direct": "db.dhzqrasofzdjfpfhhnqm.supabase.co"
     }
   },
-  "auth0": {
-    "domain": "dev-5uh7sugfyt00g0qf.us.auth0.com",
-    "clientId": "SEU_CLIENT_ID_AQUI",
-    "clientSecret": "SEU_CLIENT_SECRET_AQUI",
-    "audience": "https://dev-5uh7sugfyt00g0qf.us.auth0.com/api/v2/",
-    "issuer": "https://dev-5uh7sugfyt00g0qf.us.auth0.com/"
-  },
   "jwt": {
     "key": "SUA_CHAVE_SECRETA_JWT_AQUI",
     "issuer": "DesafioCCAA",
@@ -41,12 +34,8 @@
     "expiryInDays": 7
   },
   "email": {
-    "smtp": {
-      "host": "smtp.gmail.com",
-      "port": 587,
-      "username": "seu-email@gmail.com",
-      "password": "SUA_SENHA_DE_APP_AQUI"
-    }
+    "pickupDirectory": "C:\\temp\\emails",
+    "note": "O envio de e-mail está configurado via PickupDirectory, que grava arquivos .eml localmente. Em produção bastaria trocar para um provedor real como SendGrid/SMTP."
   },
   "ports": {
     "postgresql": 5432,

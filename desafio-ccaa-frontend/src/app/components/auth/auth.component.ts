@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService, UserProfile } from '../../services/auth.service';
-import { Observable } from 'rxjs';
+import { AuthService, LocalUser } from '../../services/auth.service';
+import { Observable, map } from 'rxjs';
 
 @Component({
   selector: 'app-auth',
@@ -44,10 +44,10 @@ import { Observable } from 'rxjs';
             class="user-avatar">
           
           <div class="user-details">
-            <span class="user-name">{{ (userProfile$ | async)?.name }}</span>
+            <span class="user-name">{{ (userProfile$ | async)?.fullName }}</span>
             <span class="user-email">{{ (userProfile$ | async)?.email }}</span>
-            <span *ngIf="(userProfile$ | async)?.dateOfBirth" class="user-dob">
-              📅 {{ (userProfile$ | async)?.dateOfBirth | date:'dd/MM/yyyy' }}
+            <span *ngIf="(userProfile$ | async)?.createdAt" class="user-dob">
+              📅 {{ (userProfile$ | async)?.createdAt | date:'dd/MM/yyyy' }}
             </span>
           </div>
         </div>
@@ -195,10 +195,12 @@ import { Observable } from 'rxjs';
 export class AuthComponent implements OnInit {
   isAuthenticated$: Observable<boolean>;
   isLoading$: Observable<boolean>;
-  userProfile$: Observable<UserProfile | null>;
+  userProfile$: Observable<LocalUser | null>;
 
   constructor(private authService: AuthService) {
-    this.isAuthenticated$ = this.authService.isAuthenticated();
+    this.isAuthenticated$ = this.authService.currentUser$.pipe(
+      map(user => !!user)
+    );
     this.isLoading$ = this.authService.isLoading();
     this.userProfile$ = this.authService.getUserProfile();
   }

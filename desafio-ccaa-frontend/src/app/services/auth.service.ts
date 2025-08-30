@@ -1,17 +1,18 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { AuthService as Auth0Service } from '@auth0/auth0-angular';
-import { Observable, map, switchMap, of, BehaviorSubject, catchError, throwError, firstValueFrom, take } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 
 export interface UserProfile {
   id: string;
   email: string;
-  name: string;
-  picture?: string;
-  emailVerified: boolean;
-  dateOfBirth?: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  createdAt: string;
+  isActive: boolean;
 }
 
 export interface LocalUserRegistration {
@@ -20,6 +21,7 @@ export interface LocalUserRegistration {
   email: string;
   password: string;
   confirmPassword: string;
+  dateOfBirth: string;
 }
 
 export interface LocalUserLogin {
@@ -29,9 +31,9 @@ export interface LocalUserLogin {
 
 export interface LocalUser {
   id: string;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
   fullName: string;
   createdAt: string;
   isActive: boolean;
@@ -43,16 +45,19 @@ export interface ApiResponse<T> {
   errors?: string[];
 }
 
+export interface LoginResponse {
+  token: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentLocalUserSubject = new BehaviorSubject<LocalUser | null>(null);
-  public currentLocalUser$ = this.currentLocalUserSubject.asObservable();
+  private currentUserSubject = new BehaviorSubject<LocalUser | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
   private authToken: string | null = null;
 
   constructor(
-    private auth0: Auth0Service,
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
@@ -68,649 +73,359 @@ export class AuthService {
   private checkSavedToken(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     
-    const savedToken = localStorage.getItem('authToken');
-    if (savedToken) {
-      this.authToken = savedToken;
-      this.getCurrentUserFromApi().subscribe({
-        next: (user) => {
-          if (user) {
-            this.currentLocalUserSubject.next(user);
-          } else {
-            this.clearAuthData();
+    const token = localStorage.getItem(environment.jwt.tokenKey);
+    const userData = localStorage.getItem(environment.jwt.userKey);
+    
+    if (token && userData) {
+      try {
+        this.authToken = token;
+        const user = JSON.parse(userData);
+        this.currentUserSubject.next(user);
+        console.log('🔐 AuthService: Token restaurado do localStorage');
+      } catch (error) {
+        console.warn('Erro ao restaurar dados do usuário:', error);
+        this.clearAuthData();
+      }
+    }
+  }
+
+  /**
+   * Verifica se o usuário está autenticado
+   */
+  isAuthenticated(): boolean {
+    const isAuth = !!this.authToken && !!this.currentUserSubject.value;
+    console.log('🔐 AuthService: isAuthenticated() =', isAuth, 'Token:', !!this.authToken, 'User:', !!this.currentUserSubject.value);
+    return isAuth;
+  }
+
+  /**
+   * Obtém o usuário atual
+   */
+  getCurrentUser(): LocalUser | null {
+    return this.currentUserSubject.value;
+  }
+
+  /**
+   * Obtém o token de autenticação
+   */
+  getToken(): string | null {
+    return this.authToken;
+  }
+
+  /**
+   * Faz login local
+   */
+  login(credentials: LocalUserLogin): Observable<LocalUser> {
+    console.log('🔐 AuthService: Iniciando login...', credentials);
+    
+    return this.http.post<ApiResponse<LoginResponse>>(`${environment.api.baseUrl}/api/user/login`, credentials)
+      .pipe(
+        tap(response => console.log('🔐 AuthService: Resposta do login recebida:', response)),
+        switchMap(response => {
+          if (response.error) {
+            console.error('❌ AuthService: Erro na resposta:', response.error);
+            throw new Error(response.error);
           }
-        },
-        error: () => {
-          this.clearAuthData();
-        }
-      });
-    }
+          
+          if (!response.data?.token) {
+            console.error('❌ AuthService: Token não recebido');
+            throw new Error('Token não recebido');
+          }
+
+          console.log('✅ AuthService: Token recebido, salvando...');
+          // Salvar token
+          this.authToken = response.data.token;
+          this.saveAuthData();
+          console.log('✅ AuthService: Token salvo, buscando dados do usuário...');
+          
+          // Buscar dados do usuário atual
+          return this.getCurrentUserData();
+        }),
+        tap(user => console.log('✅ AuthService: Dados do usuário recebidos:', user)),
+        map(user => {
+          console.log('✅ AuthService: Salvando usuário localmente...');
+          // Garantir que o usuário seja salvo localmente
+          this.currentUserSubject.next(user);
+          this.saveUserData(user);
+          console.log('✅ AuthService: Usuário salvo, estado atualizado');
+          return user;
+        }),
+        catchError(error => {
+          console.error('❌ AuthService: Erro no login:', error);
+          return throwError(() => new Error(error.error?.error || 'Erro ao fazer login'));
+        })
+      );
   }
 
   /**
-   * Salva o token de autenticação
+   * Registra um novo usuário
    */
-  private saveAuthToken(token: string): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.authToken = token;
-      localStorage.setItem('authToken', token);
-    }
-  }
+  register(userData: LocalUserRegistration): Observable<LocalUser> {
+    return this.http.post<ApiResponse<LocalUser>>(`${environment.api.baseUrl}/api/user/register`, userData)
+      .pipe(
+        map(response => {
+          if (response.error) {
+            throw new Error(response.error);
+          }
+          
+          if (!response.data) {
+            throw new Error('Dados do usuário não recebidos');
+          }
 
-  /**
-   * Limpa todos os dados de autenticação
-   */
-  private clearAuthData(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem('authToken');
-    }
-    this.authToken = null;
-    this.currentLocalUserSubject.next(null);
-  }
-
-  /**
-   * Obtém os headers de autenticação
-   */
-  private getAuthHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    
-    if (this.authToken) {
-      headers = headers.set('Authorization', `Bearer ${this.authToken}`);
-    }
-    
-    return headers;
-  }
-
-  /**
-   * Registra um novo usuário via API
-   */
-  registerLocalUser(userData: LocalUserRegistration): Observable<LocalUser> {
-    return this.http.post<ApiResponse<LocalUser>>(
-      `${environment.api.baseUrl}/api/user/register`,
-      userData,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      map(response => {
-        if (response.data) {
           return response.data;
-        } else if (response.error) {
-          throw new Error(response.error);
-        } else if (response.errors && response.errors.length > 0) {
-          throw new Error(response.errors.join(', '));
-        } else {
-          throw new Error('Erro desconhecido no registro');
-        }
-      }),
-      catchError(error => {
-        console.error('Erro no registro:', error);
-        return throwError(() => error);
-      })
-    );
+        }),
+        catchError(error => {
+          console.error('Erro no registro:', error);
+          return throwError(() => new Error(error.error?.error || 'Erro ao criar conta'));
+        })
+      );
   }
 
   /**
-   * Faz login via API
+   * Obtém dados do usuário atual
    */
-  loginLocalUser(credentials: LocalUserLogin): Observable<LocalUser> {
-    return this.http.post<{ token: string }>(
-      `${environment.api.baseUrl}/api/user/login`,
-      credentials,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      switchMap(response => {
-        if (response.token) {
-          this.saveAuthToken(response.token);
-          return this.getCurrentUserFromApi();
-        } else {
-          throw new Error('Token não recebido');
-        }
-      }),
-      catchError(error => {
-        console.error('Erro no login:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Obtém o usuário atual da API
-   */
-  private getCurrentUserFromApi(): Observable<LocalUser> {
+  getCurrentUserData(): Observable<LocalUser> {
+    console.log('🔐 AuthService: getCurrentUserData() - Token:', !!this.authToken);
+    
     if (!this.authToken) {
-      return throwError(() => new Error('Token não disponível'));
+      console.error('❌ AuthService: Sem token para buscar dados do usuário');
+      return throwError(() => new Error('Usuário não autenticado'));
     }
 
-    return this.http.get<ApiResponse<LocalUser>>(
-      `${environment.api.baseUrl}/api/user/me`,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
+    return this.http.get<ApiResponse<LocalUser>>(`${environment.api.baseUrl}/api/user/current`, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      tap(response => console.log('🔐 AuthService: Resposta do /current:', response)),
       map(response => {
-        if (response.data) {
-          this.currentLocalUserSubject.next(response.data);
-          return response.data;
-        } else if (response.error) {
+        if (response.error) {
+          console.error('❌ AuthService: Erro na resposta do /current:', response.error);
           throw new Error(response.error);
-        } else {
-          throw new Error('Usuário não encontrado');
         }
+        
+        if (!response.data) {
+          console.error('❌ AuthService: Dados do usuário não encontrados');
+          throw new Error('Dados do usuário não encontrados');
+        }
+
+        console.log('✅ AuthService: Dados do usuário obtidos com sucesso:', response.data);
+        this.currentUserSubject.next(response.data);
+        this.saveUserData(response.data);
+        return response.data;
       }),
       catchError(error => {
-        console.error('Erro ao obter usuário atual:', error);
-        return throwError(() => error);
+        console.error('❌ AuthService: Erro ao buscar dados do usuário:', error);
+        this.logout();
+        return throwError(() => new Error('Erro ao buscar dados do usuário'));
       })
     );
   }
 
   /**
-   * Faz logout do usuário local
-   */
-  logoutLocalUser(): void {
-    this.clearAuthData();
-  }
-
-  /**
-   * Verifica se o usuário está autenticado (local ou Auth0)
-   */
-  isAuthenticated(): Observable<boolean> {
-    console.log('🔍 AuthService: isAuthenticated() chamado');
-    console.log('🔍 AuthService: Estado atual do usuário local:', this.currentLocalUserSubject.value);
-    
-    return this.auth0.isAuthenticated$.pipe(
-      map(auth0Authenticated => {
-        const localAuthenticated = this.currentLocalUserSubject.value !== null;
-        const isAuth = auth0Authenticated || localAuthenticated;
-        
-        console.log('🔍 AuthService: Verificando autenticação:', {
-          auth0Authenticated,
-          localAuthenticated,
-          isAuth,
-          localUser: this.currentLocalUserSubject.value,
-          auth0User: this.auth0.user$
-        });
-        
-        return isAuth;
-      })
-    );
-  }
-
-  /**
-   * Obtém o perfil do usuário autenticado (local ou Auth0)
-   */
-  getUserProfile(): Observable<UserProfile | null> {
-    return this.auth0.user$.pipe(
-      map(auth0User => {
-        if (auth0User) {
-          // Usuário Auth0
-          return {
-            id: auth0User.sub || '',
-            email: auth0User.email || '',
-            name: auth0User.name || '',
-            picture: auth0User.picture || undefined,
-            emailVerified: auth0User.email_verified || false
-          };
-        } else {
-          // Usuário local
-          const localUser = this.currentLocalUserSubject.value;
-          if (localUser) {
-            return {
-              id: localUser.id,
-              email: localUser.email,
-              name: localUser.fullName,
-              emailVerified: true
-            };
-          }
-          return null;
-        }
-      })
-    );
-  }
-
-  /**
-   * Obtém o token de acesso (para Auth0) ou retorna o token local
-   */
-  getAccessToken(): Observable<string | null> {
-    return this.auth0.getAccessTokenSilently().pipe(
-      map(token => token),
-      switchMap(token => {
-        if (token) return of(token);
-        
-        // Se não há token Auth0, retorna o token local
-        return of(this.authToken);
-      })
-    );
-  }
-
-  /**
-   * Obtém o token para usar nas requisições da API
-   */
-  getApiToken(): Observable<string | null> {
-    return this.isAuthenticated().pipe(
-      switchMap(isAuth => {
-        if (isAuth) {
-          return this.getAccessToken();
-        }
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Verifica se o usuário está carregando
-   */
-  isLoading(): Observable<boolean> {
-    return this.auth0.isLoading$;
-  }
-
-  /**
-   * Faz login via Auth0
-   */
-  loginWithAuth0(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/'
-      }
-    });
-  }
-
-  /**
-   * Faz login via Google através do Auth0
-   */
-  loginWithGoogle(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/'
-      },
-      authorizationParams: {
-        connection: 'google-oauth2'
-      }
-    });
-  }
-
-  /**
-   * Reenvia email de verificação
-   */
-  resendVerificationEmail(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/'
-      }
-    });
-  }
-
-  /**
-   * Faz signup via Auth0
-   */
-  signupWithAuth0(userData: any): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/',
-        mode: 'signup',
-        userData: userData
-      }
-    });
-  }
-
-  /**
-   * Reset de senha via Auth0
-   */
-  resetPasswordWithAuth0(email: string): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/',
-        mode: 'reset-password',
-        email: email
-      }
-    });
-  }
-
-  /**
-   * Sincroniza usuário Auth0 com o sistema local
-   */
-  syncAuth0User(auth0User: any): Observable<LocalUser> {
-    console.log('�� AuthService: Iniciando sincronização Auth0...');
-    console.log('📊 AuthService: Dados do usuário Auth0:', auth0User);
-    
-    const syncData = {
-      auth0Id: auth0User.sub,
-      email: auth0User.email,
-      firstName: auth0User.given_name || auth0User.name?.split(' ')[0] || 'Usuário',
-      lastName: auth0User.family_name || auth0User.name?.split(' ').slice(1).join(' ') || 'Auth0',
-      picture: auth0User.picture,
-      emailVerified: auth0User.email_verified || false
-    };
-    
-    console.log('📤 AuthService: Dados para sincronização:', syncData);
-    console.log('🌐 AuthService: URL da API:', `${environment.api.baseUrl}/api/user/sync-auth0`);
-
-    return this.http.post<ApiResponse<LocalUser>>(
-      `${environment.api.baseUrl}/api/user/sync-auth0`,
-      syncData,
-      { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
-    ).pipe(
-      map(response => {
-        console.log('📥 AuthService: Resposta da API:', response);
-        if (response.data) {
-          console.log('✅ AuthService: Sincronização bem-sucedida');
-          // IMPORTANTE: Definir o usuário local após sincronização bem-sucedida
-          console.log('🔄 AuthService: Definindo usuário local:', response.data);
-          this.currentLocalUserSubject.next(response.data);
-          console.log('✅ AuthService: Usuário local definido. Valor atual:', this.currentLocalUserSubject.value);
-          return response.data;
-        } else if (response.error) {
-          console.error('❌ AuthService: Erro na resposta:', response.error);
-          throw new Error(response.error);
-        } else if (response.errors && response.errors.length > 0) {
-          console.error('❌ AuthService: Erros na resposta:', response.errors);
-          throw new Error(response.errors.join(', '));
-        } else {
-          console.error('❌ AuthService: Resposta inválida da API');
-          throw new Error('Erro desconhecido na sincronização');
-        }
-      }),
-      catchError(error => {
-        console.error('❌ AuthService: Erro na sincronização Auth0:', error);
-        console.log('📊 AuthService: Detalhes do erro:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          url: error.url
-        });
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Garante que o usuário existe no sistema local
-   */
-  ensureUserExists(email: string, auth0Id: string): Observable<LocalUser> {
-    return this.http.post<ApiResponse<LocalUser>>(
-      `${environment.api.baseUrl}/api/user/ensure-exists`,
-      { email, auth0Id },
-      { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
-    ).pipe(
-      map(response => {
-        if (response.data) {
-          // Atualizar o estado do usuário local
-          this.currentLocalUserSubject.next(response.data);
-          return response.data;
-        } else if (response.error) {
-          throw new Error(response.error);
-        } else {
-          throw new Error('Erro desconhecido ao garantir existência do usuário');
-        }
-      }),
-      catchError(error => {
-        console.error('Erro ao garantir existência do usuário:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Faz logout (Auth0 ou local)
+   * Faz logout
    */
   logout(): void {
-    console.log('🚪 AuthService: Iniciando logout...');
-    
-    // Limpar estado local primeiro
+    console.log('🔐 AuthService: Fazendo logout...');
     this.clearAuthData();
-    
-    // TEMPORARIAMENTE: Desabilitar logout do Auth0 para evitar erro 400
-    // TODO: Corrigir configuração do Auth0 antes de reabilitar
-    console.log('⚠️ AuthService: Logout do Auth0 temporariamente desabilitado para evitar erro 400');
-    
-    // Redirecionar para login imediatamente
-    this.redirectToLogin();
-    
+    this.currentUserSubject.next(null);
+    this.authToken = null;
     console.log('✅ AuthService: Logout concluído');
   }
 
   /**
-   * Logout simples sem Auth0 (fallback)
+   * Altera a senha do usuário
    */
-  simpleLogout(): void {
-    console.log('🚪 AuthService: Logout simples iniciado...');
-    
-    // Limpar estado local
-    this.clearAuthData();
-    
-    // Redirecionar para login imediatamente
-    this.redirectToLogin();
-    
-    console.log('✅ AuthService: Logout simples concluído');
-  }
-
-  /**
-   * Testa a conexão com o Auth0
-   */
-  testAuth0(): void {
-    console.log('🧪 AuthService: Testando conexão com Auth0...');
-    console.log('🔧 AuthService: Configurações:', {
-      domain: environment.auth0.domain,
-      clientId: environment.auth0.clientId,
-      redirectUri: environment.auth0.redirectUri
-    });
-    
-    // Verificar se está no browser
-    if (!isPlatformBrowser(this.platformId)) {
-      console.log('❌ AuthService: Não está no browser');
-      return;
+  changePassword(currentPassword: string, newPassword: string): Observable<boolean> {
+    if (!this.authToken) {
+      return throwError(() => new Error('Usuário não autenticado'));
     }
-    
-    // Tentar fazer login para testar
-    this.auth0.loginWithRedirect({
-      appState: { 
-        target: '/',
-        test: true
-      }
-    });
-  }
 
-  /**
-   * Verifica se o usuário tem uma determinada permissão
-   */
-  hasPermission(permission: string): Observable<boolean> {
-    return this.auth0.user$.pipe(
-      map(user => {
-        if (user && user['permissions']) {
-          return user['permissions'].includes(permission);
-        }
-        // Para usuários locais, você pode implementar lógica de permissões
-        return false;
-      })
-    );
-  }
-
-  /**
-   * Obtém as permissões do usuário
-   */
-  getUserPermissions(): Observable<string[]> {
-    return this.auth0.user$.pipe(
-      map(user => user?.['permissions'] || [])
-    );
-  }
-
-  /**
-   * Verifica se o usuário atual é local
-   */
-  isLocalUser(): boolean {
-    return this.currentLocalUserSubject.value !== null;
-  }
-
-  /**
-   * Verifica se o usuário atual é do Auth0
-   */
-  isAuth0User(): Observable<boolean> {
-    return this.auth0.isAuthenticated$;
-  }
-
-  /**
-   * Altera senha do usuário via API
-   */
-  changePassword(currentPassword: string, newPassword: string, confirmNewPassword: string): Observable<boolean> {
-    const changePasswordData = {
+    return this.http.post<ApiResponse<{ message: string }>>(`${environment.api.baseUrl}/api/user/change-password`, {
       currentPassword,
       newPassword,
-      confirmNewPassword
-    };
-
-    return this.http.post<ApiResponse<{ message: string }>>(
-      `${environment.api.baseUrl}/api/user/change-password`,
-      changePasswordData,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
+      confirmNewPassword: newPassword
+    }, {
+      headers: this.getAuthHeaders()
+    }).pipe(
       map(response => {
-        if (response.data) {
-          return true;
-        } else if (response.error) {
+        if (response.error) {
           throw new Error(response.error);
-        } else if (response.errors && response.errors.length > 0) {
-          throw new Error(response.errors.join(', '));
-        } else {
-          throw new Error('Erro desconhecido na alteração de senha');
         }
+        return true;
       }),
       catchError(error => {
-        console.error('Erro na alteração de senha:', error);
-        return throwError(() => error);
+        console.error('Erro ao alterar senha:', error);
+        return throwError(() => new Error(error.error?.error || 'Erro ao alterar senha'));
       })
     );
   }
 
   /**
-   * Solicita reset de senha via API
+   * Solicita reset de senha
    */
   forgotPassword(email: string): Observable<boolean> {
-    const forgotPasswordData = { email };
-
-    return this.http.post<ApiResponse<{ message: string }>>(
-      `${environment.api.baseUrl}/api/user/forgot-password`,
-      forgotPasswordData,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
+    return this.http.post<ApiResponse<{ message: string }>>(`${environment.api.baseUrl}/api/user/forgot-password`, {
+      email
+    }).pipe(
       map(response => {
-        if (response.data) {
-          return true;
-        } else if (response.error) {
+        if (response.error) {
           throw new Error(response.error);
-        } else {
-          throw new Error('Erro desconhecido na solicitação de reset de senha');
         }
+        return true;
       }),
       catchError(error => {
-        console.error('Erro na solicitação de reset de senha:', error);
-        return throwError(() => error);
+        console.error('Erro ao solicitar reset de senha:', error);
+        return throwError(() => new Error(error.error?.error || 'Erro ao solicitar reset de senha'));
       })
     );
   }
 
   /**
-   * Reseta senha com token via API
+   * Reseta a senha com token
    */
-  resetPassword(email: string, token: string, newPassword: string, confirmNewPassword: string): Observable<boolean> {
-    const resetPasswordData = {
+  resetPassword(email: string, token: string, newPassword: string): Observable<boolean> {
+    return this.http.post<ApiResponse<{ message: string }>>(`${environment.api.baseUrl}/api/user/reset-password`, {
       email,
       token,
       newPassword,
-      confirmNewPassword
-    };
-
-    return this.http.post<ApiResponse<{ message: string }>>(
-      `${environment.api.baseUrl}/api/user/reset-password`,
-      resetPasswordData,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
+      confirmNewPassword: newPassword
+    }).pipe(
       map(response => {
-        if (response.data) {
-          return true;
-        } else if (response.error) {
+        if (response.error) {
           throw new Error(response.error);
-        } else if (response.errors && response.errors.length > 0) {
-          throw new Error(response.errors.join(', '));
-        } else {
-          throw new Error('Erro desconhecido no reset de senha');
         }
+        return true;
       }),
       catchError(error => {
-        console.error('Erro no reset de senha:', error);
-        return throwError(() => error);
+        console.error('Erro ao resetar senha:', error);
+        return throwError(() => new Error(error.error?.error || 'Erro ao resetar senha'));
       })
     );
   }
 
   /**
-   * Atualiza perfil do usuário via API
+   * Atualiza o perfil do usuário
    */
-  updateProfile(profileData: Partial<LocalUser>): Observable<LocalUser> {
-    return this.http.put<ApiResponse<LocalUser>>(
-      `${environment.api.baseUrl}/api/user/profile`,
-      profileData,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      map(response => {
-        if (response.data) {
-          this.currentLocalUserSubject.next(response.data);
-          return response.data;
-        } else if (response.error) {
-          throw new Error(response.error);
-        } else if (response.errors && response.errors.length > 0) {
-          throw new Error(response.errors.join(', '));
-        } else {
-          throw new Error('Erro desconhecido na atualização do perfil');
+  updateProfile(firstName: string, lastName: string): Observable<LocalUser> {
+    if (!this.authToken) {
+      return throwError(() => new Error('Usuário não autenticado'));
+    }
+
+    return this.http.put<ApiResponse<{ message: string }>>(`${environment.api.baseUrl}/api/user/profile`, {
+      firstName,
+      lastName
+    }, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      map(() => {
+        // Atualizar dados locais
+        const currentUser = this.currentUserSubject.value;
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            firstName,
+            lastName,
+            fullName: `${firstName} ${lastName}`.trim()
+          };
+          this.currentUserSubject.next(updatedUser);
+          this.saveUserData(updatedUser);
+          return updatedUser;
         }
+        throw new Error('Usuário não encontrado');
       }),
       catchError(error => {
-        console.error('Erro na atualização do perfil:', error);
-        return throwError(() => error);
+        console.error('Erro ao atualizar perfil:', error);
+        return throwError(() => new Error(error.error?.error || 'Erro ao atualizar perfil'));
       })
     );
   }
 
   /**
-   * Obtém usuário atual do Auth0
+   * Obtém headers de autenticação
    */
-  async getAuth0User(): Promise<any> {
-    try {
-      console.log('🔍 AuthService: Obtendo usuário Auth0...');
-      
-      // Verificar se está autenticado primeiro
-      const isAuthenticated = await firstValueFrom(this.auth0.isAuthenticated$);
-      console.log('🔍 AuthService: Está autenticado?', isAuthenticated);
-      
-      if (!isAuthenticated) {
-        console.log('❌ AuthService: Usuário não está autenticado');
-        return null;
-      }
-      
-      // Obter usuário
-      const user = await firstValueFrom(this.auth0.user$);
-      console.log('✅ AuthService: Usuário obtido:', user);
-      
-      return user;
-    } catch (error) {
-      console.error('❌ AuthService: Erro ao obter usuário Auth0:', error);
-      return null;
+  private getAuthHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'Authorization': `Bearer ${this.authToken}`,
+      'Content-Type': 'application/json'
+    });
+  }
+
+  /**
+   * Salva dados de autenticação no localStorage
+   */
+  private saveAuthData(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    if (this.authToken) {
+      localStorage.setItem(environment.jwt.tokenKey, this.authToken);
+      console.log('💾 AuthService: Token salvo no localStorage');
     }
   }
 
   /**
-   * Redireciona para a página de login
+   * Salva dados do usuário no localStorage
    */
-  private redirectToLogin(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      window.location.href = '/login';
-    }
+  private saveUserData(user: LocalUser): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    localStorage.setItem(environment.jwt.userKey, JSON.stringify(user));
+    console.log('💾 AuthService: Dados do usuário salvos no localStorage');
+  }
+
+  /**
+   * Limpa dados de autenticação do localStorage
+   */
+  private clearAuthData(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    localStorage.removeItem(environment.jwt.tokenKey);
+    localStorage.removeItem(environment.jwt.userKey);
+    console.log('🗑️ AuthService: Dados de autenticação limpos do localStorage');
+  }
+
+  /**
+   * Verifica se o usuário está carregando (sempre false para JWT local)
+   */
+  isLoading(): Observable<boolean> {
+    return of(false);
+  }
+
+  /**
+   * Obtém o perfil do usuário (compatibilidade)
+   */
+  getUserProfile(): Observable<LocalUser | null> {
+    return this.currentUser$;
+  }
+
+  /**
+   * Logout simples (compatibilidade)
+   */
+  simpleLogout(): void {
+    this.logout();
+  }
+
+  /**
+   * Reset de senha com Auth0 (compatibilidade - não suportado)
+   */
+  resetPasswordWithAuth0(): void {
+    console.warn('resetPasswordWithAuth0 não é mais suportado. Use resetPassword() em vez disso.');
+  }
+
+  /**
+   * Métodos de compatibilidade (não usados mais)
+   */
+  loginWithAuth0(): void {
+    console.warn('loginWithAuth0 não é mais suportado. Use login() em vez disso.');
+  }
+
+  loginWithGoogle(): void {
+    console.warn('loginWithGoogle não é mais suportado. Use login() em vez disso.');
+  }
+
+  signupWithAuth0(): void {
+    console.warn('signupWithAuth0 não é mais suportado. Use register() em vez disso.');
+  }
+
+  registerLocalUser(userData: LocalUserRegistration): Observable<LocalUser> {
+    return this.register(userData);
   }
 }

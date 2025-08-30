@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
-import { AuthService } from '../../services/auth.service';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService, LocalUserLogin } from '../../services/auth.service';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { loginAnimations } from './login.animations';
 
@@ -122,7 +123,7 @@ import { loginAnimations } from './login.animations';
           >
             <span *ngIf="!isSubmitting" class="btn-content">
               <i class="fas fa-sign-in-alt"></i>
-              Entrar com Auth0
+              Entrar
             </span>
             <span *ngIf="isSubmitting" class="btn-content">
               <div class="spinner"></div>
@@ -136,17 +137,7 @@ import { loginAnimations } from './login.animations';
 
           <button 
             type="button"
-            (click)="loginWithGoogle()" 
-            class="btn btn-google btn-full"
-            [disabled]="isSubmitting"
-          >
-            <span class="google-icon">🔍</span>
-            Entrar com Google
-          </button>
-
-          <button 
-            type="button"
-            (click)="signupWithAuth0()" 
+            (click)="goToRegister()" 
             class="btn btn-secondary btn-full"
             [disabled]="isSubmitting"
           >
@@ -202,7 +193,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -279,10 +271,26 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.clearMessages();
     this.saveFormData();
 
-    // Simular delay para melhor UX
-    setTimeout(() => {
-      this.loginWithAuth0();
-    }, 500);
+    const credentials: LocalUserLogin = {
+      email: this.loginForm.value.email,
+      password: this.loginForm.value.password
+    };
+
+    this.authService.login(credentials).subscribe({
+      next: (user) => {
+        this.successMessage = 'Login realizado com sucesso! Redirecionando...';
+        this.isSubmitting = false;
+        
+        // Redirecionar após 1 segundo
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1000);
+      },
+      error: (error) => {
+        this.errorMessage = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
+        this.isSubmitting = false;
+      }
+    });
   }
 
   /**
@@ -297,27 +305,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Faz login via Auth0
+   * Navega para a página de registro
    */
-  loginWithAuth0(): void {
-    this.authService.loginWithAuth0();
-  }
-
-  /**
-   * Faz login com Google
-   */
-  loginWithGoogle(): void {
-    this.authService.loginWithGoogle();
-  }
-
-  /**
-   * Faz signup via Auth0
-   */
-  signupWithAuth0(): void {
-    this.authService.signupWithAuth0({
-      email: this.loginForm.get('email')?.value,
-      password: this.loginForm.get('password')?.value
-    });
+  goToRegister(): void {
+    this.router.navigate(['/register']);
   }
 
   /**
@@ -325,8 +316,21 @@ export class LoginComponent implements OnInit, OnDestroy {
    */
   forgotPassword(event: Event): void {
     event.preventDefault();
-    this.successMessage = 'Redirecionando para recuperação de senha...';
-    // Implementar lógica de recuperação
+    const email = this.loginForm.get('email')?.value;
+    
+    if (!email) {
+      this.errorMessage = 'Digite seu e-mail para recuperar a senha.';
+      return;
+    }
+
+    this.authService.forgotPassword(email).subscribe({
+      next: () => {
+        this.successMessage = 'Instruções de recuperação enviadas para seu e-mail.';
+      },
+      error: (error) => {
+        this.errorMessage = error.message || 'Erro ao solicitar recuperação de senha.';
+      }
+    });
   }
 
   /**

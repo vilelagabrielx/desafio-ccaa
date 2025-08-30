@@ -3,7 +3,7 @@ import { RouterOutlet, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthComponent } from './components/auth/auth.component';
 import { AuthService } from './services/auth.service';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -136,6 +136,8 @@ export class App {
   isAuthenticated$: Observable<boolean>;
 
   constructor(private authService: AuthService) {
-    this.isAuthenticated$ = this.authService.isAuthenticated();
+    this.isAuthenticated$ = this.authService.currentUser$.pipe(
+      map(user => !!user)
+    );
   }
 }

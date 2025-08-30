@@ -72,6 +72,7 @@ import { AuthService, LocalUserRegistration } from '../../services/auth.service'
             <div *ngIf="isFieldInvalid('password')" class="error-message">
               <span *ngIf="registerForm.get('password')?.hasError('required')">Senha é obrigatória</span>
               <span *ngIf="registerForm.get('password')?.hasError('minlength')">Senha deve ter pelo menos 6 caracteres</span>
+              <span *ngIf="registerForm.get('password')?.hasError('pattern')">Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número</span>
             </div>
           </div>
 
@@ -87,6 +88,19 @@ import { AuthService, LocalUserRegistration } from '../../services/auth.service'
             <div *ngIf="isFieldInvalid('confirmPassword')" class="error-message">
               <span *ngIf="registerForm.get('confirmPassword')?.hasError('required')">Confirmação de senha é obrigatória</span>
               <span *ngIf="registerForm.get('confirmPassword')?.hasError('passwordMismatch')">Senhas não coincidem</span>
+            </div>
+          </div>
+
+          <!-- Data de Nascimento -->
+          <div class="form-group">
+            <label for="dateOfBirth">Data de Nascimento *</label>
+            <input 
+              type="date" 
+              id="dateOfBirth" 
+              formControlName="dateOfBirth"
+              [class.error]="isFieldInvalid('dateOfBirth')">
+            <div *ngIf="isFieldInvalid('dateOfBirth')" class="error-message">
+              <span *ngIf="registerForm.get('dateOfBirth')?.hasError('required')">Data de nascimento é obrigatória</span>
             </div>
           </div>
 
@@ -282,8 +296,13 @@ export class RegisterComponent {
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      password: ['', [
+        Validators.required, 
+        Validators.minLength(6),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      ]],
+      confirmPassword: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
 
@@ -328,7 +347,8 @@ export class RegisterComponent {
       lastName: this.registerForm.value.lastName,
       email: this.registerForm.value.email,
       password: this.registerForm.value.password,
-      confirmPassword: this.registerForm.value.confirmPassword
+      confirmPassword: this.registerForm.value.confirmPassword,
+      dateOfBirth: this.registerForm.value.dateOfBirth
     };
 
     this.authService.registerLocalUser(userData).subscribe({

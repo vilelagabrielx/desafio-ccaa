@@ -27,48 +27,18 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "Desafio CCAA API", 
         Version = "v1",
-        Description = "API para gerenciamento de livros com autenticação Auth0/JWT"
+        Description = "API para gerenciamento de livros com autenticação JWT + Identity"
     });
 
-    // Configure authentication for Swagger
-    var auth0Settings = builder.Configuration.GetSection("Auth0");
-    if (!string.IsNullOrEmpty(auth0Settings["Domain"]))
+    // JWT Configuration for Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        // Auth0 Configuration for Swagger
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.OAuth2,
-            Flows = new OpenApiOAuthFlows
-            {
-                Implicit = new OpenApiOAuthFlow
-                {
-                    AuthorizationUrl = new Uri($"{auth0Settings["Issuer"]}authorize"),
-                    TokenUrl = new Uri($"{auth0Settings["Issuer"]}oauth/token"),
-                    Scopes = new Dictionary<string, string>
-                    {
-                        { "openid", "OpenID" },
-                        { "profile", "Profile" },
-                        { "email", "Email" }
-                    }
-                }
-            }
-        });
-    }
-    else
-    {
-        // JWT Configuration for Swagger (fallback)
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-            Scheme = "Bearer"
-        });
-    }
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -157,67 +127,38 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
     options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>();
-
-// Authentication Configuration
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var auth0Settings = builder.Configuration.GetSection("Auth0");
-
-// Use Auth0 if configured, otherwise fall back to local JWT
-if (!string.IsNullOrEmpty(auth0Settings["Domain"]))
-{
-    // Auth0 Configuration
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.Authority = auth0Settings["Issuer"];
-        options.Audience = auth0Settings["Audience"];
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = auth0Settings["Issuer"],
-            ValidAudience = auth0Settings["Audience"],
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-}
-else
-{
-    // Local JWT Configuration (fallback)
-    var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "DefaultKeyForDevelopmentOnly");
     
-    builder.Services.AddAuthentication(options =>
+    // Email confirmation settings
+    options.SignIn.RequireConfirmedEmail = false; // Set to true in production
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// JWT Authentication Configuration
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "DefaultKeyForDevelopmentOnly");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-}
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
 // Authorization
 builder.Services.AddAuthorization();

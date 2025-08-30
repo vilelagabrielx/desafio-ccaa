@@ -8,12 +8,10 @@ public interface IUserService
     Task<ServiceResult<string>> LoginAsync(UserLoginDto loginDto);
     Task<ServiceResult<UserResponseDto>> GetUserByIdAsync(string userId);
     Task<ServiceResult<UserResponseDto>> GetCurrentUserAsync();
-    Task<ServiceResult<UserResponseDto>> SyncAuth0UserAsync(Auth0UserSyncDto auth0User);
-    Task<ServiceResult<UserResponseDto>> EnsureUserExistsAsync(string email, string auth0Id);
     Task<ServiceResult<bool>> ChangePasswordAsync(string userId, ChangePasswordDto changePasswordDto);
     Task<ServiceResult<bool>> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
     Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
-    Task<ServiceResult<bool>> UpdateProfileAsync(string userId, UserResponseDto updateDto);
+    Task<ServiceResult<bool>> UpdateProfileAsync(string userId, UpdateProfileDto updateDto);
     Task<ServiceResult<bool>> DeactivateUserAsync(string userId);
 }
 
