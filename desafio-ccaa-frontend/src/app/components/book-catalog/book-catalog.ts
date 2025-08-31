@@ -68,13 +68,10 @@ export class BookCatalog implements OnInit {
 
   // Computed signals
   categoryCounts = computed(() => {
-    const booksList = this.books();
     const categoriesList = this.categories();
-
-    return categoriesList.map(category => ({
-      ...category,
-      count: booksList.filter(book => book.genre === category.name).length
-    }));
+    console.log('📊 BookCatalog: categoryCounts computado:', categoriesList.length, 'categorias');
+    // Ordenar categorias por contagem de livros em ordem decrescente
+    return categoriesList.sort((a, b) => b.count - a.count);
   });
 
   publishers = computed(() => {
@@ -215,7 +212,14 @@ export class BookCatalog implements OnInit {
     this.bookService.getAllCategories().subscribe({
       next: (categories) => {
         console.log('✅ BookCatalog: Categorias carregadas:', categories.length);
-        this.categories.set(categories);
+        console.log('🔍 Debug - Categorias recebidas do backend:', categories);
+        
+        // Garantir que a ordem do backend seja mantida
+        // O backend já retorna ordenado por contagem decrescente
+        const orderedCategories = [...categories];
+        console.log('📊 Categorias ordenadas por contagem:', orderedCategories.map(c => `${c.name} (${c.count})`));
+        
+        this.categories.set(orderedCategories);
       },
       error: (error) => {
         console.error('❌ BookCatalog: Erro ao carregar categorias:', error);
@@ -519,7 +523,7 @@ export class BookCatalog implements OnInit {
     this.selectedCategory.set(category);
     
     // Se uma categoria específica foi selecionada, mapear para o enum e aplicar filtro
-    if (category && category !== '') {
+    if (category && category !== '' && category !== 'Todas as Categorias') {
       // Mapear o nome traduzido de volta para o enum
       const genreEnum = this.mapCategoryNameToGenre(category);
       if (genreEnum) {
@@ -549,6 +553,15 @@ export class BookCatalog implements OnInit {
     
     if (genreEntry) {
       return genreEntry[0] as BookGenre;
+    }
+    
+    // Se não encontrar, tentar buscar por comparação case-insensitive
+    const genreEntryCaseInsensitive = Object.entries(genreTranslations).find(
+      ([_, translation]) => translation.toLowerCase() === categoryName.toLowerCase()
+    );
+    
+    if (genreEntryCaseInsensitive) {
+      return genreEntryCaseInsensitive[0] as BookGenre;
     }
     
     console.warn('⚠️ Categoria não reconhecida:', categoryName);

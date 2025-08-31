@@ -213,22 +213,7 @@
         </div>
         
         <ul class="categories-list">
-          <li 
-            class="category-item" 
-            [class.active]="selectedCategory() === ''"
-            (click)="filterByCategory(''); toggleSidebar()"
-          >
-            <div class="category-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span class="category-name">Todas as Categorias</span>
-            <span class="category-count">{{ books().length }}</span>
-          </li>
-          @for (category of categoryCounts(); track category.id) {
+          @for (category of categoryCounts(); track category.id; let i = $index) {
             <li 
               class="category-item" 
               [class.active]="selectedCategory() === category.name"
@@ -431,14 +416,6 @@
           Limpar Filtros
         </button>
         
-        <button class="action-btn isbn" (click)="showCreateFromIsbnModal()" title="Criar livro por ISBN">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 12L12 15L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 15V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Criar por ISBN
-        </button>
         
         <button class="action-btn pdf" (click)="generatePdfReport()" [disabled]="isGeneratingPdf()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

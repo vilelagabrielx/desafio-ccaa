@@ -371,7 +371,7 @@ public class BookService(
                 var genre = genreValues[i];
                 categories.Add(new CategoryDto 
                 { 
-                    Id = (int)genre, 
+                    Id = i + 1, // ID único começando de 1
                     Name = genre.ToString() 
                 });
             }
@@ -383,6 +383,59 @@ public class BookService(
         {
             logger.LogError(ex, "Erro ao buscar categorias");
             return Task.FromResult(new List<CategoryDto>());
+        }
+    }
+
+    public async Task<List<CategoryWithCountDto>> GetCategoriesWithCountAsync()
+    {
+        try
+        {
+            var categories = new List<CategoryWithCountDto>();
+            var genreValues = Enum.GetValues<BookGenre>();
+            
+            // Obter todos os livros para calcular contagens
+            var allBooks = (await bookRepository.GetAllAsync()).ToList();
+            
+            // Usar IDs únicos começando de 1 para evitar conflito com "Todas as Categorias"
+            for (int i = 0; i < genreValues.Length; i++)
+            {
+                var genre = genreValues[i];
+                var count = allBooks.Count(book => book.Genre == genre);
+                
+                categories.Add(new CategoryWithCountDto 
+                { 
+                    Id = i + 1, // ID único começando de 1
+                    Name = genre.ToString(),
+                    Count = count
+                });
+            }
+            
+            // Adicionar "Todas as Categorias" no início com ID único
+            var allCategories = new List<CategoryWithCountDto>
+            {
+                new CategoryWithCountDto
+                {
+                    Id = 0, // ID único para "Todas as Categorias"
+                    Name = "Todas as Categorias",
+                    Count = allBooks.Count
+                }
+            };
+            
+            allCategories.AddRange(categories);
+            
+            // Ordenar categorias por contagem decrescente (mais livros primeiro)
+            // "Todas as Categorias" sempre fica no topo
+            var sortedCategories = allCategories
+                .OrderByDescending(c => c.Count)
+                .ToList();
+            
+            logger.LogInformation("Categorias com contagem ordenadas por quantidade. Total: {Count}", sortedCategories.Count);
+            return sortedCategories;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao buscar categorias com contagem");
+            return new List<CategoryWithCountDto>();
         }
     }
 

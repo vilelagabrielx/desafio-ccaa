@@ -225,6 +225,24 @@ public class BookController : ControllerBase
     }
 
     /// <summary>
+    /// Obtém todas as categorias disponíveis com contagem de livros
+    /// </summary>
+    [HttpGet("categories-with-count")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCategoriesWithCount()
+    {
+        try
+        {
+            var categories = await _bookService.GetCategoriesWithCountAsync();
+            return Ok(new { data = categories });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao buscar categorias com contagem", details = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Obtém imagem otimizada do livro
     /// </summary>
     [HttpGet("photo/{bookId}")]

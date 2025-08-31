@@ -125,12 +125,28 @@ export class BookMockService implements IBookService {
 
   // Categories (agora baseado no enum BookGenre)
   getAllCategories(): Observable<{ id: number; name: string; count: number }[]> {
-    const categories = Object.values(BookGenre).map((genre, index) => ({
-      id: index + 1,
-      name: translateGenre(genre), // Traduz para português
-      count: this.books.filter(book => book.genre === genre).length
-    }));
-    return of(categories);
+    const categories = Object.values(BookGenre).map((genre, index) => {
+      const translatedName = translateGenre(genre);
+      const count = this.books.filter(book => book.genre === genre).length;
+      
+      return {
+        id: index + 1,
+        name: translatedName, // Traduz para português
+        count: count
+      };
+    });
+    
+    // Adicionar "Todas as Categorias" no início
+    const allCategories = [
+      {
+        id: 0,
+        name: 'Todas as Categorias',
+        count: this.books.length
+      },
+      ...categories
+    ];
+    
+    return of(allCategories);
   }
 
   // Search and Filter
