@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
@@ -28,11 +29,19 @@ public class BookService(
                 return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");
             }
 
-            // Check if ISBN already exists (only active books)
+            // Check if ISBN already exists (including inactive books)
             var existingBook = await bookRepository.GetByISBNAsync(createBookDto.ISBN);
             if (existingBook != null)
             {
-                return ServiceResult<BookResponseDto>.Failure($"Já existe um livro ativo com o ISBN {createBookDto.ISBN}");
+                if (existingBook.IsActive)
+                {
+                    return ServiceResult<BookResponseDto>.Failure($"Já existe um livro ativo com o ISBN {createBookDto.ISBN}");
+                }
+                else
+                {
+                    // Com soft delete, podemos permitir reutilização de ISBNs de livros inativos
+                    logger.LogInformation("Reutilizando ISBN de livro inativo: {ISBN} - Livro anterior: {Title}", createBookDto.ISBN, existingBook.Title);
+                }
             }
 
             var book = new Book
@@ -62,6 +71,18 @@ public class BookService(
 
             logger.LogInformation("Livro criado com sucesso: {Title} por {UserId}", createBookDto.Title, userId);
             return ServiceResult<BookResponseDto>.Success(bookResponse);
+        }
+        catch (DbUpdateException dbEx) when (dbEx.InnerException?.Message?.Contains("duplicate key value violates unique constraint") == true)
+        {
+            logger.LogWarning(dbEx, "Tentativa de criar livro com ISBN duplicado: {Title} - {ISBN} por {UserId}", createBookDto.Title, createBookDto.ISBN, userId);
+            
+            // Check if this is specifically an ISBN constraint violation
+            if (dbEx.InnerException?.Message?.Contains("IX_Books_ISBN") == true)
+            {
+                return ServiceResult<BookResponseDto>.Failure($"O ISBN {createBookDto.ISBN} já está em uso. Por favor, use um ISBN diferente.");
+            }
+            
+            return ServiceResult<BookResponseDto>.Failure($"Erro de duplicação: {createBookDto.ISBN}. Por favor, use um ISBN diferente.");
         }
         catch (Exception ex)
         {
@@ -349,7 +370,7 @@ public class BookService(
         }
     }
 
-    public async Task<List<CategoryDto>> GetCategoriesAsync()
+    public Task<List<CategoryDto>> GetCategoriesAsync()
     {
         try
         {
@@ -367,12 +388,12 @@ public class BookService(
             }
             
             logger.LogInformation("Categorias recuperadas com sucesso. Total: {Count}", categories.Count);
-            return categories;
+            return Task.FromResult(categories);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro ao buscar categorias");
-            return new List<CategoryDto>();
+            return Task.FromResult(new List<CategoryDto>());
         }
     }
 
@@ -400,7 +421,7 @@ public class BookService(
             if (!result.IsSuccess)
             {
                 logger.LogWarning("Falha na busca por ISBN {ISBN}: {ErrorMessage}", isbn, result.ErrorMessage);
-                return ServiceResult<BookFromIsbnDto?>.Failure(result.ErrorMessage);
+                return ServiceResult<BookFromIsbnDto?>.Failure(result.ErrorMessage ?? "Erro desconhecido na busca por ISBN");
             }
 
             logger.LogInformation("Busca por ISBN {ISBN} concluída com sucesso", isbn);

@@ -108,7 +108,7 @@ public class UserService(
         }
     }
 
-    public async Task<ServiceResult<UserResponseDto>> GetCurrentUserAsync()
+    public Task<ServiceResult<UserResponseDto>> GetCurrentUserAsync()
     {
         try
         {
@@ -119,7 +119,7 @@ public class UserService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro ao obter usuário atual");
-            return ServiceResult<UserResponseDto>.Failure("Erro interno ao obter usuário atual");
+            return Task.FromResult(ServiceResult<UserResponseDto>.Failure("Erro interno ao obter usuário atual"));
         }
     }
 
@@ -360,7 +360,7 @@ Content-Type: {message.BodyEncoding?.WebName ?? "text/html; charset=utf-8"}
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            FullName = user.FullName,
+            FullName = user.FullName ?? string.Empty,
             CreatedAt = user.CreatedAt,
             IsActive = user.IsActive
         };

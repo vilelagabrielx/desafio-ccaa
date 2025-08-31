@@ -133,7 +133,7 @@ public class ImageOptimizationService : IImageOptimizationService
                 Directory.CreateDirectory(uploadsBasePath);
             }
             
-            var folderPath = Path.Combine(uploadsBasePath, folderName);
+            var folderPath = Path.Combine(uploadsBasePath, folderName ?? "default");
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
@@ -157,10 +157,10 @@ public class ImageOptimizationService : IImageOptimizationService
     /// <summary>
     /// Deleta uma imagem do sistema de arquivos (método legado para compatibilidade)
     /// </summary>
-    public async Task<bool> DeleteImageAsync(string imagePath)
+    public Task<bool> DeleteImageAsync(string imagePath)
     {
         if (string.IsNullOrEmpty(imagePath))
-            return false;
+            return Task.FromResult(false);
 
         try
         {
@@ -169,26 +169,26 @@ public class ImageOptimizationService : IImageOptimizationService
             if (string.IsNullOrEmpty(cleanImagePath))
             {
                 _logger.LogWarning("Caminho da imagem inválido para exclusão: {ImagePath}", imagePath);
-                return false;
+                return Task.FromResult(false);
             }
             
             var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads");
             var basePath = Environment.CurrentDirectory;
             var uploadsBasePath = Path.Combine(basePath, uploadsFolder);
-            var fullPath = Path.Combine(uploadsBasePath, cleanImagePath);
+            var fullPath = Path.Combine(uploadsBasePath, cleanImagePath ?? string.Empty);
             
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
                 _logger.LogInformation("Imagem deletada: {ImagePath}", imagePath);
-                return true;
+                return Task.FromResult(true);
             }
-            return false;
+            return Task.FromResult(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao deletar imagem: {ImagePath}", imagePath);
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -209,7 +209,7 @@ public class ImageOptimizationService : IImageOptimizationService
             var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads");
             var basePath = Environment.CurrentDirectory;
             var uploadsBasePath = Path.Combine(basePath, uploadsFolder);
-            var fullPath = Path.Combine(uploadsBasePath, cleanImagePath);
+            var fullPath = Path.Combine(uploadsBasePath, cleanImagePath ?? string.Empty);
             
             if (!File.Exists(fullPath))
             {

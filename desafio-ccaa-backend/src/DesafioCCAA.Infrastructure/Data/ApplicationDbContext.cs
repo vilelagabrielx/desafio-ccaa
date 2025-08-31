@@ -46,7 +46,9 @@ public class ApplicationDbContext : IdentityDbContext<User>
                   .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            entity.HasIndex(e => e.ISBN).IsUnique();
+            entity.HasIndex(e => new { e.ISBN, e.IsActive })
+                  .HasFilter("\"IsActive\" = true")
+                  .IsUnique();
             entity.HasIndex(e => e.Title);
             entity.HasIndex(e => e.Author);
             entity.HasIndex(e => e.Genre);

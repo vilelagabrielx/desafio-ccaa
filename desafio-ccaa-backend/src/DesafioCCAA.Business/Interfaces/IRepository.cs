@@ -33,4 +33,6 @@ public interface IBookRepository : IRepository<Book>
     Task<IEnumerable<Book>> SearchAsync(BookSearchDto searchDto);
     Task<int> GetTotalCountAsync(BookSearchDto searchDto);
     Task<Book?> GetByIdWithUserAsync(int id);
+    Task<Book?> GetByISBNAsync(string isbn);
+    Task<bool> HardDeleteAsync(int id);
 }
