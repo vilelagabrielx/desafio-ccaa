@@ -358,4 +358,22 @@
       </div>
     </div>
   </div>
+  
+    <!-- Seção de Ações -->
+    <section class="actions-section">
+      <div class="actions-container">
+        <button class="action-btn" (click)="addBook()">
+          <span class="btn-icon">📚</span>
+          Adicionar Livro
+        </button>
+        <button class="action-btn" (click)="clearFilters()">
+          <span class="btn-icon">🔄</span>
+          Limpar Filtros
+        </button>
+        <button class="action-btn pdf-btn" (click)="generatePdfReport()" [disabled]="isGeneratingPdf()">
+          <span class="btn-icon">{{ isGeneratingPdf() ? '⏳' : '📄' }}</span>
+          {{ isGeneratingPdf() ? 'Gerando PDF...' : 'Gerar Relatório PDF' }}
+        </button>
+      </div>
+    </section>
 </main>

@@ -18,15 +18,38 @@ export class BookCatalog implements OnInit {
   categories = signal<{ id: number; name: string; count: number }[]>([]);
   filteredBooks = signal<Book[]>([]);
   searchQuery = signal('');
-  selectedCategory = signal<string>('');
-  showAddForm = signal(false);
-  newBook = signal<Partial<Book>>({});
+  selectedGenre = signal<string>('');
+  selectedPublisher = signal<string>('');
+  sortBy = signal<string>('title');
+  currentPage = signal(1);
+  pageSize = signal(12);
+  totalPages = signal(1);
 
   // User information
   userProfile = signal<any>(null);
   isAuthenticated = signal(false);
+  isGeneratingPdf = signal(false);
+  
+  // Form state
+  showAddForm = signal(false);
+  selectedCategory = signal('');
+  
+  // Mobile menu and sidebar
+  mobileMenuOpen = signal(false);
+  sidebarOpen = signal(false);
+  
+  // New book form
+  newBook = signal({
+    title: '',
+    author: '',
+    isbn: '',
+    genre: BookGenre.Fiction,
+    publisher: BookPublisher.Other,
+    synopsis: '',
+    photoPath: ''
+  });
 
-  // Computed signals for category counts
+  // Computed signals
   categoryCounts = computed(() => {
     const booksList = this.books();
     const categoriesList = this.categories();
@@ -37,9 +60,10 @@ export class BookCatalog implements OnInit {
     }));
   });
 
-  // Mobile menu state
-  mobileMenuOpen = signal(false);
-  sidebarOpen = signal(false);
+  publishers = computed(() => {
+    const booksList = this.books();
+    return [...new Set(booksList.map(book => book.publisher))].sort();
+  });
 
   constructor(
     private bookService: BookService,
@@ -105,129 +129,260 @@ export class BookCatalog implements OnInit {
   }
 
   loadBooks(): void {
-    this.bookService.getAllBooks().subscribe(books => {
-      // Garantir que sempre seja um array válido
-      const booksArray = Array.isArray(books) ? books : [];
-      this.books.set(booksArray);
-      this.filteredBooks.set(booksArray);
+    console.log('📚 BookCatalog: Carregando livros...');
+    this.bookService.getAllBooks().subscribe({
+      next: (books) => {
+        console.log('✅ BookCatalog: Livros carregados:', books.length);
+        this.books.set(books);
+        this.applyFilters();
+      },
+      error: (error) => {
+        console.error('❌ BookCatalog: Erro ao carregar livros:', error);
+      }
     });
   }
 
   loadCategories(): void {
-    this.bookService.getAllCategories().subscribe(categories => {
-      // Garantir que sempre seja um array válido
-      const categoriesArray = Array.isArray(categories) ? categories : [];
-      this.categories.set(categoriesArray);
+    console.log('🏷️ BookCatalog: Carregando categorias...');
+    this.bookService.getAllCategories().subscribe({
+      next: (categories) => {
+        console.log('✅ BookCatalog: Categorias carregadas:', categories.length);
+        this.categories.set(categories);
+      },
+      error: (error) => {
+        console.error('❌ BookCatalog: Erro ao carregar categorias:', error);
+      }
     });
   }
 
   searchBooks(): void {
-    const query = this.searchQuery();
-    if (query.trim()) {
-      this.bookService.searchBooks(query).subscribe(books => {
-        this.filteredBooks.set(books);
-      });
-    } else {
-      this.filteredBooks.set(this.books());
+    console.log('🔍 BookCatalog: Buscando livros...');
+    this.currentPage.set(1);
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = this.books();
+    
+    // Aplicar filtro de busca
+    if (this.searchQuery()) {
+      const query = this.searchQuery().toLowerCase();
+      filtered = filtered.filter(book => 
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query) ||
+        book.isbn.toLowerCase().includes(query)
+      );
+    }
+    
+    // Aplicar filtro de gênero
+    if (this.selectedGenre()) {
+      filtered = filtered.filter(book => book.genre === this.selectedGenre());
+    }
+    
+    // Aplicar filtro de editora
+    if (this.selectedPublisher()) {
+      filtered = filtered.filter(book => book.publisher === this.selectedPublisher());
+    }
+    
+    // Aplicar ordenação
+    filtered.sort((a, b) => {
+      const sortBy = this.sortBy();
+      switch (sortBy) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'author':
+          return a.author.localeCompare(b.author);
+        case 'genre':
+          return a.genre.localeCompare(b.genre);
+        case 'publisher':
+          return a.publisher.localeCompare(b.publisher);
+        default:
+          return 0;
+      }
+    });
+    
+    // Aplicar paginação
+    const startIndex = (this.currentPage() - 1) * this.pageSize();
+    const endIndex = startIndex + this.pageSize();
+    const paginatedBooks = filtered.slice(startIndex, endIndex);
+    
+    this.filteredBooks.set(paginatedBooks);
+    this.totalPages.set(Math.ceil(filtered.length / this.pageSize()));
+    
+    console.log('✅ BookCatalog: Filtros aplicados, livros filtrados:', filtered.length);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+      this.applyFilters();
     }
   }
 
-  filterByCategory(category: string): void {
-    this.selectedCategory.set(category);
-    if (category) {
-      this.bookService.getBooksByCategory(category).subscribe(books => {
-        this.filteredBooks.set(books);
-      });
-    } else {
-      this.filteredBooks.set(this.books());
-    }
+  getGenres(): string[] {
+    return Object.values(BookGenre);
+  }
+
+  getPublishers(): string[] {
+    return Object.values(BookPublisher);
   }
 
   clearFilters(): void {
     this.searchQuery.set('');
-    this.selectedCategory.set('');
-    this.filteredBooks.set(this.books());
+    this.selectedGenre.set('');
+    this.selectedPublisher.set('');
+    this.sortBy.set('title');
+    this.currentPage.set(1);
+    this.applyFilters();
   }
 
   addBook(): void {
-    this.showAddForm.set(true);
-    this.newBook.set({});
+    // Implementar adição de livro (por enquanto apenas log)
+    console.log('Adicionar novo livro');
   }
 
-  saveBook(): void {
-    const bookData = this.newBook();
-    if (bookData.title && bookData.author && bookData.isbn && bookData.genre && bookData.publisher && bookData.synopsis) {
-      this.bookService.createBook({
-        title: bookData.title!,
-        author: bookData.author!,
-        isbn: bookData.isbn!,
-        genre: bookData.genre!,
-        publisher: bookData.publisher!,
-        synopsis: bookData.synopsis!,
-        photoPath: bookData.photoPath,
-        isActive: true,
-        userId: '1' // TODO: Pegar do usuário logado
-      }).subscribe(() => {
-        this.loadBooks();
-        this.showAddForm.set(false);
-        this.newBook.set({});
-      });
-    }
-  }
-
-  cancelAdd(): void {
-    this.showAddForm.set(false);
-    this.newBook.set({});
-  }
-
-  closeModal(): void {
-    this.showAddForm.set(false);
-    this.newBook.set({});
-  }
-
-  isFormValid(): boolean {
-    const book = this.newBook();
-    return !!(book.title && book.author && book.isbn && book.genre && book.publisher && book.synopsis);
-  }
-
-  // Mobile methods
-  toggleMobileMenu(): void {
-    this.mobileMenuOpen.update(open => !open);
-  }
-
-  toggleSidebar(): void {
-    this.sidebarOpen.update(open => !open);
-  }
-
-  deleteBook(id: number): void {
-    if (confirm('Tem certeza que deseja excluir este livro?')) {
-      this.bookService.deleteBook(id).subscribe(() => {
-        this.loadBooks();
-      });
-    }
+  viewBook(book: Book): void {
+    // Implementar visualização de livro (por enquanto apenas log)
+    console.log('Visualizar livro:', book);
   }
 
   editBook(book: Book): void {
-    // Implementar edição (por enquanto apenas log)
+    // Implementar edição de livro (por enquanto apenas log)
     console.log('Editar livro:', book);
   }
 
-  onImageError(event: any): void {
-    // Hide the failed image and show fallback
-    const img = event.target;
-    const fallback = img.nextElementSibling;
-    if (img && fallback) {
-      img.style.display = 'none';
-      fallback.style.display = 'block';
+  deleteBook(book: Book): void {
+    if (confirm(`Tem certeza que deseja excluir o livro "${book.title}"?`)) {
+      console.log('🗑️ Excluindo livro:', book.title);
+      
+      this.bookService.deleteBookApi(book.id).subscribe({
+        next: (response) => {
+          console.log('✅ Livro excluído com sucesso:', response);
+          
+          // Remover o livro da lista local
+          const currentBooks = this.books();
+          const updatedBooks = currentBooks.filter(b => b.id !== book.id);
+          this.books.set(updatedBooks);
+          
+          // Aplicar filtros para atualizar a lista
+          this.applyFilters();
+          
+          // Mostrar mensagem de sucesso
+          alert('Livro excluído com sucesso!');
+        },
+        error: (error) => {
+          console.error('❌ Erro ao excluir livro:', error);
+          
+          // Mostrar mensagem de erro clara
+          let errorMessage = 'Erro ao excluir o livro.';
+          if (error.error && error.error.error) {
+            errorMessage = error.error.error;
+          } else if (error.status === 401) {
+            errorMessage = 'Você não tem permissão para excluir este livro.';
+          } else if (error.status === 404) {
+            errorMessage = 'Livro não encontrado.';
+          } else if (error.status === 500) {
+            errorMessage = 'Erro interno do servidor. Tente novamente.';
+          }
+          
+          alert(`Erro: ${errorMessage}`);
+        }
+      });
     }
   }
 
-  // Helper methods para acessar os enums no template
-  getBookGenres(): string[] {
-    return Object.values(BookGenre);
+  /**
+   * Toggle mobile menu
+   */
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.set(!this.mobileMenuOpen());
   }
 
-  getBookPublishers(): string[] {
-    return Object.values(BookPublisher);
+  /**
+   * Toggle sidebar
+   */
+  toggleSidebar(): void {
+    this.sidebarOpen.set(!this.sidebarOpen());
+  }
+
+  /**
+   * Filter books by category
+   */
+  filterByCategory(category: string): void {
+    this.selectedCategory.set(category);
+    // Implementar lógica de filtro se necessário
+  }
+
+  /**
+   * Close modal
+   */
+  closeModal(): void {
+    this.showAddForm.set(false);
+  }
+
+  /**
+   * Save book
+   */
+  saveBook(): void {
+    // Implementar lógica de salvamento
+    console.log('Salvando livro:', this.newBook());
+    this.closeModal();
+  }
+
+  /**
+   * Check if form is valid
+   */
+  isFormValid(): boolean {
+    return !!(this.newBook().title && this.newBook().author);
+  }
+
+  /**
+   * Handle image error
+   */
+  onImageError(event: any): void {
+    console.log('Erro na imagem:', event);
+  }
+
+  /**
+   * Gera relatório PDF dos livros do usuário
+   */
+  generatePdfReport(): void {
+    if (this.isGeneratingPdf()) return;
+    
+    this.isGeneratingPdf.set(true);
+    console.log('📄 Gerando relatório PDF...');
+    
+    this.bookService.generatePdfReport().subscribe({
+      next: (blob: Blob) => {
+        console.log('✅ PDF gerado com sucesso!');
+        this.downloadPdf(blob);
+        this.isGeneratingPdf.set(false);
+      },
+      error: (error) => {
+        console.error('❌ Erro ao gerar PDF:', error);
+        this.isGeneratingPdf.set(false);
+        // Aqui você pode adicionar uma notificação de erro para o usuário
+        alert('Erro ao gerar o relatório PDF. Tente novamente.');
+      }
+    });
+  }
+
+  /**
+   * Faz o download do PDF gerado
+   */
+  private downloadPdf(blob: Blob): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relatorio-livros-${new Date().toISOString().split('T')[0]}.pdf`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    window.URL.revokeObjectURL(url);
+    
+    // Mensagem de sucesso
+    console.log('📄 PDF baixado com sucesso!');
   }
 }

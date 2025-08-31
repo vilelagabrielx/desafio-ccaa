@@ -15,7 +15,8 @@ import { Observable, map } from 'rxjs';
       <header class="app-header">
         <div class="header-content">
           <div class="logo">
-            <h1>📚 Desafio CCAA</h1>
+            <span class="logo-icon">📚</span>
+            <h1>CCAA Books</h1>
           </div>
           
           <!-- Navegação condicional baseada na autenticação -->
@@ -49,10 +50,13 @@ import { Observable, map } from 'rxjs';
     }
 
     .app-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #F06292 0%, #2196F3 100%);
       color: white;
       padding: 1rem 0;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
 
     .header-content {
@@ -64,10 +68,22 @@ import { Observable, map } from 'rxjs';
       align-items: center;
     }
 
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-icon {
+      font-size: 2.5rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
     .logo h1 {
       margin: 0;
       font-size: 1.8rem;
       font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .nav-menu {

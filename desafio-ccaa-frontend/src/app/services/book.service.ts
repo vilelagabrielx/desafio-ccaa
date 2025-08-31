@@ -4,36 +4,33 @@ import { IBookService } from './book.interface';
 import { BookMockService } from './book-mock.service';
 import { BookApiService } from './book-api.service';
 import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BookService implements IBookService {
   private service: IBookService;
+  private apiUrl: string;
 
   constructor(private http: HttpClient) {
-    // 🔧 CONFIGURAÇÃO: Usa configuração de ambiente
     if (environment.services.useMock) {
       console.log('📚 Usando serviço MOCK para desenvolvimento');
       this.service = new BookMockService();
+      this.apiUrl = environment.api.baseUrl;
     } else {
       console.log('🌐 Usando serviço API para produção');
       this.service = new BookApiService(this.http);
+      this.apiUrl = environment.api.baseUrl;
     }
   }
 
-  // 🔧 MÉTODO AUXILIAR: Para alternar dinamicamente (opcional)
-  switchToApi() {
-    console.log('🔄 Alternando para serviço API...');
-    if (environment.services.fallbackToMock) {
-      console.log('⚠️ Fallback para mock habilitado em caso de erro');
+  private getAuthHeaders(): { [key: string]: string } {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
     }
-    // Implementar lógica para alternar em runtime se necessário
-  }
-
-  switchToMock() {
-    console.log('🔄 Alternando para serviço MOCK...');
-    // Implementar lógica para alternar em runtime se necessário
+    return {};
   }
 
   // Implementação dos métodos delegando para o serviço escolhido
@@ -67,5 +64,70 @@ export class BookService implements IBookService {
 
   getBooksByCategory(category: string) {
     return this.service.getBooksByCategory(category);
+  }
+
+  /**
+   * Gera relatório PDF dos livros do usuário
+   */
+  generatePdfReport(): Observable<Blob> {
+    const url = `${this.apiUrl}/api/book/report/pdf`;
+    return this.http.get(url, { 
+      responseType: 'blob',
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  /**
+   * Cria um novo livro via API
+   */
+  createBookApi(bookData: any, photoFile?: File): Observable<any> {
+    const url = `${this.apiUrl}/api/book`;
+    const formData = new FormData();
+    
+    // Adicionar dados do livro
+    Object.keys(bookData).forEach(key => {
+      formData.append(key, bookData[key]);
+    });
+    
+    // Adicionar arquivo de foto se existir
+    if (photoFile) {
+      formData.append('photo', photoFile);
+    }
+    
+    return this.http.post(url, formData, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  /**
+   * Atualiza um livro existente via API
+   */
+  updateBookApi(bookId: number, bookData: any, photoFile?: File): Observable<any> {
+    const url = `${this.apiUrl}/api/book/${bookId}`;
+    const formData = new FormData();
+    
+    // Adicionar dados do livro
+    Object.keys(bookData).forEach(key => {
+      formData.append(key, bookData[key]);
+    });
+    
+    // Adicionar arquivo de foto se existir
+    if (photoFile) {
+      formData.append('photo', photoFile);
+    }
+    
+    return this.http.put(url, formData, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  /**
+   * Exclui um livro via API
+   */
+  deleteBookApi(bookId: number): Observable<any> {
+    const url = `${this.apiUrl}/api/book/${bookId}`;
+    return this.http.delete(url, {
+      headers: this.getAuthHeaders()
+    });
   }
 }
