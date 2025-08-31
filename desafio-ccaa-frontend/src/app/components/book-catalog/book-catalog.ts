@@ -33,6 +33,7 @@ export class BookCatalog implements OnInit {
   // Form state
   showAddForm = signal(false);
   selectedCategory = signal('');
+  searchCategory = signal('');
   
   // Mobile menu and sidebar
   mobileMenuOpen = signal(false);

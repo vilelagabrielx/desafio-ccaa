@@ -1,89 +1,38 @@
-<!-- Header Principal -->
+<!-- CCAA Books - Interface Moderna 2024 -->
+
+<!-- Header Principal Moderno -->
 <header class="main-header">
-  <div class="top-bar">
-    <div class="container">
-      <div class="logo">
-        <span class="logo-icon">📚</span>
-        <h1>CCAA Books</h1>
+  <div class="header-container">
+    <!-- Logo CCAA -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="var(--ccaa-primary)"/>
+          <path d="M2 17L12 22L22 17" stroke="var(--ccaa-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="var(--ccaa-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <!-- Botão Mobile Menu -->
-      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
-        <span class="hamburger"></span>
-      </button>
-      
-      <!-- Menu Mobile -->
-      <div class="mobile-menu" [class.active]="mobileMenuOpen()">
-                 <div class="mobile-menu-header">
-           <h3>Menu</h3>
-           <button class="mobile-close mobile-only" (click)="toggleMobileMenu()" aria-label="Fechar menu">×</button>
-         </div>
-        
-        <!-- Busca Mobile -->
-        <div class="mobile-search">
-          <div class="search-container">
-            <select class="search-category">
-              <option>TODO O CATÁLOGO</option>
-              <option>Por Título</option>
-              <option>Por Autor</option>
-              <option>Por Categoria</option>
-            </select>
-            <input 
-              type="text" 
-              placeholder="Buscar livros..." 
-              class="search-input"
-              [ngModel]="searchQuery()"
-              (ngModelChange)="searchQuery.set($event)"
-              (keyup.enter)="searchBooks()"
-            >
-            <button class="search-btn" (click)="searchBooks()">
-              🔍
-            </button>
-          </div>
-        </div>
-        
-        <!-- Ações Mobile -->
-        <div class="mobile-actions">
-          <button class="mobile-action-btn" (click)="addBook(); toggleMobileMenu()">
-            <span class="btn-icon">📚</span>
-            Adicionar Livro
-          </button>
-          <button class="mobile-action-btn" (click)="clearFilters(); toggleMobileMenu()">
-            <span class="btn-icon">🔄</span>
-            Limpar Filtros
-          </button>
-        </div>
-        
-        <!-- Usuário Mobile -->
-        <div class="mobile-user">
-          @if (isAuthenticated()) {
-            <div class="user-info">
-              @if (userProfile()?.picture) {
-                <img [src]="userProfile()?.picture" [alt]="userProfile()?.name" class="user-avatar">
-              } @else {
-                <span class="user-icon">👤</span>
-              }
-              <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
-              <button class="logout-btn" (click)="logout(); toggleMobileMenu()" title="Sair da conta">
-                <span class="logout-icon">🚪</span>
-                <span class="logout-text">Sair</span>
-              </button>
-            </div>
-          } @else {
-            <span class="user-icon">👤</span>
-            <span class="user-text">Não logado</span>
-          }
-        </div>
-      </div>
-      
-      <!-- Busca Desktop -->
-      <div class="search-section desktop-only">
-        <div class="search-container">
-          <select class="search-category">
-            <option>TODO O CATÁLOGO</option>
-            <option>Por Título</option>
-            <option>Por Autor</option>
-            <option>Por Categoria</option>
+      <h1 class="logo-text">CCAA Books</h1>
+    </div>
+
+    <!-- Busca Centralizada -->
+    <div class="search-section">
+      <div class="search-container">
+        <div class="search-select-wrapper">
+          <svg class="search-select-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <select class="search-category" [(ngModel)]="searchCategory">
+            <option value="">Todo o Catálogo</option>
+            <option value="title">Por Título</option>
+            <option value="author">Por Autor</option>
+            <option value="genre">Por Categoria</option>
           </select>
+        </div>
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <input 
             type="text" 
             placeholder="Buscar livros..." 
@@ -92,233 +41,308 @@
             (ngModelChange)="searchQuery.set($event)"
             (keyup.enter)="searchBooks()"
           >
-          <button class="search-btn" (click)="searchBooks()">
-            🔍
-          </button>
         </div>
-      </div>
-      
-      <!-- Usuário Desktop -->
-      <div class="user-section desktop-only">
-        @if (isAuthenticated()) {
-          <div class="user-info">
-            @if (userProfile()?.picture) {
-              <img [src]="userProfile()?.picture" [alt]="userProfile()?.name" class="user-avatar">
-            } @else {
-              <span class="user-icon">👤</span>
-            }
-            <span class="user-text">{{ userProfile()?.name || 'Usuário' }}</span>
-            <button class="logout-btn" (click)="logout()" title="Sair da conta">
-              <span class="logout-icon">🚪</span>
-              <span class="logout-text">Sair</span>
-            </button>
-          </div>
-        } @else {
-          <span class="user-icon">👤</span>
-          <span class="user-text">Não logado</span>
-        }
+        <button class="search-btn" (click)="searchBooks()" title="Buscar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
+
+    <!-- Área do Usuário -->
+    <div class="user-section">
+      @if (isAuthenticated()) {
+        <div class="user-info">
+          <div class="user-avatar">
+            @if (userProfile()?.picture) {
+              <img [src]="userProfile()?.picture" [alt]="userProfile()?.name">
+            } @else {
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+          </div>
+          <span class="user-name">{{ userProfile()?.name || 'Usuário' }}</span>
+          <button class="logout-btn" (click)="logout()" title="Sair da conta">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 5V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      } @else {
+        <div class="user-guest">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Convidado</span>
+        </div>
+      }
+    </div>
+
+    <!-- Menu Mobile -->
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M3 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
-  
 
+  <!-- Menu Mobile Overlay -->
+  <div class="mobile-menu" [class.active]="mobileMenuOpen()">
+    <div class="mobile-menu-header">
+      <h3>Menu</h3>
+      <button class="mobile-close" (click)="toggleMobileMenu()" aria-label="Fechar menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="mobile-search">
+      <div class="search-container">
+        <div class="search-select-wrapper">
+          <select class="search-category" [(ngModel)]="searchCategory">
+            <option value="">Todo o Catálogo</option>
+            <option value="title">Por Título</option>
+            <option value="author">Por Autor</option>
+            <option value="genre">Por Categoria</option>
+          </select>
+        </div>
+        <div class="search-input-wrapper">
+          <input 
+            type="text" 
+            placeholder="Buscar livros..." 
+            class="search-input"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            (keyup.enter)="searchBooks()"
+          >
+        </div>
+        <button class="search-btn" (click)="searchBooks()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="mobile-actions">
+      <button class="mobile-action-btn primary" (click)="addBook(); toggleMobileMenu()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Adicionar Livro
+      </button>
+      <button class="mobile-action-btn secondary" (click)="clearFilters(); toggleMobileMenu()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Limpar Filtros
+      </button>
+    </div>
+    
+    <div class="mobile-user">
+      @if (isAuthenticated()) {
+        <div class="user-info">
+          <div class="user-avatar">
+            @if (userProfile()?.picture) {
+              <img [src]="userProfile()?.picture" [alt]="userProfile()?.name">
+            } @else {
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+          </div>
+          <span class="user-name">{{ userProfile()?.name || 'Usuário' }}</span>
+          <button class="logout-btn" (click)="logout(); toggleMobileMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 5V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Sair
+          </button>
+        </div>
+      }
+    </div>
+  </div>
 </header>
-
-
 
 <!-- Conteúdo Principal -->
 <main class="main-content">
   <div class="container">
-    <h2 class="page-title">Livros</h2>
-    
-         <div class="content-wrapper">
-       <!-- Botão Mobile para Sidebar -->
-       <button class="mobile-sidebar-toggle" (click)="toggleSidebar()">
-         <span class="sidebar-icon">📚</span>
-         <span class="sidebar-text">Categorias</span>
-         <span class="sidebar-arrow">▼</span>
-       </button>
-       
-       <!-- Sidebar de Categorias -->
-       <aside class="categories-sidebar" [class.mobile-open]="sidebarOpen()">
-                 <div class="sidebar-header">
-          <h3 class="sidebar-title">Categorias</h3>
-          <button class="mobile-sidebar-close mobile-only" (click)="toggleSidebar()">×</button>
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a href="#" class="breadcrumb-item">Início</a>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="breadcrumb-item active">Catálogo</span>
+    </nav>
+
+    <div class="content-wrapper">
+      <!-- Sidebar de Categorias -->
+      <aside class="categories-sidebar" [class.mobile-open]="sidebarOpen()">
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 10H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 14H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Categorias
+          </h3>
+          <button class="mobile-sidebar-close" (click)="toggleSidebar()" aria-label="Fechar sidebar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
-         <ul class="categories-list">
-           <li 
-             class="category-item" 
-             [class.active]="selectedCategory() === ''"
-             (click)="filterByCategory(''); toggleSidebar()"
-           >
-             <span class="category-name">Todas as Categorias</span>
-             <span class="category-count">({{ books().length }})</span>
-           </li>
-           @for (category of categoryCounts(); track category.id) {
-             <li 
-               class="category-item" 
-               [class.active]="selectedCategory() === category.name"
-               (click)="filterByCategory(category.name); toggleSidebar()"
-             >
-               <span class="category-name">{{ category.name }}</span>
-               <span class="category-count">({{ category.count }})</span>
-             </li>
-           }
-         </ul>
-       </aside>
-
-      <!-- Área Principal de Conteúdo -->
-      <div class="main-area">
-                 <!-- Cards de Destaque -->
-         <div class="featured-cards">
-           <div class="featured-card">
-             <h3>Livros Favoritos</h3>
-             <p>confira ></p>
-           </div>
-           <div class="featured-card">
-             <h3>Novidades</h3>
-             <p>confira ></p>
-           </div>
-         </div>
-         
-         <!-- Filtro Mobile Ativo -->
-         @if (selectedCategory()) {
-           <div class="mobile-filter-info">
-             <span class="filter-label">Filtro ativo:</span>
-             <span class="filter-value">{{ selectedCategory() }}</span>
-             <button class="clear-filter-btn" (click)="filterByCategory('')">
-               <span class="btn-icon">✕</span>
-             </button>
-           </div>
-         }
-
-        <!-- Modal de Adição de Livro -->
-        @if (showAddForm()) {
-          <div class="modal-overlay" (click)="closeModal()">
-            <div class="modal-container" (click)="$event.stopPropagation()">
-                             <div class="modal-header">
-                 <h3>📚 Adicionar Novo Livro</h3>
-                 <button class="modal-close" (click)="closeModal()" aria-label="Fechar modal">×</button>
-               </div>
-              
-              <div class="modal-body">
-                <form class="modal-form" (ngSubmit)="saveBook()">
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="title">Título *</label>
-                      <input 
-                        id="title"
-                        type="text" 
-                        [(ngModel)]="newBook().title" 
-                        name="title"
-                        placeholder="Título do livro"
-                        required
-                      >
-                    </div>
-                    <div class="form-group">
-                      <label for="author">Autor *</label>
-                      <input 
-                        id="author"
-                        type="text" 
-                        [(ngModel)]="newBook().author" 
-                        name="author"
-                        placeholder="Nome do autor"
-                        required
-                      >
-                    </div>
-                  </div>
-                  
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="isbn">ISBN *</label>
-                      <input 
-                        id="isbn"
-                        type="text" 
-                        [(ngModel)]="newBook().isbn" 
-                        name="isbn"
-                        placeholder="ISBN"
-                        required
-                      >
-                    </div>
-                    <div class="form-group">
-                      <label for="genre">Gênero *</label>
-                      <select 
-                        id="genre"
-                        [(ngModel)]="newBook().genre" 
-                        name="genre"
-                        required
-                      >
-                        <option value="">Selecione um gênero</option>
-                        @for (genre of getBookGenres(); track genre) {
-                          <option [value]="genre">{{ genre }}</option>
-                        }
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="publisher">Editora *</label>
-                      <select 
-                        id="publisher"
-                        [(ngModel)]="newBook().publisher" 
-                        name="publisher"
-                        required
-                      >
-                        <option value="">Selecione uma editora</option>
-                        @for (publisher of getBookPublishers(); track publisher) {
-                          <option [value]="publisher">{{ publisher }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label for="synopsis">Sinopse *</label>
-                      <textarea 
-                        id="synopsis"
-                        [(ngModel)]="newBook().synopsis" 
-                        name="synopsis"
-                        placeholder="Breve sinopse do livro..."
-                        rows="3"
-                        required
-                      ></textarea>
-                    </div>
-                  </div>
-                  
-                  <div class="form-group full-width">
-                    <label for="photoPath">Caminho da Foto</label>
-                    <input 
-                      id="photoPath"
-                      type="text" 
-                      [(ngModel)]="newBook().photoPath" 
-                      name="photoPath"
-                      placeholder="URL da imagem ou caminho do arquivo"
-                    >
-                  </div>
-                  
-                  <!-- Removido - publisher e synopsis já estão em campos separados acima -->
-                  
-                  <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" (click)="closeModal()">
-                      Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary" [disabled]="!isFormValid()">
-                      <span class="btn-icon">💾</span>
-                      Salvar Livro
-                    </button>
-                  </div>
-                </form>
-              </div>
+        
+        <ul class="categories-list">
+          <li 
+            class="category-item" 
+            [class.active]="selectedCategory() === ''"
+            (click)="filterByCategory(''); toggleSidebar()"
+          >
+            <div class="category-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
+            <span class="category-name">Todas as Categorias</span>
+            <span class="category-count">{{ books().length }}</span>
+          </li>
+          @for (category of categoryCounts(); track category.id) {
+            <li 
+              class="category-item" 
+              [class.active]="selectedCategory() === category.name"
+              (click)="filterByCategory(category.name); toggleSidebar()"
+            >
+              <div class="category-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="category-name">{{ category.name }}</span>
+              <span class="category-count">{{ category.count }}</span>
+            </li>
+          }
+        </ul>
+      </aside>
+
+      <!-- Área Principal -->
+      <div class="main-area">
+        <!-- Botão Mobile para Sidebar -->
+        <button class="mobile-sidebar-toggle" (click)="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 10H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 14H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Categorias</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Filtro Ativo Mobile -->
+        @if (selectedCategory()) {
+          <div class="mobile-filter-info">
+            <span class="filter-label">Filtro ativo:</span>
+            <span class="filter-value">{{ selectedCategory() }}</span>
+            <button class="clear-filter-btn" (click)="filterByCategory('')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
           </div>
         }
 
+        <!-- Cards de Destaque -->
+        <div class="featured-cards">
+          <div class="featured-card primary">
+            <div class="featured-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="featured-content">
+              <h3>Livros Favoritos</h3>
+              <p>Confira sua coleção especial</p>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          
+          <div class="featured-card secondary">
+            <div class="featured-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="featured-content">
+              <h3>Novidades</h3>
+              <p>Descubra os últimos lançamentos</p>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
         <!-- Lista de Livros -->
         <div class="books-section">
-          <h3>Indicações</h3>
+          <div class="books-header">
+            <h3 class="books-title">Catálogo de Livros</h3>
+            <div class="books-stats">
+              <span class="books-count">{{ filteredBooks().length }} livro{{ filteredBooks().length !== 1 ? 's' : '' }}</span>
+              @if (selectedCategory()) {
+                <span class="books-filter">em {{ selectedCategory() }}</span>
+              }
+            </div>
+          </div>
           
           @if (filteredBooks().length === 0) {
-            <div class="no-books">
-              <p>Nenhum livro encontrado.</p>
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h4>Nenhum livro encontrado</h4>
+              <p>Tente ajustar os filtros ou adicionar novos livros ao catálogo.</p>
+              <button class="btn btn-primary" (click)="addBook()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Adicionar Primeiro Livro
+              </button>
             </div>
           } @else {
             <div class="books-grid">
@@ -334,21 +358,48 @@
                     >
                     <div class="fallback-cover" style="display: none;">
                       <div class="fallback-content">
-                        <span class="fallback-icon">📚</span>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="var(--ccaa-gray-300)"/>
+                          <path d="M2 17L12 22L22 17" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M2 12L12 17L22 12" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                         <span class="fallback-title">{{ book.title }}</span>
                       </div>
                     </div>
+                    <div class="book-overlay">
+                      <div class="book-actions">
+                        <button class="book-action-btn edit" (click)="editBook(book)" title="Editar">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M18.5 2.50023C18.8978 2.10297 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10297 21.5 2.50023C21.8978 2.89749 22.1219 3.43705 22.1219 4.00023C22.1219 4.5634 21.8978 5.10297 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </button>
+                        <button class="book-action-btn delete" (click)="deleteBook(book.id)" title="Excluir">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                  
                   <div class="book-info">
                     <h4 class="book-title">{{ book.title }}</h4>
-                    <p class="book-author">{{ book.author }}</p>
-                    <p class="book-genre">{{ book.genre }}</p>
-                    <p class="book-publisher">{{ book.publisher }}</p>
-                    <p class="book-synopsis">{{ book.synopsis }}</p>
-                    <div class="book-actions">
-                      <button class="btn btn-small btn-primary" (click)="editBook(book)">Editar</button>
-                      <button class="btn btn-small btn-danger" (click)="deleteBook(book.id)">Excluir</button>
+                    <p class="book-author">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      {{ book.author }}
+                    </p>
+                    <div class="book-meta">
+                      <span class="book-genre">{{ book.genre }}</span>
+                      <span class="book-publisher">{{ book.publisher }}</span>
                     </div>
+                    @if (book.synopsis) {
+                      <p class="book-synopsis">{{ book.synopsis }}</p>
+                    }
                   </div>
                 </div>
               }
@@ -357,23 +408,170 @@
         </div>
       </div>
     </div>
-  </div>
-  
+
     <!-- Seção de Ações -->
     <section class="actions-section">
       <div class="actions-container">
-        <button class="action-btn" (click)="addBook()">
-          <span class="btn-icon">📚</span>
+        <button class="action-btn primary" (click)="addBook()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           Adicionar Livro
         </button>
-        <button class="action-btn" (click)="clearFilters()">
-          <span class="btn-icon">🔄</span>
+        
+        <button class="action-btn secondary" (click)="clearFilters()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           Limpar Filtros
         </button>
-        <button class="action-btn pdf-btn" (click)="generatePdfReport()" [disabled]="isGeneratingPdf()">
-          <span class="btn-icon">{{ isGeneratingPdf() ? '⏳' : '📄' }}</span>
+        
+        <button class="action-btn pdf" (click)="generatePdfReport()" [disabled]="isGeneratingPdf()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           {{ isGeneratingPdf() ? 'Gerando PDF...' : 'Gerar Relatório PDF' }}
         </button>
       </div>
     </section>
+  </div>
 </main>
+
+<!-- Modal de Adição de Livro -->
+@if (showAddForm()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="var(--ccaa-primary)"/>
+            <path d="M2 17L12 22L22 17" stroke="var(--ccaa-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="var(--ccaa-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Adicionar Novo Livro
+        </h3>
+        <button class="modal-close" (click)="closeModal()" aria-label="Fechar modal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <form class="modal-form" (ngSubmit)="saveBook()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="title">Título *</label>
+              <input 
+                id="title"
+                type="text" 
+                [(ngModel)]="newBook().title" 
+                name="title"
+                placeholder="Título do livro"
+                required
+              >
+            </div>
+            <div class="form-group">
+              <label for="author">Autor *</label>
+              <input 
+                id="author"
+                type="text" 
+                [(ngModel)]="newBook().author" 
+                name="author"
+                placeholder="Nome do autor"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="isbn">ISBN *</label>
+              <input 
+                id="isbn"
+                type="text" 
+                [(ngModel)]="newBook().isbn" 
+                name="isbn"
+                placeholder="ISBN"
+                required
+              >
+            </div>
+            <div class="form-group">
+              <label for="genre">Gênero *</label>
+              <select 
+                id="genre"
+                [(ngModel)]="newBook().genre" 
+                name="genre"
+                required
+              >
+                <option value="">Selecione um gênero</option>
+                @for (genre of getBookGenres(); track genre) {
+                  <option [value]="genre">{{ genre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="publisher">Editora *</label>
+              <select 
+                id="publisher"
+                [(ngModel)]="newBook().publisher" 
+                name="publisher"
+                required
+              >
+                <option value="">Selecione uma editora</option>
+                @for (publisher of getBookPublishers(); track publisher) {
+                  <option [value]="publisher">{{ publisher }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="synopsis">Sinopse *</label>
+              <textarea 
+                id="synopsis"
+                [(ngModel)]="newBook().synopsis" 
+                name="synopsis"
+                placeholder="Breve sinopse do livro..."
+                rows="3"
+                required
+              ></textarea>
+            </div>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="photoPath">Caminho da Foto</label>
+            <input 
+              id="photoPath"
+              type="text" 
+              [(ngModel)]="newBook().photoPath" 
+              name="photoPath"
+              placeholder="URL da imagem ou caminho do arquivo"
+            >
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!isFormValid()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Salvar Livro
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
