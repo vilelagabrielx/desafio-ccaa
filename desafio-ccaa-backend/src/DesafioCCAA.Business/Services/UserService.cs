@@ -77,6 +77,7 @@ public class UserService(
 
             var token = GenerateJwtToken(user);
             logger.LogInformation("Usuário logado com sucesso: {Email}", user.Email);
+            logger.LogInformation("Token JWT gerado com sucesso");
             
             return ServiceResult<string>.Success(token);
         }
@@ -91,7 +92,7 @@ public class UserService(
     {
         try
         {
-            var user = await userRepository.GetByIdAsync(int.Parse(userId));
+            var user = await userRepository.GetByIdAsync(userId);
             if (user is null)
             {
                 return ServiceResult<UserResponseDto>.Failure("Usuário não encontrado");
@@ -206,7 +207,7 @@ public class UserService(
     {
         try
         {
-            var user = await userRepository.GetByIdAsync(int.Parse(userId));
+            var user = await userRepository.GetByIdAsync(userId);
             if (user is null)
             {
                 return ServiceResult<bool>.Failure("Usuário não encontrado");
@@ -237,7 +238,7 @@ public class UserService(
     {
         try
         {
-            var user = await userRepository.GetByIdAsync(int.Parse(userId));
+            var user = await userRepository.GetByIdAsync(userId);
             if (user is null)
             {
                 return ServiceResult<bool>.Failure("Usuário não encontrado");
@@ -283,6 +284,8 @@ public class UserService(
                 new Claim(ClaimTypes.Name, user.FullName ?? string.Empty)
             }),
             Expires = DateTime.UtcNow.AddDays(7),
+            Issuer = configuration["Jwt:Issuer"],
+            Audience = configuration["Jwt:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 

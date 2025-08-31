@@ -87,9 +87,19 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
+        // Debug: Log das claims do usuário
+        Console.WriteLine("🔐 GetCurrentUser: Claims do usuário:");
+        foreach (var claim in User.Claims)
+        {
+            Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+        }
+
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        Console.WriteLine($"🔐 GetCurrentUser: UserId extraído: {userId}");
+        
         if (string.IsNullOrEmpty(userId))
         {
+            Console.WriteLine("❌ GetCurrentUser: UserId não encontrado nas claims");
             return Unauthorized(new { error = "Token inválido" });
         }
 
@@ -97,9 +107,11 @@ public class UserController : ControllerBase
         
         if (!result.IsSuccess)
         {
+            Console.WriteLine($"❌ GetCurrentUser: Erro ao buscar usuário: {result.ErrorMessage}");
             return NotFound(new { error = result.ErrorMessage });
         }
 
+        Console.WriteLine($"✅ GetCurrentUser: Usuário encontrado: {result.Data?.Email}");
         return Ok(new { data = result.Data });
     }
 

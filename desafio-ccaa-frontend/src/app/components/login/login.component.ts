@@ -276,17 +276,30 @@ export class LoginComponent implements OnInit, OnDestroy {
       password: this.loginForm.value.password
     };
 
+    console.log('🔐 LoginComponent: Iniciando login...', credentials);
+
     this.authService.login(credentials).subscribe({
       next: (user) => {
+        console.log('✅ LoginComponent: Login bem-sucedido, usuário:', user);
         this.successMessage = 'Login realizado com sucesso! Redirecionando...';
         this.isSubmitting = false;
         
-        // Redirecionar após 1 segundo
+        // Verificar se a autenticação foi realmente estabelecida
         setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 1000);
+          const isAuth = this.authService.isAuthenticated();
+          console.log('🔐 LoginComponent: Verificação pós-login - isAuthenticated:', isAuth);
+          
+          if (isAuth) {
+            console.log('✅ LoginComponent: Usuário autenticado, redirecionando...');
+            this.router.navigate(['/books']);
+          } else {
+            console.log('❌ LoginComponent: Usuário não autenticado após login, mostrando erro');
+            this.errorMessage = 'Erro na autenticação. Tente novamente.';
+          }
+        }, 500);
       },
       error: (error) => {
+        console.error('❌ LoginComponent: Erro no login:', error);
         this.errorMessage = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
         this.isSubmitting = false;
       }

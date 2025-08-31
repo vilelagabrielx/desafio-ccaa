@@ -45,6 +45,12 @@ export interface ApiResponse<T> {
   errors?: string[];
 }
 
+// Interface específica para resposta de login
+export interface LoginApiResponse {
+  token: string;
+  error?: string;
+}
+
 export interface LoginResponse {
   token: string;
 }
@@ -81,11 +87,14 @@ export class AuthService {
         this.authToken = token;
         const user = JSON.parse(userData);
         this.currentUserSubject.next(user);
-        console.log('🔐 AuthService: Token restaurado do localStorage');
+        console.log('🔐 AuthService: Token e usuário restaurados do localStorage');
+        console.log('🔐 AuthService: Estado atualizado - Token:', !!this.authToken, 'User:', !!this.currentUserSubject.value);
       } catch (error) {
-        console.warn('Erro ao restaurar dados do usuário:', error);
+        console.warn('❌ Erro ao restaurar dados do usuário:', error);
         this.clearAuthData();
       }
+    } else {
+      console.log('🔐 AuthService: Nenhum token ou usuário encontrado no localStorage');
     }
   }
 
@@ -93,8 +102,19 @@ export class AuthService {
    * Verifica se o usuário está autenticado
    */
   isAuthenticated(): boolean {
-    const isAuth = !!this.authToken && !!this.currentUserSubject.value;
-    console.log('🔐 AuthService: isAuthenticated() =', isAuth, 'Token:', !!this.authToken, 'User:', !!this.currentUserSubject.value);
+    // Verificar se há token E usuário
+    const hasToken = !!this.authToken;
+    const hasUser = !!this.currentUserSubject.value;
+    const isAuth = hasToken && hasUser;
+    
+    console.log('🔐 AuthService: isAuthenticated() =', isAuth, 'Token:', hasToken, 'User:', hasUser);
+    
+    // Se há token mas não há usuário, tentar restaurar
+    if (hasToken && !hasUser) {
+      console.log('⚠️ AuthService: Token encontrado mas usuário não, tentando restaurar...');
+      this.checkSavedToken();
+    }
+    
     return isAuth;
   }
 
@@ -113,12 +133,43 @@ export class AuthService {
   }
 
   /**
+   * Valida e decodifica o token JWT para debug
+   */
+  private validateToken(token: string): boolean {
+    try {
+      // Verificar se o token tem o formato correto (3 partes separadas por ponto)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('❌ Token JWT inválido: formato incorreto');
+        return false;
+      }
+
+      // Decodificar o payload (segunda parte)
+      const payload = JSON.parse(atob(parts[1]));
+      console.log('🔐 Token JWT decodificado:', payload);
+
+      // Verificar se não expirou
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < currentTime) {
+        console.error('❌ Token JWT expirado:', new Date(payload.exp * 1000));
+        return false;
+      }
+
+      console.log('✅ Token JWT válido');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao validar token JWT:', error);
+      return false;
+    }
+  }
+
+  /**
    * Faz login local
    */
   login(credentials: LocalUserLogin): Observable<LocalUser> {
     console.log('🔐 AuthService: Iniciando login...', credentials);
     
-    return this.http.post<ApiResponse<LoginResponse>>(`${environment.api.baseUrl}/api/user/login`, credentials)
+    return this.http.post<LoginApiResponse>(`${environment.api.baseUrl}/api/user/login`, credentials)
       .pipe(
         tap(response => console.log('🔐 AuthService: Resposta do login recebida:', response)),
         switchMap(response => {
@@ -127,29 +178,35 @@ export class AuthService {
             throw new Error(response.error);
           }
           
-          if (!response.data?.token) {
+          // A API retorna { token: "..." } diretamente, não { data: { token: "..." } }
+          if (!response.token) {
             console.error('❌ AuthService: Token não recebido');
             throw new Error('Token não recebido');
           }
 
-          console.log('✅ AuthService: Token recebido, salvando...');
+          console.log('✅ AuthService: Token recebido, validando...');
+          
+          // Validar token antes de salvar
+          if (!this.validateToken(response.token)) {
+            throw new Error('Token JWT inválido');
+          }
+          
           // Salvar token
-          this.authToken = response.data.token;
+          this.authToken = response.token;
           this.saveAuthData();
           console.log('✅ AuthService: Token salvo, buscando dados do usuário...');
           
           // Buscar dados do usuário atual
           return this.getCurrentUserData();
         }),
-        tap(user => console.log('✅ AuthService: Dados do usuário recebidos:', user)),
-        map(user => {
-          console.log('✅ AuthService: Salvando usuário localmente...');
-          // Garantir que o usuário seja salvo localmente
+        tap(user => {
+          console.log('✅ AuthService: Dados do usuário recebidos:', user);
+          // IMPORTANTE: Atualizar o estado ANTES de retornar
           this.currentUserSubject.next(user);
           this.saveUserData(user);
           console.log('✅ AuthService: Usuário salvo, estado atualizado');
-          return user;
         }),
+        map(user => user), // Retorna o usuário sem alterações
         catchError(error => {
           console.error('❌ AuthService: Erro no login:', error);
           return throwError(() => new Error(error.error?.error || 'Erro ao fazer login'));

@@ -13,8 +13,14 @@ public interface IRepository<T> where T : class
     Task<bool> ExistsAsync(int id);
 }
 
-public interface IUserRepository : IRepository<User>
+public interface IUserRepository
 {
+    Task<User?> GetByIdAsync(string id);
+    Task<IEnumerable<User>> GetAllAsync();
+    Task<User> AddAsync(User entity);
+    Task<User> UpdateAsync(User entity);
+    Task<bool> DeleteAsync(string id);
+    Task<bool> ExistsAsync(string id);
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByEmailWithBooksAsync(string email);
     Task<bool> EmailExistsAsync(string email);

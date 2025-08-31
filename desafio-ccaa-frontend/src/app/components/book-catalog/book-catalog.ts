@@ -68,15 +68,23 @@ export class BookCatalog implements OnInit {
   }
 
   loadUserProfile(): void {
-    this.authService.getUserProfile().subscribe(profile => {
-      if (profile) {
-        console.log('✅ BookCatalog: Perfil carregado:', profile);
-        this.userProfile.set(profile);
-        // Não alterar isAuthenticated aqui, pois já foi definido no ngOnInit
-      } else {
-        console.log('⚠️ BookCatalog: Perfil não carregado ainda, mas usuário está autenticado');
-        // Não definir isAuthenticated como false aqui
-        // O usuário pode estar autenticado mas o perfil ainda não foi carregado
+    console.log('🔍 BookCatalog: Carregando perfil do usuário...');
+    this.authService.getUserProfile().subscribe({
+      next: (profile) => {
+        if (profile) {
+          console.log('✅ BookCatalog: Perfil carregado:', profile);
+          this.userProfile.set(profile);
+        } else {
+          console.log('⚠️ BookCatalog: Perfil não carregado ainda, mas usuário está autenticado');
+        }
+      },
+      error: (error) => {
+        console.error('❌ BookCatalog: Erro ao carregar perfil:', error);
+        // Se houver erro ao carregar o perfil, verificar se ainda está autenticado
+        if (!this.authService.isAuthenticated()) {
+          console.log('❌ BookCatalog: Usuário não está mais autenticado, redirecionando...');
+          this.router.navigate(['/login']);
+        }
       }
     });
   }

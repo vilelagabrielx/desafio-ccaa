@@ -14,11 +14,11 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(string id)
     {
         return await _context.Users
             .Include(u => u.Books)
-            .FirstOrDefaultAsync(u => u.Id == id.ToString() && u.IsActive);
+            .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
     }
 
     public async Task<IEnumerable<User>> GetAllAsync()
@@ -44,9 +44,9 @@ public class UserRepository : IUserRepository
         return entity;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string id)
     {
-        var user = await _context.Users.FindAsync(id.ToString());
+        var user = await _context.Users.FindAsync(id);
         if (user == null) return false;
 
         user.IsActive = false;
@@ -55,9 +55,9 @@ public class UserRepository : IUserRepository
         return true;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(string id)
     {
-        return await _context.Users.AnyAsync(u => u.Id == id.ToString() && u.IsActive);
+        return await _context.Users.AnyAsync(u => u.Id == id && u.IsActive);
     }
 
     public async Task<User?> GetByEmailAsync(string email)

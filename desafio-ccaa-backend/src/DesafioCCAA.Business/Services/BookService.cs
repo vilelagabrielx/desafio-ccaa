@@ -17,7 +17,7 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
     {
         try
         {
-            var user = await userRepository.GetByIdAsync(int.Parse(userId));
+            var user = await userRepository.GetByIdAsync(userId);
             if (user is null)
             {
                 return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");

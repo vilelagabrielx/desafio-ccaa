@@ -15,6 +15,7 @@ export class AuthGuard implements CanActivate {
   canActivate(): Observable<boolean | UrlTree> {
     console.log('🔒 AuthGuard: Verificando acesso à rota...');
     
+    // Verificar autenticação
     const isAuthenticated = this.authService.isAuthenticated();
     console.log('🔒 AuthGuard: Resultado da verificação:', isAuthenticated);
     
@@ -24,8 +25,8 @@ export class AuthGuard implements CanActivate {
     }
     
     console.log('❌ AuthGuard: Acesso negado, redirecionando para login');
-    this.router.navigate(['/login']);
-    return of(false);
+    // Usar createUrlTree para evitar problemas de navegação
+    return of(this.router.createUrlTree(['/login']));
   }
 }
 
