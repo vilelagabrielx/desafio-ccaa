@@ -567,6 +567,13 @@ export class BookCatalog implements OnInit {
       return;
     }
 
+    // Validate ISBN before proceeding
+    const isbnValidation = this.validateIsbn(this.newBook().isbn);
+    if (!isbnValidation.isValid) {
+      this.showValidationError(isbnValidation.message);
+      return;
+    }
+
     const isEditing = this.editingBook() !== null;
     const bookData = this.newBook();
     const photoFile = this.selectedPhotoFile();
@@ -585,7 +592,35 @@ export class BookCatalog implements OnInit {
         },
         error: (error) => {
           console.error('❌ Erro ao atualizar livro:', error);
-          alert('Erro ao atualizar livro. Tente novamente.');
+          
+          // Tratamento específico para diferentes tipos de erro
+          let errorMessage = 'Erro ao atualizar livro. Tente novamente.';
+          
+          if (error.error && error.error.error) {
+            // Erro retornado pelo backend
+            errorMessage = error.error.error;
+            
+            // Check for specific ISBN duplicate error
+            if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+              this.showIsbnDuplicateError(this.newBook().isbn);
+              return; // Don't show the generic error message
+            }
+          } else if (error.error && error.error.message) {
+            // Erro com estrutura diferente
+            errorMessage = error.error.message;
+          } else if (error.status === 400) {
+            errorMessage = 'Dados inválidos. Verifique as informações do livro.';
+          } else if (error.status === 401) {
+            errorMessage = 'Você não tem permissão para atualizar este livro.';
+          } else if (error.status === 404) {
+            errorMessage = 'Livro não encontrado.';
+          } else if (error.status === 409) {
+            errorMessage = 'Já existe um livro com este ISBN. Por favor, use um ISBN diferente.';
+          } else if (error.status === 500) {
+            errorMessage = 'Erro interno do servidor. Tente novamente.';
+          }
+          
+          alert(`Erro: ${errorMessage}`);
         }
       });
     } else {
@@ -602,10 +637,77 @@ export class BookCatalog implements OnInit {
         },
         error: (error) => {
           console.error('❌ Erro ao criar livro:', error);
-          alert('Erro ao criar livro. Tente novamente.');
+          
+          // Tratamento específico para diferentes tipos de erro
+          let errorMessage = 'Erro ao criar livro. Tente novamente.';
+          
+          if (error.error && error.error.error) {
+            // Erro retornado pelo backend
+            errorMessage = error.error.error;
+            
+            // Check for specific ISBN duplicate error
+            if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+              this.showIsbnDuplicateError(this.newBook().isbn);
+              return; // Don't show the generic error message
+            }
+          } else if (error.error && error.error.message) {
+            // Erro com estrutura diferente
+            errorMessage = error.error.message;
+          } else if (error.status === 400) {
+            errorMessage = 'Dados inválidos. Verifique as informações do livro.';
+          } else if (error.status === 401) {
+            errorMessage = 'Você não tem permissão para criar livros.';
+          } else if (error.status === 409) {
+            errorMessage = 'Já existe um livro com este ISBN. Por favor, use um ISBN diferente.';
+          } else if (error.status === 500) {
+            errorMessage = 'Erro interno do servidor. Tente novamente.';
+          }
+          
+          alert(`Erro: ${errorMessage}`);
         }
       });
     }
+  }
+
+  /**
+   * Check ISBN availability when user types
+   */
+  onIsbnInput(): void {
+    // Check ISBN in the main form
+    const isbn = this.newBook().isbn;
+    if (isbn && isbn.trim()) {
+      const validation = this.validateIsbn(isbn);
+      if (!validation.isValid) {
+        console.warn('⚠️ ISBN inválido:', validation.message);
+      }
+    }
+    
+    // Check ISBN in the create from ISBN modal
+    const modalIsbn = this.isbnToCreate();
+    if (modalIsbn && modalIsbn.trim()) {
+      // Basic format validation for modal ISBN
+      const cleanIsbn = modalIsbn.replace(/[-\s]/g, '');
+      if (!/^\d{10}(\d{3})?$/.test(cleanIsbn)) {
+        console.warn('⚠️ ISBN do modal inválido: deve ter 10 ou 13 dígitos');
+      }
+    }
+  }
+
+  /**
+   * Get ISBN validation status for display
+   */
+  getIsbnValidationStatus(): { isValid: boolean; message: string; show: boolean } {
+    const isbn = this.newBook().isbn;
+    if (!isbn || !isbn.trim()) {
+      return { isValid: true, message: '', show: false };
+    }
+    
+    const validation = this.validateIsbn(isbn);
+    return {
+      isValid: validation.isValid,
+      message: validation.message,
+      show: true
+    };
   }
 
   /**
@@ -671,6 +773,10 @@ export class BookCatalog implements OnInit {
         let errorMessage = 'Erro ao sincronizar dados do ISBN.';
         if (error.error && error.error.error) {
           errorMessage = error.error.error;
+        } else if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 400) {
+          errorMessage = 'ISBN inválido. Verifique o formato.';
         } else if (error.status === 404) {
           errorMessage = 'ISBN não encontrado na base de dados.';
         } else if (error.status === 500) {
@@ -706,6 +812,80 @@ export class BookCatalog implements OnInit {
     console.log('  - Formulário válido:', isValid);
     
     return isValid;
+  }
+
+  /**
+   * Check if ISBN already exists in the current book list
+   */
+  isIsbnDuplicate(isbn: string): boolean {
+    if (!isbn) return false;
+    
+    const currentBooks = this.books();
+    return currentBooks.some(book => 
+      book.isbn.toLowerCase() === isbn.toLowerCase() && 
+      book.id !== this.editingBook()?.id // Exclude current book when editing
+    );
+  }
+
+  /**
+   * Check if ISBN exists in database (for create from ISBN modal)
+   */
+  async checkIsbnExistsInDatabase(isbn: string): Promise<boolean> {
+    if (!isbn || !isbn.trim()) return false;
+    
+    try {
+      // Try to search for the ISBN in the database
+      const response = await this.bookService.searchBookByIsbn(isbn).toPromise();
+      return response && response.data !== null;
+    } catch (error) {
+      // If there's an error, assume it doesn't exist to allow creation
+      console.warn('⚠️ Erro ao verificar ISBN no banco:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Validate ISBN format and uniqueness
+   */
+  validateIsbn(isbn: string): { isValid: boolean; message: string } {
+    if (!isbn || !isbn.trim()) {
+      return { isValid: false, message: 'ISBN é obrigatório' };
+    }
+    
+    // Basic ISBN format validation (10 or 13 digits, with optional hyphens)
+    const cleanIsbn = isbn.replace(/[-\s]/g, '');
+    if (!/^\d{10}(\d{3})?$/.test(cleanIsbn)) {
+      return { isValid: false, message: 'ISBN deve ter 10 ou 13 dígitos' };
+    }
+    
+    // Check for duplicates
+    if (this.isIsbnDuplicate(isbn)) {
+      return { isValid: false, message: 'Já existe um livro com este ISBN' };
+    }
+    
+    return { isValid: true, message: 'ISBN válido' };
+  }
+
+  /**
+   * Show validation error message to user
+   */
+  showValidationError(message: string): void {
+    console.warn('⚠️ Erro de validação:', message);
+    // You can replace this with a toast notification or better UI feedback
+    alert(`Erro de validação: ${message}`);
+  }
+
+  /**
+   * Show ISBN duplicate error with suggestions
+   */
+  showIsbnDuplicateError(isbn: string): void {
+    const message = `O ISBN "${isbn}" já está sendo usado por outro livro.\n\n` +
+                   `Sugestões:\n` +
+                   `• Verifique se você digitou o ISBN corretamente\n` +
+                   `• Use um ISBN diferente para este livro\n` +
+                   `• Se for o mesmo livro, edite o existente em vez de criar um novo`;
+    
+    alert(message);
   }
 
   /**
@@ -761,6 +941,19 @@ export class BookCatalog implements OnInit {
       return;
     }
 
+    // Validate ISBN format
+    const cleanIsbn = isbn.replace(/[-\s]/g, '');
+    if (!/^\d{10}(\d{3})?$/.test(cleanIsbn)) {
+      alert('ISBN inválido. Deve ter 10 ou 13 dígitos.');
+      return;
+    }
+
+    // Check if ISBN already exists in current books
+    if (this.isIsbnDuplicate(isbn)) {
+      alert('Já existe um livro com este ISBN no seu catálogo.');
+      return;
+    }
+
     this.isCreatingFromIsbn.set(true);
     console.log('🔄 Criando livro por ISBN:', isbn);
 
@@ -792,8 +985,20 @@ export class BookCatalog implements OnInit {
         let errorMessage = 'Erro ao criar livro por ISBN.';
         if (error.error && error.error.error) {
           errorMessage = error.error.error;
+          
+          // Check for specific ISBN duplicate error
+          if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+            this.showIsbnDuplicateError(this.isbnToCreate());
+            return; // Don't show the generic error message
+          }
+        } else if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 400) {
+          errorMessage = 'Dados inválidos. Verifique o ISBN informado.';
         } else if (error.status === 404) {
           errorMessage = 'ISBN não encontrado na base de dados.';
+        } else if (error.status === 409) {
+          errorMessage = 'Já existe um livro com este ISBN. Por favor, use um ISBN diferente.';
         } else if (error.status === 500) {
           errorMessage = 'Erro interno do servidor. Tente novamente.';
         }

@@ -513,6 +513,7 @@
                   [(ngModel)]="newBook().isbn" 
                   name="isbn"
                   placeholder="ISBN"
+                  (input)="onIsbnInput()"
                   required
                 >
                 <button 
@@ -527,6 +528,16 @@
                   </svg>
                   <div class="spinner" *ngIf="isSyncingIsbn()"></div>
                 </button>
+              </div>
+              <!-- ISBN validation message -->
+              <div class="validation-message" *ngIf="getIsbnValidationStatus().show" [class.error]="!getIsbnValidationStatus().isValid" [class.success]="getIsbnValidationStatus().isValid">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" *ngIf="getIsbnValidationStatus().isValid">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" *ngIf="!getIsbnValidationStatus().isValid">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {{ getIsbnValidationStatus().message }}
               </div>
             </div>
             <div class="form-group">
@@ -687,6 +698,7 @@
                   [(ngModel)]="newBook().isbn" 
                   name="edit-isbn"
                   placeholder="ISBN"
+                  (input)="onIsbnInput()"
                   required
                 >
                 <button 
@@ -825,6 +837,7 @@
           id="isbn-input"
           [(ngModel)]="isbnToCreate" 
           placeholder="Digite o ISBN (ex: 9788535902778)"
+          (input)="onIsbnInput()"
           class="form-input"
         >
       </div>
