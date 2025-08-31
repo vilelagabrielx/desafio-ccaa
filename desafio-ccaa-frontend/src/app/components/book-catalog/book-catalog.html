@@ -278,34 +278,37 @@
           </div>
         }
 
-        <!-- Cards de Destaque -->
+        <!-- Cards de Destaque Funcionais -->
         <div class="featured-cards">
-          <div class="featured-card primary">
+          <div class="featured-card primary" (click)="showAddForm.set(true)">
             <div class="featured-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L15.09 8.26L22 9L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="featured-content">
-              <h3>Livros Favoritos</h3>
-              <p>Confira sua coleção especial</p>
+              <h3>Adicionar Livro</h3>
+              <p>Comece a construir sua biblioteca pessoal</p>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           
-          <div class="featured-card secondary">
+          <div class="featured-card secondary" (click)="generatePdfReport()">
             <div class="featured-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="featured-content">
-              <h3>Novidades</h3>
-              <p>Descubra os últimos lançamentos</p>
+              <h3>Gerar Relatório</h3>
+              <p>Exporte seu catálogo em PDF</p>
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -328,15 +331,15 @@
           @if (filteredBooks().length === 0) {
             <div class="empty-state">
               <div class="empty-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M2 17L12 22L22 17" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M2 12L12 17L22 12" stroke="var(--ccaa-gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
-              <h4>Nenhum livro encontrado</h4>
-              <p>Tente ajustar os filtros ou adicionar novos livros ao catálogo.</p>
-              <button class="btn btn-primary" (click)="addBook()">
+              <h4>Comece sua biblioteca hoje!</h4>
+              <p>Adicione seu primeiro livro ao catálogo e comece a organizar sua coleção literária. É fácil e rápido!</p>
+              <button class="empty-cta" (click)="showAddForm.set(true)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
