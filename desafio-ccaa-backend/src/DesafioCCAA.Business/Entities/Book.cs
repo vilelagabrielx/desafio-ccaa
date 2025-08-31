@@ -61,6 +61,7 @@ public enum BookGenre
 
 public enum BookPublisher
 {
+    // Editoras Internacionais Principais
     PenguinRandomHouse,
     HarperCollins,
     SimonSchuster,
@@ -77,5 +78,98 @@ public enum BookPublisher
     Ballantine,
     Bantam,
     Dell,
+    
+    // Editoras Brasileiras
+    CompanhiaDasLetras,
+    Record,
+    Rocco,
+    Globo,
+    Sextante,
+    Planeta,
+    Leya,
+    Intrinseca,
+    Objetiva,
+    NovaFronteira,
+    BertrandBrasil,
+    Zahar,
+    MartinsFontes,
+    Atual,
+    Moderna,
+    FTD,
+    Scipione,
+    Saraiva,
+    Melhoramentos,
+    CirandaCultural,
+    
+    // Editoras Internacionais Adicionais
+    Norton,
+    OxfordUniversityPress,
+    CambridgeUniversityPress,
+    MITPress,
+    PrincetonUniversityPress,
+    YaleUniversityPress,
+    HarvardUniversityPress,
+    StanfordUniversityPress,
+    UniversityOfChicagoPress,
+    ColumbiaUniversityPress,
+    BasicBooks,
+    PublicAffairs,
+    GrovePress,
+    NewDirections,
+    CityLights,
+    GraywolfPress,
+    CoffeeHousePress,
+    TinHouse,
+    McSweeneys,
+    AkashicBooks,
+    
+    // Editoras de Gêneros Específicos
+    TorBooks,
+    Orbit,
+    BaenBooks,
+    DAW,
+    Ace,
+    Roc,
+    DelRey,
+    Gollancz,
+    AngryRobot,
+    Solaris,
+    
+    // Editoras Acadêmicas e Técnicas
+    Springer,
+    Wiley,
+    Elsevier,
+    Routledge,
+    Sage,
+    PalgraveMacmillan,
+    BloomsburyAcademic,
+    UniversityOfCaliforniaPress,
+    JohnsHopkinsUniversityPress,
+    CornellUniversityPress,
+    
+    // Editoras Independentes e Alternativas
+    SevenStoriesPress,
+    HaymarketBooks,
+    Verso,
+    MonthlyReviewPress,
+    AKPress,
+    PMPress,
+    MicrocosmPublishing,
+    SoftSkullPress,
+    MelvilleHouse,
+    EuropaEditions,
+    
+    // Editoras de Livros Infantis e Juvenis
+    CandlewickPress,
+    ChronicleBooks,
+    Abrams,
+    Phaidon,
+    Taschen,
+    ThamesHudson,
+    Prestel,
+    Rizzoli,
+    Assouline,
+    Gestalten,
+    
     Other
 }

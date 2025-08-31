@@ -1,0 +1,28 @@
+<svg width="200" height="300" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo do livro -->
+  <rect x="20" y="40" width="160" height="220" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  
+  <!-- Páginas do livro -->
+  <rect x="25" y="45" width="150" height="210" rx="4" fill="#ffffff" stroke="#e9ecef" stroke-width="1"/>
+  
+  <!-- Linhas de texto simuladas -->
+  <rect x="35" y="60" width="120" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="70" width="100" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="80" width="110" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="90" width="90" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="100" width="105" height="3" rx="1.5" fill="#adb5bd"/>
+  
+  <!-- Mais linhas -->
+  <rect x="35" y="120" width="115" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="130" width="95" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="140" width="125" height="3" rx="1.5" fill="#adb5bd"/>
+  <rect x="35" y="150" width="85" height="3" rx="1.5" fill="#adb5bd"/>
+  
+  <!-- Ícone de livro -->
+  <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#6c757d" transform="translate(89, 180) scale(2)"/>
+  <path d="M2 17L12 22L22 17" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(89, 180) scale(2)"/>
+  <path d="M2 12L12 17L22 12" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(89, 180) scale(2)"/>
+  
+  <!-- Texto "Sem Capa" -->
+  <text x="100" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6c757d">Sem Capa</text>
+</svg>

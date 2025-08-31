@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Book, BookGenre, BookPublisher } from '../models/book.model';
+import { translateGenre } from '../utils/genre-translations';
 import { IBookService } from './book.interface';
 
 @Injectable()
@@ -126,7 +127,7 @@ export class BookMockService implements IBookService {
   getAllCategories(): Observable<{ id: number; name: string; count: number }[]> {
     const categories = Object.values(BookGenre).map((genre, index) => ({
       id: index + 1,
-      name: genre,
+      name: translateGenre(genre), // Traduz para português
       count: this.books.filter(book => book.genre === genre).length
     }));
     return of(categories);

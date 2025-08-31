@@ -233,18 +233,23 @@ public class BookController : ControllerBase
     {
         try
         {
+            Console.WriteLine($"🔍 GetBookPhoto chamado para bookId: {bookId}");
+            
             // Buscar o livro para obter os bytes da imagem
             var bookResult = await _bookService.GetBookByIdAsync(bookId);
             if (!bookResult.IsSuccess)
             {
+                Console.WriteLine($"❌ Livro não encontrado para bookId: {bookId}");
                 return NotFound(new { error = "Livro não encontrado" });
             }
 
             var book = bookResult.Data!;
+            Console.WriteLine($"✅ Livro encontrado: {book.Title}, PhotoBytes: {book.PhotoBytes?.Length ?? 0} bytes");
             
             // Verificar se o livro tem foto
             if (book.PhotoBytes == null || book.PhotoBytes.Length == 0)
             {
+                Console.WriteLine($"❌ Livro {book.Title} não possui foto");
                 return NotFound(new { error = "Livro não possui foto" });
             }
 
@@ -252,6 +257,7 @@ public class BookController : ControllerBase
             byte[] imageBytes = book.PhotoBytes;
             if (width.HasValue || height.HasValue)
             {
+                Console.WriteLine($"🔄 Redimensionando imagem para {width}x{height}");
                 imageBytes = await _imageService.ResizeImageBytesAsync(book.PhotoBytes, width, height);
             }
 
@@ -259,11 +265,13 @@ public class BookController : ControllerBase
             var contentType = !string.IsNullOrEmpty(book.PhotoContentType) 
                 ? book.PhotoContentType 
                 : "image/jpeg";
-
+                
+            Console.WriteLine($"✅ Retornando imagem: {imageBytes.Length} bytes, tipo: {contentType}");
             return File(imageBytes, contentType);
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"❌ Erro ao processar imagem para bookId {bookId}: {ex.Message}");
             return BadRequest(new { error = "Erro ao processar imagem", details = ex.Message });
         }
     }

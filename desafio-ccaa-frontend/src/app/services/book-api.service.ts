@@ -19,7 +19,7 @@ export class BookApiService implements IBookService {
 
   // CRUD Operations
   getAllBooks(): Observable<Book[]> {
-    return this.http.get<{ data: Book[] }>(`${this.API_BASE_URL}/all`, this.httpOptions)
+    return this.http.get<{ data: Book[] }>(`${this.API_BASE_URL}/my`, this.httpOptions)
       .pipe(
         map(response => {
           // Garantir que sempre retorne um array válido

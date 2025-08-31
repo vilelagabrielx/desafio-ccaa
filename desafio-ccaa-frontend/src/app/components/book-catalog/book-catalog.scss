@@ -1526,6 +1526,27 @@ textarea:focus {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
+    .photo-source-indicator {
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      background: var(--ccaa-primary);
+      color: white;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--border-radius);
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+    
     .remove-photo-btn {
       position: absolute;
       top: -8px;
@@ -1565,11 +1586,49 @@ textarea:focus {
       margin-bottom: var(--space-1);
     }
     
+    .sync-info {
+      display: block;
+      color: var(--ccaa-primary);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-1);
+      font-weight: 500;
+    }
+    
     .upload-hint {
       display: block;
       color: var(--ccaa-success);
       font-size: 0.8rem;
       font-style: italic;
+    }
+  }
+  
+  .photo-actions {
+    margin-top: var(--space-3);
+    
+    .download-sync-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--ccaa-secondary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      
+      &:hover {
+        background: var(--ccaa-secondary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      svg {
+        width: 14px;
+        height: 14px;
+      }
     }
   }
 }

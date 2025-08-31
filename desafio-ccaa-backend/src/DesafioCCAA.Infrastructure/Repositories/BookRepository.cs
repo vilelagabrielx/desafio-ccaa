@@ -50,21 +50,18 @@ public class BookRepository : IBookRepository
         var book = await _context.Books.FindAsync(id);
         if (book == null) return false;
 
-        // Soft delete - marcar como inativo em vez de remover fisicamente
-        book.IsActive = false;
-        book.UpdatedAt = DateTime.UtcNow;
-        
-        _context.Books.Update(book);
+        // Hard delete - remover fisicamente o registro
+        _context.Books.Remove(book);
         await _context.SaveChangesAsync();
         return true;
     }
 
     /// <summary>
-    /// Remove fisicamente um livro do banco (use apenas quando necessário)
+    /// Remove fisicamente um livro por ISBN
     /// </summary>
-    public async Task<bool> HardDeleteAsync(int id)
+    public async Task<bool> DeleteByIsbnAsync(string isbn)
     {
-        var book = await _context.Books.FindAsync(id);
+        var book = await _context.Books.FirstOrDefaultAsync(b => b.ISBN == isbn);
         if (book == null) return false;
 
         // Hard delete - remover fisicamente o registro

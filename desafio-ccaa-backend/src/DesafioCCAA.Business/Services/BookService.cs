@@ -29,19 +29,11 @@ public class BookService(
                 return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");
             }
 
-            // Check if ISBN already exists (including inactive books)
+            // Check if ISBN already exists (only active books since we now do hard delete)
             var existingBook = await bookRepository.GetByISBNAsync(createBookDto.ISBN);
             if (existingBook != null)
             {
-                if (existingBook.IsActive)
-                {
-                    return ServiceResult<BookResponseDto>.Failure($"Já existe um livro ativo com o ISBN {createBookDto.ISBN}");
-                }
-                else
-                {
-                    // Com soft delete, podemos permitir reutilização de ISBNs de livros inativos
-                    logger.LogInformation("Reutilizando ISBN de livro inativo: {ISBN} - Livro anterior: {Title}", createBookDto.ISBN, existingBook.Title);
-                }
+                return ServiceResult<BookResponseDto>.Failure($"Já existe um livro com o ISBN {createBookDto.ISBN}");
             }
 
             var book = new Book
@@ -252,15 +244,12 @@ public class BookService(
                 return ServiceResult<bool>.Failure("Acesso negado");
             }
 
-            // Limpar dados da foto (agora armazenados no banco)
-            book.PhotoBytes = null;
-            book.PhotoContentType = null;
-            book.PhotoPath = null;
-
-            var result = await bookRepository.DeleteAsync(bookId);
+            // Deletar o livro fisicamente por ISBN
+            var result = await bookRepository.DeleteByIsbnAsync(book.ISBN);
             if (result)
             {
-                logger.LogInformation("Livro deletado com sucesso: {BookId} por {UserId}", bookId, userId);
+                logger.LogInformation("Livro deletado fisicamente por ISBN: {ISBN} ({Title}) por {UserId}", 
+                    book.ISBN, book.Title, userId);
             }
 
             return ServiceResult<bool>.Success(result);
@@ -457,7 +446,7 @@ public class BookService(
                 return ServiceResult<BookResponseDto>.Failure("Livro não encontrado na API do OpenLibrary");
             }
 
-            // Verificar se ISBN já existe
+            // Verificar se ISBN já existe (apenas livros ativos)
             var existingBooks = await bookRepository.GetAllAsync();
             if (existingBooks.Any(b => b.ISBN == bookData.ISBN))
             {
@@ -539,6 +528,7 @@ public class BookService(
             PhotoPath = book.PhotoPath, // Campo legado para compatibilidade
             PhotoBytes = book.PhotoBytes,
             PhotoContentType = book.PhotoContentType,
+            PhotoDataUrl = book.PhotoBytes != null ? $"data:{book.PhotoContentType ?? "image/jpeg"};base64,{Convert.ToBase64String(book.PhotoBytes)}" : null,
             CreatedAt = book.CreatedAt,
             UpdatedAt = book.UpdatedAt,
             UserId = book.UserId,

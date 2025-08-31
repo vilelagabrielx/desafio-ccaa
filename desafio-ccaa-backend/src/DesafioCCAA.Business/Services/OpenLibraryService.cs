@@ -152,21 +152,28 @@ public class OpenLibraryService : IOpenLibraryService
         // Determinar o gênero baseado nos assuntos
         var genre = DetermineGenreFromSubjects(openLibraryBook.Subjects);
         
+        _logger.LogInformation("Gênero determinado: {Genre}", genre);
+        
         // Criar sinopse a partir dos dados disponíveis
         var synopsis = CreateSynopsisFromBookData(openLibraryBook);
 
+        var mappedPublisher = MapPublisherToEnum(publisher);
+        
+        _logger.LogInformation("Editora mapeada: {OriginalPublisher} -> {MappedPublisher}", publisher, mappedPublisher);
+        
         var result = new BookFromIsbnDto
         {
             Title = title,
             ISBN = isbn,
             Genre = genre,
             Author = author,
-            Publisher = MapPublisherToEnum(publisher),
+            Publisher = mappedPublisher,
             Synopsis = synopsis,
             CoverUrl = openLibraryBook.Cover?.Medium ?? openLibraryBook.Cover?.Large ?? openLibraryBook.Cover?.Small
         };
         
-        _logger.LogInformation("DTO mapeado: {Result}", result);
+        _logger.LogInformation("DTO mapeado: Title={Title}, ISBN={ISBN}, Genre={Genre} (valor: {GenreValue}), Author={Author}, Publisher={Publisher} (valor: {PublisherValue}), Synopsis={Synopsis}", 
+            result.Title, result.ISBN, result.Genre, (int)result.Genre, result.Author, result.Publisher, (int)result.Publisher, result.Synopsis);
         
         return result;
     }
@@ -181,16 +188,29 @@ public class OpenLibraryService : IOpenLibraryService
         var subjectNames = subjects.Select(s => s.Name?.ToLowerInvariant()).Where(s => !string.IsNullOrEmpty(s)).ToList();
         
         _logger.LogInformation("Analisando assuntos para determinar gênero: {Subjects}", string.Join(", ", subjectNames));
+        
+        // Log detalhado de cada assunto
+        foreach (var subject in subjects.Take(10)) // Log dos primeiros 10 assuntos
+        {
+            _logger.LogInformation("Assunto: {SubjectName}", subject.Name);
+        }
 
         // Mapear assuntos para gêneros
-        if (subjectNames.Any(s => s!.Contains("fiction") || s!.Contains("romance")))
-            return BookGenre.Fiction;
+        if (subjectNames.Any(s => s!.Contains("fantasy") || s!.Contains("magic") || s!.Contains("wizard") || s!.Contains("witch")))
+        {
+            var fantasySubjects = subjectNames.Where(s => s!.Contains("fantasy") || s!.Contains("magic") || s!.Contains("wizard") || s!.Contains("witch")).ToList();
+            _logger.LogInformation("Gênero determinado: Fantasy (baseado em: {Subjects}) - Valor do enum: {EnumValue}", 
+                string.Join(", ", fantasySubjects), (int)BookGenre.Fantasy);
+            return BookGenre.Fantasy;
+        }
+        if (subjectNames.Any(s => s!.Contains("science fiction") || s!.Contains("sci-fi")))
+            return BookGenre.ScienceFiction;
         if (subjectNames.Any(s => s!.Contains("mystery") || s!.Contains("thriller")))
             return BookGenre.Mystery;
-        if (subjectNames.Any(s => s!.Contains("science fiction") || s!.Contains("fantasy")))
-            return BookGenre.ScienceFiction;
         if (subjectNames.Any(s => s!.Contains("horror")))
             return BookGenre.Horror;
+        if (subjectNames.Any(s => s!.Contains("romance")))
+            return BookGenre.Romance;
         if (subjectNames.Any(s => s!.Contains("biography") || s!.Contains("autobiography")))
             return BookGenre.Biography;
         if (subjectNames.Any(s => s!.Contains("history")))
@@ -209,8 +229,10 @@ public class OpenLibraryService : IOpenLibraryService
             return BookGenre.Cookbook;
         if (subjectNames.Any(s => s!.Contains("travel")))
             return BookGenre.Travel;
-        if (subjectNames.Any(s => s!.Contains("juvenile") || s!.Contains("children")))
-            return BookGenre.Fiction; // Livros infantis como ficção
+        if (subjectNames.Any(s => s!.Contains("juvenile") || s!.Contains("children") || s!.Contains("school") || s!.Contains("adventure")))
+            return BookGenre.Fiction; // Livros infantis, escolares e de aventura como ficção
+        if (subjectNames.Any(s => s!.Contains("fiction")))
+            return BookGenre.Fiction;
 
         return BookGenre.Other;
     }
@@ -263,8 +285,9 @@ public class OpenLibraryService : IOpenLibraryService
         
         _logger.LogInformation("Mapeando editora: {PublisherName} -> {NormalizedName}", publisherName, normalizedName);
 
-        return normalizedName switch
+        var result = normalizedName switch
         {
+            // Editoras Internacionais Principais
             var name when name.Contains("penguin") || name.Contains("random house") => BookPublisher.PenguinRandomHouse,
             var name when name.Contains("harper") || name.Contains("collins") => BookPublisher.HarperCollins,
             var name when name.Contains("simon") || name.Contains("schuster") => BookPublisher.SimonSchuster,
@@ -280,8 +303,95 @@ public class OpenLibraryService : IOpenLibraryService
             var name when name.Contains("ballantine") => BookPublisher.Ballantine,
             var name when name.Contains("bantam") => BookPublisher.Bantam,
             var name when name.Contains("dell") => BookPublisher.Bantam,
-            var name when name.Contains("puffin") => BookPublisher.PenguinRandomHouse, // Puffin é da Penguin
+            var name when name.Contains("puffin") => BookPublisher.PenguinRandomHouse,
+            var name when name.Contains("norton") => BookPublisher.Norton,
+            var name when name.Contains("oxford") => BookPublisher.OxfordUniversityPress,
+            var name when name.Contains("cambridge") => BookPublisher.CambridgeUniversityPress,
+            var name when name.Contains("mit press") => BookPublisher.MITPress,
+            var name when name.Contains("princeton") => BookPublisher.PrincetonUniversityPress,
+            var name when name.Contains("yale") => BookPublisher.YaleUniversityPress,
+            var name when name.Contains("harvard") => BookPublisher.HarvardUniversityPress,
+            var name when name.Contains("stanford") => BookPublisher.StanfordUniversityPress,
+            var name when name.Contains("chicago") => BookPublisher.UniversityOfChicagoPress,
+            var name when name.Contains("columbia") => BookPublisher.ColumbiaUniversityPress,
+            var name when name.Contains("springer") => BookPublisher.Springer,
+            var name when name.Contains("wiley") => BookPublisher.Wiley,
+            var name when name.Contains("elsevier") => BookPublisher.Elsevier,
+            var name when name.Contains("routledge") => BookPublisher.Routledge,
+            var name when name.Contains("sage") => BookPublisher.Sage,
+            var name when name.Contains("palgrave") => BookPublisher.PalgraveMacmillan,
+            var name when name.Contains("tor") => BookPublisher.TorBooks,
+            var name when name.Contains("orbit") => BookPublisher.Orbit,
+            var name when name.Contains("baen") => BookPublisher.BaenBooks,
+            var name when name.Contains("daw") => BookPublisher.DAW,
+            var name when name.Contains("ace") => BookPublisher.Ace,
+            var name when name.Contains("roc") => BookPublisher.Roc,
+            var name when name.Contains("del rey") => BookPublisher.DelRey,
+            var name when name.Contains("gollancz") => BookPublisher.Gollancz,
+            var name when name.Contains("angry robot") => BookPublisher.AngryRobot,
+            var name when name.Contains("solaris") => BookPublisher.Solaris,
+            var name when name.Contains("candlewick") => BookPublisher.CandlewickPress,
+            var name when name.Contains("chronicle") => BookPublisher.ChronicleBooks,
+            var name when name.Contains("abrams") => BookPublisher.Abrams,
+            var name when name.Contains("phaidon") => BookPublisher.Phaidon,
+            var name when name.Contains("taschen") => BookPublisher.Taschen,
+            var name when name.Contains("thames") || name.Contains("hudson") => BookPublisher.ThamesHudson,
+            var name when name.Contains("prestel") => BookPublisher.Prestel,
+            var name when name.Contains("rizzoli") => BookPublisher.Rizzoli,
+            var name when name.Contains("assouline") => BookPublisher.Assouline,
+            var name when name.Contains("gestalten") => BookPublisher.Gestalten,
+            
+            // Editoras Brasileiras
+            var name when name.Contains("companhia") || name.Contains("letras") => BookPublisher.CompanhiaDasLetras,
+            var name when name.Contains("record") => BookPublisher.Record,
+            var name when name.Contains("rocco") => BookPublisher.Rocco,
+            var name when name.Contains("globo") => BookPublisher.Globo,
+            var name when name.Contains("sextante") => BookPublisher.Sextante,
+            var name when name.Contains("planeta") => BookPublisher.Planeta,
+            var name when name.Contains("leya") => BookPublisher.Leya,
+            var name when name.Contains("intrinseca") => BookPublisher.Intrinseca,
+            var name when name.Contains("objetiva") => BookPublisher.Objetiva,
+            var name when name.Contains("nova fronteira") => BookPublisher.NovaFronteira,
+            var name when name.Contains("bertrand") => BookPublisher.BertrandBrasil,
+            var name when name.Contains("zahar") => BookPublisher.Zahar,
+            var name when name.Contains("martins") || name.Contains("fontes") => BookPublisher.MartinsFontes,
+            var name when name.Contains("atual") => BookPublisher.Atual,
+            var name when name.Contains("moderna") => BookPublisher.Moderna,
+            var name when name.Contains("ftd") => BookPublisher.FTD,
+            var name when name.Contains("scipione") => BookPublisher.Scipione,
+            var name when name.Contains("saraiva") => BookPublisher.Saraiva,
+            var name when name.Contains("melhoramentos") => BookPublisher.Melhoramentos,
+            var name when name.Contains("ciranda") => BookPublisher.CirandaCultural,
+            
+            // Fallbacks específicos
+            var name when name.Contains("arthur") || name.Contains("levine") => BookPublisher.Other,
+            var name when name.Contains("basic books") => BookPublisher.BasicBooks,
+            var name when name.Contains("public affairs") => BookPublisher.PublicAffairs,
+            var name when name.Contains("grove press") => BookPublisher.GrovePress,
+            var name when name.Contains("new directions") => BookPublisher.NewDirections,
+            var name when name.Contains("city lights") => BookPublisher.CityLights,
+            var name when name.Contains("graywolf") => BookPublisher.GraywolfPress,
+            var name when name.Contains("coffee house") => BookPublisher.CoffeeHousePress,
+            var name when name.Contains("tin house") => BookPublisher.TinHouse,
+            var name when name.Contains("mcsweeneys") => BookPublisher.McSweeneys,
+            var name when name.Contains("akashic") => BookPublisher.AkashicBooks,
+            var name when name.Contains("seven stories") => BookPublisher.SevenStoriesPress,
+            var name when name.Contains("haymarket") => BookPublisher.HaymarketBooks,
+            var name when name.Contains("verso") => BookPublisher.Verso,
+            var name when name.Contains("monthly review") => BookPublisher.MonthlyReviewPress,
+            var name when name.Contains("ak press") => BookPublisher.AKPress,
+            var name when name.Contains("pm press") => BookPublisher.PMPress,
+            var name when name.Contains("microcosm") => BookPublisher.MicrocosmPublishing,
+            var name when name.Contains("soft skull") => BookPublisher.SoftSkullPress,
+            var name when name.Contains("melville house") => BookPublisher.MelvilleHouse,
+            var name when name.Contains("europa") => BookPublisher.EuropaEditions,
+            
             _ => BookPublisher.Other
         };
+        
+        _logger.LogInformation("Editora mapeada: {OriginalPublisher} -> {MappedPublisher} (valor: {EnumValue})", 
+            publisherName, result, (int)result);
+        
+        return result;
     }
 }

@@ -44,6 +44,9 @@ public record BookResponseDto
     // Tipo de conteúdo da imagem
     public string? PhotoContentType { get; init; }
     
+    // Data URL da imagem (base64 inline) para uso direto no frontend
+    public string? PhotoDataUrl { get; init; }
+    
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public string UserId { get; init; } = string.Empty;

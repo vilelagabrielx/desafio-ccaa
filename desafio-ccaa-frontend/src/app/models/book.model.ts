@@ -11,6 +11,7 @@ export interface Book {
   photoUrl?: string; // URL para acessar a imagem via API
   photoBytes?: number[]; // Bytes da imagem (não usado no frontend)
   photoContentType?: string; // Tipo MIME da imagem
+  photoDataUrl?: string; // Data URL da imagem (base64 inline)
   
   // Campo legado para compatibilidade
   photoPath?: string;
@@ -49,6 +50,7 @@ export enum BookGenre {
 }
 
 export enum BookPublisher {
+  // Editoras Internacionais Principais
   PenguinRandomHouse = 'PenguinRandomHouse',
   HarperCollins = 'HarperCollins',
   SimonSchuster = 'SimonSchuster',
@@ -65,6 +67,99 @@ export enum BookPublisher {
   Ballantine = 'Ballantine',
   Bantam = 'Bantam',
   Dell = 'Dell',
+  
+  // Editoras Brasileiras
+  CompanhiaDasLetras = 'CompanhiaDasLetras',
+  Record = 'Record',
+  Rocco = 'Rocco',
+  Globo = 'Globo',
+  Sextante = 'Sextante',
+  Planeta = 'Planeta',
+  Leya = 'Leya',
+  Intrinseca = 'Intrinseca',
+  Objetiva = 'Objetiva',
+  NovaFronteira = 'NovaFronteira',
+  BertrandBrasil = 'BertrandBrasil',
+  Zahar = 'Zahar',
+  MartinsFontes = 'MartinsFontes',
+  Atual = 'Atual',
+  Moderna = 'Moderna',
+  FTD = 'FTD',
+  Scipione = 'Scipione',
+  Saraiva = 'Saraiva',
+  Melhoramentos = 'Melhoramentos',
+  CirandaCultural = 'CirandaCultural',
+  
+  // Editoras Internacionais Adicionais
+  Norton = 'Norton',
+  OxfordUniversityPress = 'OxfordUniversityPress',
+  CambridgeUniversityPress = 'CambridgeUniversityPress',
+  MITPress = 'MITPress',
+  PrincetonUniversityPress = 'PrincetonUniversityPress',
+  YaleUniversityPress = 'YaleUniversityPress',
+  HarvardUniversityPress = 'HarvardUniversityPress',
+  StanfordUniversityPress = 'StanfordUniversityPress',
+  UniversityOfChicagoPress = 'UniversityOfChicagoPress',
+  ColumbiaUniversityPress = 'ColumbiaUniversityPress',
+  BasicBooks = 'BasicBooks',
+  PublicAffairs = 'PublicAffairs',
+  GrovePress = 'GrovePress',
+  NewDirections = 'NewDirections',
+  CityLights = 'CityLights',
+  GraywolfPress = 'GraywolfPress',
+  CoffeeHousePress = 'CoffeeHousePress',
+  TinHouse = 'TinHouse',
+  McSweeneys = 'McSweeneys',
+  AkashicBooks = 'AkashicBooks',
+  
+  // Editoras de Gêneros Específicos
+  TorBooks = 'TorBooks',
+  Orbit = 'Orbit',
+  BaenBooks = 'BaenBooks',
+  DAW = 'DAW',
+  Ace = 'Ace',
+  Roc = 'Roc',
+  DelRey = 'DelRey',
+  Gollancz = 'Gollancz',
+  AngryRobot = 'AngryRobot',
+  Solaris = 'Solaris',
+  
+  // Editoras Acadêmicas e Técnicas
+  Springer = 'Springer',
+  Wiley = 'Wiley',
+  Elsevier = 'Elsevier',
+  Routledge = 'Routledge',
+  Sage = 'Sage',
+  PalgraveMacmillan = 'PalgraveMacmillan',
+  BloomsburyAcademic = 'BloomsburyAcademic',
+  UniversityOfCaliforniaPress = 'UniversityOfCaliforniaPress',
+  JohnsHopkinsUniversityPress = 'JohnsHopkinsUniversityPress',
+  CornellUniversityPress = 'CornellUniversityPress',
+  
+  // Editoras Independentes e Alternativas
+  SevenStoriesPress = 'SevenStoriesPress',
+  HaymarketBooks = 'HaymarketBooks',
+  Verso = 'Verso',
+  MonthlyReviewPress = 'MonthlyReviewPress',
+  AKPress = 'AKPress',
+  PMPress = 'PMPress',
+  MicrocosmPublishing = 'MicrocosmPublishing',
+  SoftSkullPress = 'SoftSkullPress',
+  MelvilleHouse = 'MelvilleHouse',
+  EuropaEditions = 'EuropaEditions',
+  
+  // Editoras de Livros Infantis e Juvenis
+  CandlewickPress = 'CandlewickPress',
+  ChronicleBooks = 'ChronicleBooks',
+  Abrams = 'Abrams',
+  Phaidon = 'Phaidon',
+  Taschen = 'Taschen',
+  ThamesHudson = 'ThamesHudson',
+  Prestel = 'Prestel',
+  Rizzoli = 'Rizzoli',
+  Assouline = 'Assouline',
+  Gestalten = 'Gestalten',
+  
   Other = 'Other'
 }
 

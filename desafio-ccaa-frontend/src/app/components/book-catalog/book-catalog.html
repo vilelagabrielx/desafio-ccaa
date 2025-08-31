@@ -397,8 +397,8 @@
                       {{ book.author }}
                     </p>
                     <div class="book-meta">
-                      <span class="book-genre">{{ book.genre }}</span>
-                      <span class="book-publisher">{{ book.publisher }}</span>
+                                      <span class="book-genre">{{ getGenreTranslation(book.genre) }}</span>
+                <span class="book-publisher">{{ getPublisherTranslation(book.publisher) }}</span>
                     </div>
                     @if (book.synopsis) {
                       <p class="book-synopsis">{{ book.synopsis }}</p>
@@ -549,8 +549,8 @@
                 required
               >
                 <option value="">Selecione um gênero</option>
-                @for (genre of getBookGenres(); track genre) {
-                  <option [value]="genre">{{ genre }}</option>
+                @for (genre of getTranslatedGenres(); track genre.value) {
+                  <option [value]="genre.value">{{ genre.label }}</option>
                 }
               </select>
             </div>
@@ -566,8 +566,8 @@
                 required
               >
                 <option value="">Selecione uma editora</option>
-                @for (publisher of getBookPublishers(); track publisher) {
-                  <option [value]="publisher">{{ publisher }}</option>
+                @for (publisher of getTranslatedPublishers(); track publisher.value) {
+                  <option [value]="publisher.value">{{ publisher.label }}</option>
                 }
               </select>
             </div>
@@ -724,8 +724,8 @@
                 required
               >
                 <option value="">Selecione um gênero</option>
-                @for (genre of getBookGenres(); track genre) {
-                  <option [value]="genre">{{ genre }}</option>
+                @for (genre of getTranslatedGenres(); track genre.value) {
+                  <option [value]="genre.value">{{ genre.label }}</option>
                 }
               </select>
             </div>
@@ -741,8 +741,8 @@
                 required
               >
                 <option value="">Selecione uma editora</option>
-                @for (publisher of getBookPublishers(); track publisher) {
-                  <option [value]="publisher">{{ publisher }}</option>
+                @for (publisher of getTranslatedPublishers(); track publisher.value) {
+                  <option [value]="publisher.value">{{ publisher.label }}</option>
                 }
               </select>
             </div>
@@ -770,12 +770,23 @@
                 accept="image/*"
                 class="photo-input"
               >
+              
+              <!-- Preview da foto (arquivo selecionado ou imagem sincronizada) -->
               <div class="photo-preview" *ngIf="selectedPhotoFile() || newBook().photoPath">
                 <img 
                   [src]="getPhotoPreview()" 
                   [alt]="'Preview da foto'"
                   class="photo-thumbnail"
                 >
+                
+                <!-- Indicador de origem da imagem -->
+                <div class="photo-source-indicator" *ngIf="newBook().photoPath && !selectedPhotoFile()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 2L3 14H9L3 22L21 10H15L21 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Imagem sincronizada por ISBN</span>
+                </div>
+                
                 <button 
                   type="button" 
                   class="remove-photo-btn"
@@ -787,13 +798,42 @@
                   </svg>
                 </button>
               </div>
-              <div class="photo-info" *ngIf="selectedPhotoFile()">
-                <small class="file-info">
-                  {{ selectedPhotoFile()?.name }} ({{ formatFileSize(selectedPhotoFile()?.size) }})
-                </small>
-                <small class="upload-hint">
-                  A imagem será automaticamente otimizada para economizar espaço
-                </small>
+              
+              <!-- Informações sobre a foto -->
+              <div class="photo-info" *ngIf="selectedPhotoFile() || newBook().photoPath">
+                <div *ngIf="selectedPhotoFile()">
+                  <small class="file-info">
+                    {{ selectedPhotoFile()?.name }} ({{ formatFileSize(selectedPhotoFile()?.size) }})
+                  </small>
+                  <small class="upload-hint">
+                    A imagem será automaticamente otimizada para economizar espaço
+                  </small>
+                </div>
+                <div *ngIf="!selectedPhotoFile() && newBook().photoPath">
+                  <small class="sync-info">
+                    📸 Imagem sincronizada automaticamente do ISBN
+                  </small>
+                  <small class="upload-hint">
+                    Você pode fazer upload de uma nova imagem para substituir esta
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Botão para baixar imagem sincronizada -->
+              <div class="photo-actions" *ngIf="newBook().photoPath && !selectedPhotoFile()">
+                <button 
+                  type="button" 
+                  class="btn btn-secondary btn-sm download-sync-btn"
+                  (click)="downloadSyncedImage()"
+                  title="Baixar imagem sincronizada"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Baixar Imagem
+                </button>
               </div>
             </div>
           </div>

@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { Book, BookGenre, BookPublisher } from '../../models/book.model';
 import { BookService } from '../../services/book.service';
 import { AuthService } from '../../services/auth.service';
+import { translateGenre, genreTranslations } from '../../utils/genre-translations';
+import { translatePublisher } from '../../utils/publisher-translations';
 
 @Component({
   selector: 'app-book-catalog',
@@ -79,6 +81,31 @@ export class BookCatalog implements OnInit {
     const booksList = this.books();
     return [...new Set(booksList.map(book => book.publisher))].sort();
   });
+
+  // Métodos para tradução
+  getGenreTranslation(genre: BookGenre): string {
+    return translateGenre(genre);
+  }
+
+  getPublisherTranslation(publisher: BookPublisher): string {
+    return translatePublisher(publisher);
+  }
+
+  // Obter todos os gêneros traduzidos para o select
+  getTranslatedGenres(): { value: BookGenre; label: string }[] {
+    return Object.values(BookGenre).map(genre => ({
+      value: genre,
+      label: translateGenre(genre)
+    }));
+  }
+
+  // Obter todas as editoras traduzidas para o select
+  getTranslatedPublishers(): { value: BookPublisher; label: string }[] {
+    return Object.values(BookPublisher).map(publisher => ({
+      value: publisher,
+      label: translatePublisher(publisher)
+    }));
+  }
 
   constructor(
     private bookService: BookService,
@@ -490,7 +517,42 @@ export class BookCatalog implements OnInit {
    */
   filterByCategory(category: string): void {
     this.selectedCategory.set(category);
-    // Implementar lógica de filtro se necessário
+    
+    // Se uma categoria específica foi selecionada, mapear para o enum e aplicar filtro
+    if (category && category !== '') {
+      // Mapear o nome traduzido de volta para o enum
+      const genreEnum = this.mapCategoryNameToGenre(category);
+      if (genreEnum) {
+        this.selectedGenre.set(genreEnum);
+        console.log('🔍 Filtro aplicado: categoria', category, '-> gênero', genreEnum);
+      }
+    } else {
+      // Limpar filtros se "Todas as Categorias" foi selecionado
+      this.selectedGenre.set('');
+      console.log('🔍 Filtros limpos: exibindo todas as categorias');
+    }
+    
+    // Aplicar os filtros
+    this.applyFilters();
+  }
+
+  /**
+   * Mapeia o nome da categoria traduzida de volta para o enum BookGenre
+   */
+  private mapCategoryNameToGenre(categoryName: string): BookGenre | '' {
+    if (!categoryName) return '';
+    
+    // Buscar o enum correspondente ao nome traduzido
+    const genreEntry = Object.entries(genreTranslations).find(
+      ([_, translation]) => translation === categoryName
+    );
+    
+    if (genreEntry) {
+      return genreEntry[0] as BookGenre;
+    }
+    
+    console.warn('⚠️ Categoria não reconhecida:', categoryName);
+    return '';
   }
 
   /**
@@ -544,10 +606,18 @@ export class BookCatalog implements OnInit {
   }
 
   getPhotoPreview(): string {
+    // Priorizar arquivo selecionado pelo usuário
     if (this.selectedPhotoFile()) {
       return URL.createObjectURL(this.selectedPhotoFile()!);
     }
-    return this.newBook().photoPath || '';
+    
+    // Fallback para URL da foto sincronizada ou campo photoPath
+    if (this.newBook().photoPath) {
+      return this.newBook().photoPath;
+    }
+    
+    // Imagem padrão se não houver foto
+    return 'assets/images/default-book-cover.svg';
   }
 
   formatFileSize(bytes: number | undefined): string {
@@ -742,22 +812,37 @@ export class BookCatalog implements OnInit {
         if (response.data) {
           const bookData = response.data;
           
+          console.log('🔍 Debug - Dados recebidos do backend:', bookData);
+          console.log('🔍 Debug - Genre recebido:', bookData.genre, 'Tipo:', typeof bookData.genre);
+          console.log('🔍 Debug - Publisher recebido:', bookData.publisher, 'Tipo:', typeof bookData.publisher);
+          
           // Preencher os campos com os dados obtidos
           this.newBook.set({
             ...this.newBook(),
             title: bookData.title || this.newBook().title,
             author: bookData.author || this.newBook().author,
-            genre: bookData.genre || this.newBook().genre,
-            publisher: bookData.publisher || this.newBook().publisher,
-            synopsis: bookData.synopsis || this.newBook().synopsis
+            genre: this.mapGenreFromBackend(bookData.genre) || this.newBook().genre,
+            publisher: this.mapPublisherFromBackend(bookData.publisher) || this.newBook().publisher,
+            synopsis: bookData.synopsis || this.newBook().synopsis,
+            photoPath: bookData.coverUrl || this.newBook().photoPath // Atualizar photoPath com a URL da capa
           });
           
+          console.log('🔍 Debug - Novo livro após sincronização:', this.newBook());
+          
           // Sincronizar a foto se disponível
-          if (bookData.photoUrl) {
-            console.log('📸 Foto sincronizada:', bookData.photoUrl);
-            // Atualizar o preview da foto
-            this.selectedPhotoFile.set(null); // Limpar arquivo selecionado
-            // A foto será exibida automaticamente pelo getPhotoPreview()
+          if (bookData.coverUrl) {
+            console.log('📸 Foto sincronizada:', bookData.coverUrl);
+            
+            // Baixar a imagem da URL da capa de forma assíncrona
+            this.downloadImageFromUrl(bookData.coverUrl).then(imageFile => {
+              if (imageFile) {
+                this.selectedPhotoFile.set(imageFile);
+                console.log('✅ Imagem baixada com sucesso:', imageFile.name);
+              }
+            }).catch(error => {
+              console.error('❌ Erro ao baixar imagem da capa:', error);
+              // A imagem ainda será exibida pela URL, mas não será baixada
+            });
           }
           
           alert('Dados do livro sincronizados com sucesso!');
@@ -892,18 +977,43 @@ export class BookCatalog implements OnInit {
    * Obtém a URL da imagem do livro
    */
   getBookImageUrl(book: Book): string {
-    // Priorizar photoUrl (nova propriedade)
-    if (book.photoUrl) {
+    console.log('🔍 Debug getBookImageUrl para livro:', book.title, {
+      photoDataUrl: book.photoDataUrl ? '✅ Presente' : '❌ Ausente',
+      photoUrl: book.photoUrl,
+      photoPath: book.photoPath,
+      photoBytes: book.photoBytes ? `${book.photoBytes.length} caracteres` : '❌ Ausente',
+      id: book.id
+    });
+    
+    // Priorizar photoDataUrl (imagem base64 inline - sem problemas de CORS)
+    if (book.photoDataUrl) {
+      console.log('✅ Usando photoDataUrl (base64 inline)');
+      return book.photoDataUrl;
+    }
+    
+    // Se não tem photoDataUrl mas tem photoBytes, construir a data URL
+    if (book.photoBytes && book.photoBytes.length > 0) {
+      const contentType = book.photoContentType || 'image/jpeg';
+      const dataUrl = `data:${contentType};base64,${book.photoBytes}`;
+      console.log('🔧 Construindo data URL a partir de photoBytes');
+      return dataUrl;
+    }
+    
+    // Fallback para photoUrl (URL da API)
+    if (book.photoUrl && book.photoUrl.startsWith('/api/book/photo/')) {
+      console.log('✅ Usando photoUrl:', book.photoUrl);
       return book.photoUrl;
     }
     
     // Fallback para photoPath (campo legado)
     if (book.photoPath) {
+      console.log('✅ Usando photoPath:', book.photoPath);
       return book.photoPath;
     }
     
     // Imagem padrão se não houver foto
-    return 'assets/images/default-book-cover.jpg';
+    console.log('✅ Usando imagem padrão');
+    return 'assets/images/default-book-cover.svg';
   }
 
   /**
@@ -1064,5 +1174,117 @@ export class BookCatalog implements OnInit {
    */
   getBookPublishers(): string[] {
     return Object.values(BookPublisher);
+  }
+
+  /**
+   * Helper to download an image from a URL and return a File object
+   */
+  private downloadImageFromUrl(url: string): Promise<File | null> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'blob';
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const blob = xhr.response;
+          const filename = url.substring(url.lastIndexOf('/') + 1);
+          const file = new File([blob], filename, { type: blob.type });
+          resolve(file);
+        } else {
+          reject(new Error(`Erro ao baixar imagem: Status ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Erro de rede ao baixar imagem'));
+      };
+
+      xhr.send();
+    });
+  }
+
+  /**
+   * Permite ao usuário baixar a imagem sincronizada por ISBN
+   */
+  downloadSyncedImage(): void {
+    const photoPath = this.newBook().photoPath;
+    
+    if (!photoPath) {
+      alert('Nenhuma imagem sincronizada disponível para download.');
+      return;
+    }
+
+    // Se a imagem já foi baixada como arquivo, não precisa baixar novamente
+    if (this.selectedPhotoFile()) {
+      alert('A imagem já foi baixada e está disponível para upload.');
+      return;
+    }
+
+    // Baixar a imagem da URL
+    this.downloadImageFromUrl(photoPath).then(imageFile => {
+      if (imageFile) {
+        this.selectedPhotoFile.set(imageFile);
+        alert(`Imagem baixada com sucesso: ${imageFile.name}`);
+        console.log('✅ Imagem sincronizada baixada pelo usuário:', imageFile);
+      } else {
+        alert('Erro ao baixar a imagem. Tente novamente.');
+      }
+    }).catch(error => {
+      console.error('❌ Erro ao baixar imagem sincronizada:', error);
+      alert('Erro ao baixar a imagem. Tente novamente.');
+    });
+  }
+
+  /**
+   * Mapeia o gênero recebido do backend para o enum local
+   */
+  private mapGenreFromBackend(genre: any): BookGenre | null {
+    if (!genre) return null;
+    
+    console.log('🔍 Mapeando gênero:', genre, 'Tipo:', typeof genre);
+    
+    // Se já for um enum válido, retorna diretamente
+    if (Object.values(BookGenre).includes(genre)) {
+      console.log('✅ Gênero válido encontrado:', genre);
+      return genre as BookGenre;
+    }
+    
+    // Se for string, tenta mapear diretamente
+    if (typeof genre === 'string') {
+      if (Object.values(BookGenre).includes(genre as BookGenre)) {
+        console.log('✅ Gênero mapeado por string:', genre);
+        return genre as BookGenre;
+      }
+    }
+    
+    console.warn('❌ Gênero não reconhecido:', genre);
+    return null;
+  }
+
+  /**
+   * Mapeia a editora recebida do backend para o enum local
+   */
+  private mapPublisherFromBackend(publisher: any): BookPublisher | null {
+    if (!publisher) return null;
+    
+    console.log('🔍 Mapeando editora:', publisher, 'Tipo:', typeof publisher);
+    
+    // Se já for um enum válido, retorna diretamente
+    if (Object.values(BookPublisher).includes(publisher)) {
+      console.log('✅ Editora válida encontrada:', publisher);
+      return publisher as BookPublisher;
+    }
+    
+    // Se for string, tenta mapear diretamente
+    if (typeof publisher === 'string') {
+      if (Object.values(BookPublisher).includes(publisher as BookPublisher)) {
+        console.log('✅ Editora mapeada por string:', publisher);
+        return publisher as BookPublisher;
+      }
+    }
+    
+    console.warn('❌ Editora não reconhecida:', publisher);
+    return null;
   }
 }
