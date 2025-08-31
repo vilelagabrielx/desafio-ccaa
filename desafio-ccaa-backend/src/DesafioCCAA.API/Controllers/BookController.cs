@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors;
 using DesafioCCAA.Business.DTOs;
 using DesafioCCAA.Business.Interfaces;
+using DesafioCCAA.Business.Services;
 
 namespace DesafioCCAA.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace DesafioCCAA.API.Controllers;
 public class BookController : ControllerBase
 {
     private readonly IBookService _bookService;
+    private readonly IImageOptimizationService _imageService;
 
-    public BookController(IBookService bookService)
+    public BookController(IBookService bookService, IImageOptimizationService imageService)
     {
         _bookService = bookService;
+        _imageService = imageService;
     }
 
     /// <summary>
@@ -219,5 +222,95 @@ public class BookController : ControllerBase
         {
             return BadRequest(new { error = "Erro ao buscar categorias", details = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Obtém imagem otimizada do livro
+    /// </summary>
+    [HttpGet("photo/{bookId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetBookPhoto(int bookId, [FromQuery] int? width, [FromQuery] int? height)
+    {
+        try
+        {
+            // Buscar o livro para obter os bytes da imagem
+            var bookResult = await _bookService.GetBookByIdAsync(bookId);
+            if (!bookResult.IsSuccess)
+            {
+                return NotFound(new { error = "Livro não encontrado" });
+            }
+
+            var book = bookResult.Data!;
+            
+            // Verificar se o livro tem foto
+            if (book.PhotoBytes == null || book.PhotoBytes.Length == 0)
+            {
+                return NotFound(new { error = "Livro não possui foto" });
+            }
+
+            // Redimensionar a imagem se especificado
+            byte[] imageBytes = book.PhotoBytes;
+            if (width.HasValue || height.HasValue)
+            {
+                imageBytes = await _imageService.ResizeImageBytesAsync(book.PhotoBytes, width, height);
+            }
+
+            // Determinar o tipo de conteúdo
+            var contentType = !string.IsNullOrEmpty(book.PhotoContentType) 
+                ? book.PhotoContentType 
+                : "image/jpeg";
+
+            return File(imageBytes, contentType);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao processar imagem", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Busca livro por ISBN na API do OpenLibrary
+    /// </summary>
+    [HttpGet("search-isbn/{isbn}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SearchBookByIsbn(string isbn)
+    {
+        try
+        {
+            var result = await _bookService.SearchBookByIsbnAsync(isbn);
+            
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { error = result.ErrorMessage });
+            }
+
+            return Ok(new { data = result.Data });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao buscar livro por ISBN", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Cria um livro diretamente a partir do ISBN (incluindo download da capa)
+    /// </summary>
+    [HttpPost("create-from-isbn")]
+    public async Task<IActionResult> CreateBookFromIsbn([FromBody] CreateBookFromIsbnDto createBookDto)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { error = "Token inválido" });
+        }
+
+        var result = await _bookService.CreateBookFromIsbnAsync(userId, createBookDto);
+        
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { error = result.ErrorMessage });
+        }
+
+        return CreatedAtAction(nameof(GetBookById), new { id = result.Data!.Id }, new { data = result.Data });
     }
 }

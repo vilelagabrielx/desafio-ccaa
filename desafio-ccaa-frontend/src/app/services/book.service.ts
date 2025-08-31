@@ -130,4 +130,28 @@ export class BookService implements IBookService {
       headers: this.getAuthHeaders()
     });
   }
+
+  /**
+   * Busca livro por ISBN na API do OpenLibrary
+   */
+  searchBookByIsbn(isbn: string): Observable<any> {
+    const url = `${this.apiUrl}/api/book/search-isbn/${isbn}`;
+    return this.http.get(url, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  /**
+   * Cria um livro diretamente a partir do ISBN
+   */
+  createBookFromIsbn(isbn: string, downloadCover: boolean = true): Observable<any> {
+    const url = `${this.apiUrl}/api/book/create-from-isbn`;
+    const data = {
+      isbn: isbn,
+      downloadCover: downloadCover
+    };
+    return this.http.post(url, data, {
+      headers: this.getAuthHeaders()
+    });
+  }
 }

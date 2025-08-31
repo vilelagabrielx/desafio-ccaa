@@ -26,7 +26,15 @@ public class ApplicationDbContext : IdentityDbContext<User>
             entity.Property(e => e.Author).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Publisher).IsRequired();
             entity.Property(e => e.Synopsis).IsRequired().HasMaxLength(5000);
+            
+            // Configuração para as novas propriedades de imagem
+            entity.Property(e => e.PhotoBytes).HasColumnType("bytea"); // PostgreSQL para dados binários
+            entity.Property(e => e.PhotoContentType).HasMaxLength(100);
+
+            
+            // Campo legado para compatibilidade
             entity.Property(e => e.PhotoPath).HasMaxLength(500);
+            
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt);
             entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);

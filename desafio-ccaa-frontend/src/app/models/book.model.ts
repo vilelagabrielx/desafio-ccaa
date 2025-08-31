@@ -6,7 +6,15 @@ export interface Book {
   author: string;
   publisher: BookPublisher;
   synopsis: string;
+  
+  // Novas propriedades para imagens no banco de dados
+  photoUrl?: string; // URL para acessar a imagem via API
+  photoBytes?: number[]; // Bytes da imagem (não usado no frontend)
+  photoContentType?: string; // Tipo MIME da imagem
+  
+  // Campo legado para compatibilidade
   photoPath?: string;
+  
   createdAt: Date;
   updatedAt?: Date;
   isActive: boolean;

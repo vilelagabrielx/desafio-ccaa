@@ -924,6 +924,7 @@
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -969,6 +970,7 @@
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1159,6 +1161,54 @@
     resize: vertical;
     min-height: 80px;
   }
+}
+
+// ISBN input group with sync button
+.isbn-input-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+  
+  input {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  
+  .sync-isbn-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+    padding: var(--space-3) var(--space-3);
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      background-color: var(--ccaa-blue-600);
+      border-color: var(--ccaa-blue-600);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .modal-actions {
@@ -1381,5 +1431,109 @@ textarea:focus {
   
   &:focus {
     box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1) !important;
+  }
+}
+
+// ============================================================================
+// UPLOAD DE FOTOS
+// ============================================================================
+
+.photo-upload-container {
+  position: relative;
+  
+  .photo-input {
+    width: 100%;
+    padding: var(--space-3);
+    border: 2px dashed var(--ccaa-primary);
+    border-radius: var(--border-radius);
+    background: var(--ccaa-light);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    
+    &:hover {
+      border-color: var(--ccaa-primary-dark);
+      background: var(--ccaa-lighter);
+    }
+    
+    &:focus {
+      outline: none;
+      border-color: var(--ccaa-primary);
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    
+    &::-webkit-file-upload-button {
+      background: var(--ccaa-primary);
+      color: white;
+      border: none;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      margin-right: var(--space-3);
+      
+      &:hover {
+        background: var(--ccaa-primary-dark);
+      }
+    }
+  }
+  
+  .photo-preview {
+    position: relative;
+    margin-top: var(--space-3);
+    display: inline-block;
+    
+    .photo-thumbnail {
+      width: 120px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--ccaa-light);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .remove-photo-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--ccaa-secondary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: all var(--transition-fast);
+      
+      &:hover {
+        background: var(--ccaa-secondary-dark);
+        transform: scale(1.1);
+      }
+      
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+  
+  .photo-info {
+    margin-top: var(--space-2);
+    
+    .file-info {
+      display: block;
+      color: var(--ccaa-text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-1);
+    }
+    
+    .upload-hint {
+      display: block;
+      color: var(--ccaa-success);
+      font-size: 0.8rem;
+      font-style: italic;
+    }
   }
 }

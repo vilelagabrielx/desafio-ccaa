@@ -353,7 +353,7 @@
                 <div class="book-card">
                   <div class="book-cover">
                     <img 
-                      [src]="book.photoPath" 
+                      [src]="getBookImageUrl(book)" 
                       [alt]="book.title" 
                       class="cover-image"
                       (error)="onImageError($event)"
@@ -377,7 +377,7 @@
                             <path d="M18.5 2.50023C18.8978 2.10297 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10297 21.5 2.50023C21.8978 2.89749 22.1219 3.43705 22.1219 4.00023C22.1219 4.5634 21.8978 5.10297 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                           </svg>
                         </button>
-                        <button class="book-action-btn delete" (click)="deleteBook(book.id)" title="Excluir">
+                        <button class="book-action-btn delete" (click)="deleteBook(book)" title="Excluir">
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path d="M3 6H5H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -429,6 +429,15 @@
             <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Limpar Filtros
+        </button>
+        
+        <button class="action-btn isbn" (click)="showCreateFromIsbnModal()" title="Criar livro por ISBN">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12L12 15L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 15V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Criar por ISBN
         </button>
         
         <button class="action-btn pdf" (click)="generatePdfReport()" [disabled]="isGeneratingPdf()">
@@ -497,14 +506,28 @@
           <div class="form-row">
             <div class="form-group">
               <label for="isbn">ISBN *</label>
-              <input 
-                id="isbn"
-                type="text" 
-                [(ngModel)]="newBook().isbn" 
-                name="isbn"
-                placeholder="ISBN"
-                required
-              >
+              <div class="isbn-input-group">
+                <input 
+                  id="isbn"
+                  type="text" 
+                  [(ngModel)]="newBook().isbn" 
+                  name="isbn"
+                  placeholder="ISBN"
+                  required
+                >
+                <button 
+                  type="button" 
+                  class="btn btn-secondary btn-sm sync-isbn-btn"
+                  (click)="syncIsbn()"
+                  [disabled]="!newBook().isbn || isSyncingIsbn()"
+                  title="Sincronizar dados do ISBN"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" *ngIf="!isSyncingIsbn()">
+                    <path d="M21 2L3 14H9L3 22L21 10H15L21 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <div class="spinner" *ngIf="isSyncingIsbn()"></div>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="genre">Gênero *</label>
@@ -551,14 +574,42 @@
           </div>
           
           <div class="form-group full-width">
-            <label for="photoPath">Caminho da Foto</label>
-            <input 
-              id="photoPath"
-              type="text" 
-              [(ngModel)]="newBook().photoPath" 
-              name="photoPath"
-              placeholder="URL da imagem ou caminho do arquivo"
-            >
+            <label for="photoFile">Foto do Livro</label>
+            <div class="photo-upload-container">
+              <input 
+                id="photoFile"
+                type="file" 
+                (change)="onPhotoSelected($event)"
+                name="photoFile"
+                accept="image/*"
+                class="photo-input"
+              >
+              <div class="photo-preview" *ngIf="selectedPhotoFile() || newBook().photoPath">
+                <img 
+                  [src]="getPhotoPreview()" 
+                  [alt]="'Preview da foto'"
+                  class="photo-thumbnail"
+                >
+                <button 
+                  type="button" 
+                  class="remove-photo-btn"
+                  (click)="removePhoto()"
+                  *ngIf="selectedPhotoFile() || newBook().photoPath"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="photo-info" *ngIf="selectedPhotoFile()">
+                <small class="file-info">
+                  {{ selectedPhotoFile()?.name }} ({{ formatFileSize(selectedPhotoFile()?.size) }})
+                </small>
+                <small class="upload-hint">
+                  A imagem será automaticamente otimizada para economizar espaço
+                </small>
+              </div>
+            </div>
           </div>
           
           <div class="modal-actions">
@@ -578,3 +629,226 @@
     </div>
   </div>
 }
+
+<!-- Modal de Edição de Livro -->
+@if (showEditForm()) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="var(--ccaa-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="var(--ccaa-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Editar Livro
+        </h3>
+        <button class="modal-close" (click)="closeEditModal()" aria-label="Fechar modal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <form class="modal-form" (ngSubmit)="saveBook()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-title">Título *</label>
+              <input 
+                id="edit-title"
+                type="text" 
+                [(ngModel)]="newBook().title" 
+                name="edit-title"
+                placeholder="Título do livro"
+                required
+              >
+            </div>
+            <div class="form-group">
+              <label for="edit-author">Autor *</label>
+              <input 
+                id="edit-author"
+                type="text" 
+                [(ngModel)]="newBook().author" 
+                name="edit-author"
+                placeholder="Nome do autor"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-isbn">ISBN *</label>
+              <div class="isbn-input-group">
+                <input 
+                  id="edit-isbn"
+                  type="text" 
+                  [(ngModel)]="newBook().isbn" 
+                  name="edit-isbn"
+                  placeholder="ISBN"
+                  required
+                >
+                <button 
+                  type="button" 
+                  class="btn btn-secondary btn-sm sync-isbn-btn"
+                  (click)="syncIsbn()"
+                  [disabled]="!newBook().isbn || isSyncingIsbn()"
+                  title="Sincronizar dados do ISBN"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" *ngIf="!isSyncingIsbn()">
+                    <path d="M21 2L3 14H9L3 22L21 10H15L21 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <div class="spinner" *ngIf="isSyncingIsbn()"></div>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="edit-genre">Gênero *</label>
+              <select 
+                id="edit-genre"
+                [(ngModel)]="newBook().genre" 
+                name="edit-genre"
+                required
+              >
+                <option value="">Selecione um gênero</option>
+                @for (genre of getBookGenres(); track genre) {
+                  <option [value]="genre">{{ genre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-publisher">Editora *</label>
+              <select 
+                id="edit-publisher"
+                [(ngModel)]="newBook().publisher" 
+                name="edit-publisher"
+                required
+              >
+                <option value="">Selecione uma editora</option>
+                @for (publisher of getBookPublishers(); track publisher) {
+                  <option [value]="publisher">{{ publisher }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-synopsis">Sinopse *</label>
+              <textarea 
+                id="edit-synopsis"
+                [(ngModel)]="newBook().synopsis" 
+                name="edit-synopsis"
+                placeholder="Breve sinopse do livro..."
+                rows="3"
+                required
+              ></textarea>
+            </div>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="edit-photoFile">Foto do Livro</label>
+            <div class="photo-upload-container">
+              <input 
+                id="edit-photoFile"
+                type="file" 
+                (change)="onPhotoSelected($event)"
+                name="edit-photoFile"
+                accept="image/*"
+                class="photo-input"
+              >
+              <div class="photo-preview" *ngIf="selectedPhotoFile() || newBook().photoPath">
+                <img 
+                  [src]="getPhotoPreview()" 
+                  [alt]="'Preview da foto'"
+                  class="photo-thumbnail"
+                >
+                <button 
+                  type="button" 
+                  class="remove-photo-btn"
+                  (click)="removePhoto()"
+                  *ngIf="selectedPhotoFile() || newBook().photoPath"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="photo-info" *ngIf="selectedPhotoFile()">
+                <small class="file-info">
+                  {{ selectedPhotoFile()?.name }} ({{ formatFileSize(selectedPhotoFile()?.size) }})
+                </small>
+                <small class="upload-hint">
+                  A imagem será automaticamente otimizada para economizar espaço
+                </small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeEditModal()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!isFormValid()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Atualizar Livro
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal para Criar Livro por ISBN -->
+        <div class="modal" [class.show]="showCreateFromIsbnModalSignal()" *ngIf="showCreateFromIsbnModalSignal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Criar Livro por ISBN</h3>
+      <button class="modal-close" (click)="closeCreateFromIsbnModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="isbn-input">ISBN do Livro</label>
+        <input 
+          type="text" 
+          id="isbn-input"
+          [(ngModel)]="isbnToCreate" 
+          placeholder="Digite o ISBN (ex: 9788535902778)"
+          class="form-input"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="downloadCover" checked>
+          <span class="checkmark"></span>
+          Baixar capa automaticamente
+        </label>
+      </div>
+      
+      <div class="form-actions">
+        <button 
+          class="btn btn-primary" 
+          (click)="createBookFromIsbn()"
+          [disabled]="!isbnToCreate || isCreatingFromIsbn()"
+        >
+          {{ isCreatingFromIsbn() ? 'Criando...' : 'Criar Livro' }}
+        </button>
+        <button class="btn btn-secondary" (click)="closeCreateFromIsbnModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

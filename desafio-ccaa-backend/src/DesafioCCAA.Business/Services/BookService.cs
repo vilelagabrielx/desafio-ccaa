@@ -11,7 +11,12 @@ using DesafioCCAA.Business.Interfaces;
 
 namespace DesafioCCAA.Business.Services;
 
-public class BookService(IBookRepository bookRepository, IUserRepository userRepository, ILogger<BookService> logger) : IBookService
+public class BookService(
+    IBookRepository bookRepository, 
+    IUserRepository userRepository, 
+    IImageOptimizationService imageService,
+    IOpenLibraryService openLibraryService,
+    ILogger<BookService> logger) : IBookService
 {
     public async Task<ServiceResult<BookResponseDto>> CreateBookAsync(string userId, CreateBookDto createBookDto, IFormFile? photoFile)
     {
@@ -23,11 +28,11 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
                 return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");
             }
 
-            // Check if ISBN already exists
-            var existingBooks = await bookRepository.GetAllAsync();
-            if (existingBooks.Any(b => b.ISBN == createBookDto.ISBN))
+            // Check if ISBN already exists (only active books)
+            var existingBook = await bookRepository.GetByISBNAsync(createBookDto.ISBN);
+            if (existingBook != null)
             {
-                return ServiceResult<BookResponseDto>.Failure("ISBN já está em uso");
+                return ServiceResult<BookResponseDto>.Failure($"Já existe um livro ativo com o ISBN {createBookDto.ISBN}");
             }
 
             var book = new Book
@@ -38,9 +43,19 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
                 Author = createBookDto.Author,
                 Publisher = createBookDto.Publisher,
                 Synopsis = createBookDto.Synopsis,
-                UserId = userId,
-                PhotoPath = await SavePhotoAsync(photoFile)
+                UserId = userId
             };
+
+            // Processar foto se fornecida
+            if (photoFile != null)
+            {
+                var imageData = await imageService.OptimizeImageToBytesAsync(photoFile);
+                if (imageData.Data.Length > 0)
+                {
+                    book.PhotoBytes = imageData.Data;
+                    book.PhotoContentType = imageData.ContentType;
+                }
+            }
 
             var createdBook = await bookRepository.AddAsync(book);
             var bookResponse = MapToBookResponseDto(createdBook);
@@ -176,7 +191,16 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
 
             if (photoFile is not null)
             {
-                book.PhotoPath = await SavePhotoAsync(photoFile);
+                // Processar e salvar a nova imagem no banco
+                var imageData = await imageService.OptimizeImageToBytesAsync(photoFile);
+                if (imageData.Data.Length > 0)
+                {
+                    book.PhotoBytes = imageData.Data;
+                    book.PhotoContentType = imageData.ContentType;
+                }
+                
+                // Limpar campos legados
+                book.PhotoPath = null;
             }
 
             var updatedBook = await bookRepository.UpdateAsync(book);
@@ -206,6 +230,11 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
             {
                 return ServiceResult<bool>.Failure("Acesso negado");
             }
+
+            // Limpar dados da foto (agora armazenados no banco)
+            book.PhotoBytes = null;
+            book.PhotoContentType = null;
+            book.PhotoPath = null;
 
             var result = await bookRepository.DeleteAsync(bookId);
             if (result)
@@ -347,33 +376,133 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
         }
     }
 
-    private static async Task<string?> SavePhotoAsync(IFormFile? photoFile)
+    public async Task<byte[]> GetOptimizedImageAsync(string imagePath, int? maxWidth = null, int? maxHeight = null)
     {
-        if (photoFile is null || photoFile.Length == 0)
-            return null;
-
         try
         {
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            var uniqueFileName = $"{Guid.NewGuid()}_{photoFile.FileName}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using var fileStream = new FileStream(filePath, FileMode.Create);
-            await photoFile.CopyToAsync(fileStream);
-
-            return $"/uploads/{uniqueFileName}";
+            return await imageService.GetOptimizedImageAsync(imagePath, maxWidth, maxHeight);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Log error if logger was available
-            return null;
+            logger.LogError(ex, "Erro ao obter imagem otimizada: {ImagePath}", imagePath);
+            throw;
         }
     }
+
+    public async Task<ServiceResult<BookFromIsbnDto?>> SearchBookByIsbnAsync(string isbn)
+    {
+        try
+        {
+            logger.LogInformation("Iniciando busca por ISBN: {ISBN}", isbn);
+            
+            var result = await openLibraryService.SearchBookByIsbnAsync(isbn);
+            
+            if (!result.IsSuccess)
+            {
+                logger.LogWarning("Falha na busca por ISBN {ISBN}: {ErrorMessage}", isbn, result.ErrorMessage);
+                return ServiceResult<BookFromIsbnDto?>.Failure(result.ErrorMessage);
+            }
+
+            logger.LogInformation("Busca por ISBN {ISBN} concluída com sucesso", isbn);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro interno ao buscar livro por ISBN: {ISBN}", isbn);
+            return ServiceResult<BookFromIsbnDto?>.Failure("Erro interno ao buscar livro por ISBN");
+        }
+    }
+
+    public async Task<ServiceResult<BookResponseDto>> CreateBookFromIsbnAsync(string userId, CreateBookFromIsbnDto createBookDto)
+    {
+        try
+        {
+            var user = await userRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");
+            }
+
+            // Buscar livro na API do OpenLibrary
+            var openLibraryResult = await openLibraryService.SearchBookByIsbnAsync(createBookDto.ISBN);
+            if (!openLibraryResult.IsSuccess)
+            {
+                return ServiceResult<BookResponseDto>.Failure($"Erro ao buscar livro por ISBN: {openLibraryResult.ErrorMessage}");
+            }
+
+            var bookData = openLibraryResult.Data;
+            if (bookData == null)
+            {
+                return ServiceResult<BookResponseDto>.Failure("Livro não encontrado na API do OpenLibrary");
+            }
+
+            // Verificar se ISBN já existe
+            var existingBooks = await bookRepository.GetAllAsync();
+            if (existingBooks.Any(b => b.ISBN == bookData.ISBN))
+            {
+                return ServiceResult<BookResponseDto>.Failure("ISBN já está em uso");
+            }
+
+            // Download da imagem de capa se solicitado
+            byte[]? photoBytes = null;
+            string? photoContentType = null;
+            if (createBookDto.DownloadCover && !string.IsNullOrWhiteSpace(bookData.CoverUrl))
+            {
+                try
+                {
+                    var coverImageBytes = await openLibraryService.DownloadCoverImageAsync(bookData.CoverUrl);
+                    if (coverImageBytes != null)
+                    {
+                        // Otimizar a imagem baixada
+                        var imageData = await imageService.OptimizeImageToBytesAsync(coverImageBytes, $"cover_{bookData.ISBN}.jpg");
+                        photoBytes = imageData.Data;
+                        photoContentType = imageData.ContentType;
+                        logger.LogInformation("Imagem de capa baixada e otimizada para ISBN {ISBN}", bookData.ISBN);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Erro ao baixar imagem de capa para ISBN {ISBN}, continuando sem imagem", bookData.ISBN);
+                }
+            }
+
+            // Criar o livro
+            var book = new Book
+            {
+                Title = bookData.Title,
+                ISBN = bookData.ISBN,
+                Genre = bookData.Genre,
+                Author = bookData.Author,
+                Publisher = bookData.Publisher,
+                Synopsis = bookData.Synopsis,
+                UserId = userId,
+                CoverUrl = bookData.CoverUrl // Salvar a URL da capa do OpenLibrary
+            };
+
+            // Adicionar foto se baixada
+            if (photoBytes != null && photoContentType != null)
+            {
+                book.PhotoBytes = photoBytes;
+                book.PhotoContentType = photoContentType;
+
+            }
+
+            var createdBook = await bookRepository.AddAsync(book);
+            var bookResponse = MapToBookResponseDto(createdBook);
+
+            logger.LogInformation("Livro criado com sucesso a partir do ISBN: {Title} ({ISBN}) por {UserId}", 
+                bookData.Title, bookData.ISBN, userId);
+            
+            return ServiceResult<BookResponseDto>.Success(bookResponse);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao criar livro a partir do ISBN: {ISBN} por {UserId}", createBookDto.ISBN, userId);
+            return ServiceResult<BookResponseDto>.Failure("Erro interno ao criar livro a partir do ISBN");
+        }
+    }
+
+
 
     private static BookResponseDto MapToBookResponseDto(Book book) =>
         new()
@@ -385,10 +514,37 @@ public class BookService(IBookRepository bookRepository, IUserRepository userRep
             Author = book.Author,
             Publisher = book.Publisher,
             Synopsis = book.Synopsis,
-            PhotoPath = book.PhotoPath,
+            PhotoUrl = book.PhotoBytes != null ? $"/api/book/photo/{book.Id}" : book.CoverUrl, // Priorizar imagem local, fallback para URL do OpenLibrary
+            PhotoPath = book.PhotoPath, // Campo legado para compatibilidade
+            PhotoBytes = book.PhotoBytes,
+            PhotoContentType = book.PhotoContentType,
             CreatedAt = book.CreatedAt,
             UpdatedAt = book.UpdatedAt,
             UserId = book.UserId,
             UserFullName = book.User?.FullName ?? string.Empty
         };
+
+    /// <summary>
+    /// Redimensiona a foto de um livro
+    /// </summary>
+    public async Task<byte[]> ResizeBookPhotoAsync(int bookId, int? width, int? height)
+    {
+        try
+        {
+            var book = await bookRepository.GetByIdAsync(bookId);
+            if (book?.PhotoBytes == null || book.PhotoBytes.Length == 0)
+            {
+                throw new InvalidOperationException("Livro não possui foto");
+            }
+
+            // Redimensionar a imagem usando o ImageOptimizationService
+            var resizedBytes = await imageService.ResizeImageBytesAsync(book.PhotoBytes, width, height);
+            return resizedBytes;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao redimensionar foto do livro: {BookId}", bookId);
+            throw;
+        }
+    }
 }

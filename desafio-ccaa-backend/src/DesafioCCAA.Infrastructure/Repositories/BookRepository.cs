@@ -50,8 +50,8 @@ public class BookRepository : IBookRepository
         var book = await _context.Books.FindAsync(id);
         if (book == null) return false;
 
-        book.IsActive = false;
-        book.UpdatedAt = DateTime.UtcNow;
+        // Hard delete - remover fisicamente o registro
+        _context.Books.Remove(book);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -68,6 +68,49 @@ public class BookRepository : IBookRepository
             .Where(b => b.UserId == userId && b.IsActive)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
+    }
+
+    public async Task<Book> GetByISBNAsync(string isbn)
+    {
+        return await _context.Books
+            .FirstOrDefaultAsync(b => b.ISBN == isbn && b.IsActive);
+    }
+
+    public async Task<bool> CleanupDuplicateISBNsAsync()
+    {
+        try
+        {
+            // Encontrar ISBNs duplicados
+            var duplicateISBNs = await _context.Books
+                .Where(b => b.IsActive)
+                .GroupBy(b => b.ISBN)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToListAsync();
+
+            foreach (var isbn in duplicateISBNs)
+            {
+                // Manter apenas o primeiro livro com cada ISBN
+                var booksWithISBN = await _context.Books
+                    .Where(b => b.ISBN == isbn && b.IsActive)
+                    .OrderBy(b => b.CreatedAt)
+                    .ToListAsync();
+
+                // Marcar todos exceto o primeiro como inativos
+                for (int i = 1; i < booksWithISBN.Count; i++)
+                {
+                    booksWithISBN[i].IsActive = false;
+                    booksWithISBN[i].UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<IEnumerable<Book>> GetBooksByUserIdAsync(string userId)

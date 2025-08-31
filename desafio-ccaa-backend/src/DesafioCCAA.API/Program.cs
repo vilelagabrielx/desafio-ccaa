@@ -176,6 +176,11 @@ builder.Services.AddScoped<IBookRepository, BookRepository>();
 // Service Registration
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IImageOptimizationService, ImageOptimizationService>();
+builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
+
+// HTTP Client for external APIs
+builder.Services.AddHttpClient<IOpenLibraryService, OpenLibraryService>();
 
 // CORS
 builder.Services.AddCors(options =>

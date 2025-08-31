@@ -31,7 +31,19 @@ public record BookResponseDto
     public string Author { get; init; } = string.Empty;
     public BookPublisher Publisher { get; init; }
     public string Synopsis { get; init; } = string.Empty;
+    
+    // URL para acessar a foto do livro
+    public string? PhotoUrl { get; init; }
+    
+    // Campo legado para compatibilidade
     public string? PhotoPath { get; init; }
+    
+    // Bytes da imagem (não incluído na serialização por padrão)
+    public byte[]? PhotoBytes { get; init; }
+    
+    // Tipo de conteúdo da imagem
+    public string? PhotoContentType { get; init; }
+    
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public string UserId { get; init; } = string.Empty;
@@ -62,4 +74,69 @@ public record CategoryDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
+}
+
+// DTOs para busca por ISBN via OpenLibrary API
+public record OpenLibraryBookDto
+{
+    public string? Title { get; init; }
+    public List<OpenLibraryAuthorDto>? Authors { get; init; } = [];
+    public int? NumberOfPages { get; init; }
+    public List<OpenLibraryPublisherDto>? Publishers { get; init; } = [];
+    public string? PublishDate { get; init; }
+    public List<OpenLibrarySubjectDto>? Subjects { get; init; } = [];
+    public OpenLibraryCoverDto? Cover { get; init; }
+    public List<OpenLibraryExcerptDto>? Excerpts { get; init; } = [];
+}
+
+public record OpenLibraryAuthorDto
+{
+    public string? Name { get; init; }
+    public string? Url { get; init; }
+}
+
+public record OpenLibraryPublisherDto
+{
+    public string? Name { get; init; }
+}
+
+public record OpenLibrarySubjectDto
+{
+    public string? Name { get; init; }
+    public string? Url { get; init; }
+}
+
+public record OpenLibraryCoverDto
+{
+    public string? Small { get; init; }
+    public string? Medium { get; init; }
+    public string? Large { get; init; }
+}
+
+public record OpenLibraryExcerptDto
+{
+    public string? Text { get; init; }
+    public bool? FirstSentence { get; init; }
+}
+
+public record OpenLibrarySearchResponseDto
+{
+    public Dictionary<string, OpenLibraryBookDto>? Books { get; init; }
+}
+
+public record BookFromIsbnDto
+{
+    public string Title { get; init; } = string.Empty;
+    public string ISBN { get; init; } = string.Empty;
+    public BookGenre Genre { get; init; }
+    public string Author { get; init; } = string.Empty;
+    public BookPublisher Publisher { get; init; }
+    public string Synopsis { get; init; } = string.Empty;
+    public string? CoverUrl { get; init; }
+}
+
+public record CreateBookFromIsbnDto
+{
+    public string ISBN { get; init; } = string.Empty;
+    public bool DownloadCover { get; init; } = true;
 }

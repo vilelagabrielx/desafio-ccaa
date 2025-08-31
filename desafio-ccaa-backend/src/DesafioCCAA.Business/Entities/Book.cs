@@ -9,7 +9,18 @@ public class Book
     public string Author { get; set; } = string.Empty;
     public BookPublisher Publisher { get; set; }
     public string Synopsis { get; set; } = string.Empty;
+    
+    // Campos para armazenar a imagem no banco de dados
+    public byte[]? PhotoBytes { get; set; }
+    public string? PhotoContentType { get; set; }
+    
+    // URL da capa original do OpenLibrary (para livros criados via ISBN)
+    public string? CoverUrl { get; set; }
+
+    
+    // Campo legado para compatibilidade (será removido em futuras versões)
     public string? PhotoPath { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public bool IsActive { get; set; } = true;
