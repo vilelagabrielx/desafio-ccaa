@@ -10,6 +10,9 @@ public class Book
     public BookPublisher Publisher { get; set; }
     public string Synopsis { get; set; } = string.Empty;
     
+    // Resumo do livro obtido via API do OpenLibrary
+    public string? Summary { get; set; }
+    
     // Campos para armazenar a imagem no banco de dados
     public byte[]? PhotoBytes { get; set; }
     public string? PhotoContentType { get; set; }

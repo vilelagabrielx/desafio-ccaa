@@ -10,6 +10,7 @@ public record CreateBookDto
     public string Author { get; init; } = string.Empty;
     public BookPublisher Publisher { get; init; }
     public string Synopsis { get; init; } = string.Empty;
+    public string? Summary { get; init; }
 }
 
 public record UpdateBookDto
@@ -20,6 +21,7 @@ public record UpdateBookDto
     public string Author { get; init; } = string.Empty;
     public BookPublisher Publisher { get; init; }
     public string Synopsis { get; init; } = string.Empty;
+    public string? Summary { get; init; }
 }
 
 public record BookResponseDto
@@ -31,6 +33,7 @@ public record BookResponseDto
     public string Author { get; init; } = string.Empty;
     public BookPublisher Publisher { get; init; }
     public string Synopsis { get; init; } = string.Empty;
+    public string? Summary { get; init; }
     
     // URL para acessar a foto do livro
     public string? PhotoUrl { get; init; }
@@ -96,7 +99,8 @@ public record OpenLibraryBookDto
     public string? PublishDate { get; init; }
     public List<OpenLibrarySubjectDto>? Subjects { get; init; } = [];
     public OpenLibraryCoverDto? Cover { get; init; }
-    public List<OpenLibraryExcerptDto>? Excerpts { get; init; } = [];
+    public List<OpenLibraryExcerptDto>? Excerpts { get; init; }
+    public List<OpenLibraryWorkDto>? Works { get; init; } = [];
 }
 
 public record OpenLibraryAuthorDto
@@ -129,6 +133,18 @@ public record OpenLibraryExcerptDto
     public bool? FirstSentence { get; init; }
 }
 
+public record OpenLibraryWorkDto
+{
+    public string? Key { get; init; }
+}
+
+public record OpenLibraryWorkResponseDto
+{
+    public string? Title { get; init; }
+    public string? Description { get; init; }
+    public string? Key { get; init; }
+}
+
 public record OpenLibrarySearchResponseDto
 {
     public Dictionary<string, OpenLibraryBookDto>? Books { get; init; }
@@ -142,6 +158,7 @@ public record BookFromIsbnDto
     public string Author { get; init; } = string.Empty;
     public BookPublisher Publisher { get; init; }
     public string Synopsis { get; init; } = string.Empty;
+    public string? Summary { get; init; }
     public string? CoverUrl { get; init; }
 }
 

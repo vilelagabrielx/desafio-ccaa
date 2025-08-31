@@ -44,6 +44,7 @@ public class BookService(
                 Author = createBookDto.Author,
                 Publisher = createBookDto.Publisher,
                 Synopsis = createBookDto.Synopsis,
+                Summary = createBookDto.Summary, // Resumo do livro
                 UserId = userId
             };
 
@@ -200,6 +201,7 @@ public class BookService(
             book.Author = updateBookDto.Author;
             book.Publisher = updateBookDto.Publisher;
             book.Synopsis = updateBookDto.Synopsis;
+            book.Summary = updateBookDto.Summary; // Atualizar o resumo do livro
             book.UpdatedAt = DateTime.UtcNow;
 
             if (photoFile is not null)
@@ -538,6 +540,7 @@ public class BookService(
                 Author = bookData.Author,
                 Publisher = bookData.Publisher,
                 Synopsis = bookData.Synopsis,
+                Summary = bookData.Summary, // Resumo obtido via API do OpenLibrary
                 UserId = userId,
                 CoverUrl = bookData.CoverUrl // Salvar a URL da capa do OpenLibrary
             };
@@ -577,6 +580,7 @@ public class BookService(
             Author = book.Author,
             Publisher = book.Publisher,
             Synopsis = book.Synopsis,
+            Summary = book.Summary, // Resumo do livro obtido via API do OpenLibrary
             PhotoUrl = book.PhotoBytes != null ? $"/api/book/photo/{book.Id}" : book.CoverUrl, // Priorizar imagem local, fallback para URL do OpenLibrary
             PhotoPath = book.PhotoPath, // Campo legado para compatibilidade
             PhotoBytes = book.PhotoBytes,

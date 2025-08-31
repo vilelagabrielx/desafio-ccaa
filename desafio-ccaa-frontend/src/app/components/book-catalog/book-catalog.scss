@@ -1653,3 +1653,171 @@ textarea:focus {
     }
   }
 }
+
+// Modal de Detalhes do Livro
+.book-details-modal {
+  .book-details-content {
+    max-width: 900px;
+    width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .book-details-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--space-6);
+    align-items: start;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+  }
+  
+  .book-cover-section {
+    text-align: center;
+    
+    .book-cover-large {
+      width: 100%;
+      max-width: 280px;
+      height: auto;
+      border-radius: var(--border-radius);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      transition: transform var(--transition-fast);
+      
+      &:hover {
+        transform: scale(1.02);
+      }
+    }
+  }
+  
+  .book-info-section {
+    .book-title-large {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ccaa-text-primary);
+      margin-bottom: var(--space-4);
+      line-height: 1.2;
+    }
+    
+    .book-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+      
+      .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        
+        label {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--ccaa-text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        span {
+          font-size: 1rem;
+          color: var(--ccaa-text-primary);
+          font-weight: 500;
+        }
+      }
+    }
+    
+    .book-section {
+      margin-bottom: var(--space-4);
+      
+      h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--ccaa-text-primary);
+        margin-bottom: var(--space-2);
+        border-bottom: 2px solid var(--ccaa-primary);
+        padding-bottom: var(--space-1);
+      }
+      
+      .book-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--ccaa-text-primary);
+        text-align: justify;
+        background: var(--ccaa-gray-50);
+        padding: var(--space-3);
+        border-radius: var(--border-radius);
+        border-left: 4px solid var(--ccaa-primary);
+      }
+    }
+    
+    .book-actions-section {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--ccaa-gray-200);
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+      }
+      
+      .btn {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-4);
+        font-size: 1rem;
+        font-weight: 500;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        &.btn-primary {
+          background: var(--ccaa-primary);
+          color: white;
+          
+          &:hover {
+            background: var(--ccaa-primary-dark);
+          }
+        }
+        
+        &.btn-danger {
+          background: var(--ccaa-danger);
+          color: white;
+          
+          &:hover {
+            background: var(--ccaa-danger-dark);
+          }
+        }
+        
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+}
+
+// Estilos para o campo de resumo no formulário
+.form-hint {
+  display: block;
+  color: var(--ccaa-primary);
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  background: var(--ccaa-primary-light);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--ccaa-primary);
+}

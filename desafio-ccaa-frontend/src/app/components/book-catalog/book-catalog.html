@@ -335,7 +335,7 @@
           } @else {
             <div class="books-grid">
               @for (book of filteredBooks(); track book.id) {
-                <div class="book-card">
+                <div class="book-card" (click)="showBookDetails(book)" style="cursor: pointer;">
                   <div class="book-cover">
                     <img 
                       [src]="getBookImageUrl(book)" 
@@ -562,6 +562,20 @@
           </div>
           
           <div class="form-group full-width">
+            <label for="summary">Resumo do Livro</label>
+            <textarea 
+              id="summary"
+              [(ngModel)]="newBook().summary" 
+              name="summary"
+              placeholder="Resumo detalhado do livro (obtido via API do OpenLibrary ou digitado manualmente)..."
+              rows="5"
+            ></textarea>
+            <small class="form-hint">
+              💡 Este campo pode ser preenchido automaticamente ao sincronizar por ISBN ou editado manualmente
+            </small>
+          </div>
+          
+          <div class="form-group full-width">
             <label for="photoFile">Foto do Livro</label>
             <div class="photo-upload-container">
               <input 
@@ -737,6 +751,20 @@
           </div>
           
           <div class="form-group full-width">
+            <label for="edit-summary">Resumo do Livro</label>
+            <textarea 
+              id="edit-summary"
+              [(ngModel)]="newBook().summary" 
+              name="edit-summary"
+              placeholder="Resumo detalhado do livro (obtido via API do OpenLibrary ou digitado manualmente)..."
+              rows="5"
+            ></textarea>
+            <small class="form-hint">
+              💡 Este campo pode ser preenchido automaticamente ao sincronizar por ISBN ou editado manualmente
+            </small>
+          </div>
+          
+          <div class="form-group full-width">
             <label for="edit-photoFile">Foto do Livro</label>
             <div class="photo-upload-container">
               <input 
@@ -879,6 +907,111 @@
           Cancelar
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Detalhes do Livro -->
+<div class="modal book-details-modal" [class.show]="showBookDetailsModal()" *ngIf="showBookDetailsModal()">
+  <div class="modal-content book-details-content">
+    <div class="modal-header">
+      <h3>Detalhes do Livro</h3>
+      <button class="modal-close" (click)="closeBookDetailsModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      @if (selectedBookForDetails()) {
+        <div class="book-details-container">
+          <!-- Imagem da capa -->
+          <div class="book-cover-section">
+            <img 
+              [src]="getBookImageUrl(selectedBookForDetails()!)" 
+              [alt]="selectedBookForDetails()!.title" 
+              class="book-cover-large"
+              (error)="onImageError($event)"
+            >
+          </div>
+          
+          <!-- Informações do livro -->
+          <div class="book-info-section">
+            <h2 class="book-title-large">{{ selectedBookForDetails()!.title }}</h2>
+            
+            <div class="book-meta-grid">
+              <div class="meta-item">
+                <label>Autor:</label>
+                <span>{{ selectedBookForDetails()!.author }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <label>ISBN:</label>
+                <span>{{ selectedBookForDetails()!.isbn }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <label>Categoria:</label>
+                <span>{{ getGenreTranslation(selectedBookForDetails()!.genre) }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <label>Editora:</label>
+                <span>{{ getPublisherTranslation(selectedBookForDetails()!.publisher) }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <label>Data de Criação:</label>
+                <span>{{ selectedBookForDetails()!.createdAt | date:'dd/MM/yyyy' }}</span>
+              </div>
+              
+              @if (selectedBookForDetails()!.updatedAt) {
+                <div class="meta-item">
+                  <label>Última Atualização:</label>
+                  <span>{{ selectedBookForDetails()!.updatedAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              }
+            </div>
+            
+            <!-- Sinopse -->
+            @if (selectedBookForDetails()!.synopsis) {
+              <div class="book-section">
+                <h4>Sinopse</h4>
+                <p class="book-text">{{ selectedBookForDetails()!.synopsis }}</p>
+              </div>
+            }
+            
+            <!-- Resumo -->
+            @if (selectedBookForDetails()!.summary) {
+              <div class="book-section">
+                <h4>Resumo</h4>
+                <p class="book-text">{{ selectedBookForDetails()!.summary }}</p>
+              </div>
+            }
+            
+            <!-- Ações -->
+            <div class="book-actions-section">
+              <button class="btn btn-primary" (click)="editBook(selectedBookForDetails()!)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M18.5 2.50023C18.8978 2.10297 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10297 21.5 2.50023C21.8978 2.89749 22.1219 3.43705 22.1219 4.00023C22.1219 4.5634 21.8978 5.10297 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Editar Livro
+              </button>
+              
+              <button class="btn btn-danger" (click)="deleteBook(selectedBookForDetails()!)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Excluir Livro
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   </div>
 </div>

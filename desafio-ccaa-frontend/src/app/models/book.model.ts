@@ -6,6 +6,7 @@ export interface Book {
   author: string;
   publisher: BookPublisher;
   synopsis: string;
+  summary?: string; // Resumo do livro obtido via API do OpenLibrary
   
   // Novas propriedades para imagens no banco de dados
   photoUrl?: string; // URL para acessar a imagem via API
@@ -171,6 +172,7 @@ export interface CreateBookDto {
   author: string;
   publisher: BookPublisher;
   synopsis: string;
+  summary?: string; // Resumo do livro
   photoPath?: string;
 }
 
@@ -182,6 +184,7 @@ export interface UpdateBookDto {
   author?: string;
   publisher?: BookPublisher;
   synopsis?: string;
+  summary?: string; // Resumo do livro
   photoPath?: string;
 }
 

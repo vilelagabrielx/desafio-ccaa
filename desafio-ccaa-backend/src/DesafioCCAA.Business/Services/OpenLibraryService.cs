@@ -10,13 +10,14 @@ public interface IOpenLibraryService
 {
     Task<ServiceResult<BookFromIsbnDto?>> SearchBookByIsbnAsync(string isbn);
     Task<byte[]?> DownloadCoverImageAsync(string coverUrl);
+    Task<string?> GetBookSummaryAsync(string isbn);
 }
 
 public class OpenLibraryService : IOpenLibraryService
 {
     private readonly ILogger<OpenLibraryService> _logger;
     private readonly HttpClient _httpClient;
-    private readonly string _baseUrl = "https://openlibrary.org/api/books";
+    private readonly string _baseUrl = "https://openlibrary.org";
 
     public OpenLibraryService(ILogger<OpenLibraryService> logger, HttpClient httpClient)
     {
@@ -36,8 +37,8 @@ public class OpenLibraryService : IOpenLibraryService
             // Limpar o ISBN (remover espaços e hífens)
             var cleanIsbn = isbn.Replace(" ", "").Replace("-", "");
 
-            // Construir a URL da API
-            var url = $"{_baseUrl}?bibkeys=ISBN:{cleanIsbn}&format=json&jscmd=data";
+            // Construir a URL da API usando o novo endpoint direto
+            var url = $"{_baseUrl}/isbn/{cleanIsbn}.json";
 
             _logger.LogInformation("Buscando livro por ISBN: {ISBN} na API do OpenLibrary", cleanIsbn);
 
@@ -59,40 +60,33 @@ public class OpenLibraryService : IOpenLibraryService
                 return ServiceResult<BookFromIsbnDto?>.Success(null);
             }
 
-            // Deserializar a resposta diretamente como um dicionário
-            var searchResponse = JsonSerializer.Deserialize<Dictionary<string, OpenLibraryBookDto>>(jsonContent, new JsonSerializerOptions
+            // Deserializar a resposta diretamente
+            var bookData = JsonSerializer.Deserialize<OpenLibraryBookDto>(jsonContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
 
-            _logger.LogInformation("Resposta deserializada: {SearchResponse}", 
-                searchResponse != null ? $"Count: {searchResponse.Count}, Keys: {string.Join(", ", searchResponse.Keys)}" : "null");
-
-            if (searchResponse == null || !searchResponse.Any())
-            {
-                _logger.LogInformation("Nenhum livro encontrado para ISBN {ISBN}", cleanIsbn);
-                return ServiceResult<BookFromIsbnDto?>.Success(null);
-            }
-
-            // Pegar o primeiro livro encontrado (a chave será algo como "ISBN:9780140328721")
-            var bookData = searchResponse.First().Value;
-            
-            _logger.LogInformation("Dados do livro encontrado: Title={Title}, Authors={Authors}, Publishers={Publishers}", 
-                bookData.Title, 
-                bookData.Authors?.Count ?? 0, 
-                bookData.Publishers?.Count ?? 0);
-            
             if (bookData == null)
             {
+                _logger.LogWarning("Falha ao deserializar dados do livro para ISBN {ISBN}", cleanIsbn);
                 return ServiceResult<BookFromIsbnDto?>.Success(null);
             }
 
+            _logger.LogInformation("Dados do livro encontrado: Title={Title}, Authors={Authors}, Publishers={Publishers}, Works={Works}", 
+                bookData.Title, 
+                bookData.Authors?.Count ?? 0, 
+                bookData.Publishers?.Count ?? 0,
+                bookData.Works?.Count ?? 0);
+
+            // Buscar o resumo do livro
+            var summary = await GetBookSummaryAsync(cleanIsbn);
+            
             // Mapear para o DTO do sistema
-            var bookDto = MapToBookFromIsbnDto(bookData, cleanIsbn);
+            var bookDto = MapToBookFromIsbnDto(bookData, cleanIsbn, summary);
             
             _logger.LogInformation("Livro encontrado para ISBN {ISBN}: {Title}", cleanIsbn, bookDto.Title);
-            _logger.LogInformation("Dados mapeados: Author={Author}, Publisher={Publisher}, Genre={Genre}", 
-                bookDto.Author, bookDto.Publisher, bookDto.Genre);
+            _logger.LogInformation("Dados mapeados: Author={Author}, Publisher={Publisher}, Genre={Genre}, Summary={HasSummary}", 
+                bookDto.Author, bookDto.Publisher, bookDto.Genre, !string.IsNullOrEmpty(bookDto.Summary));
             
             return ServiceResult<BookFromIsbnDto?>.Success(bookDto);
         }
@@ -135,12 +129,86 @@ public class OpenLibraryService : IOpenLibraryService
         }
     }
 
-    private BookFromIsbnDto MapToBookFromIsbnDto(OpenLibraryBookDto openLibraryBook, string isbn)
+    public async Task<string?> GetBookSummaryAsync(string isbn)
     {
-        _logger.LogInformation("Mapeando dados do OpenLibrary: Title={Title}, Authors={Authors}, Publishers={Publishers}", 
+        try
+        {
+            if (string.IsNullOrWhiteSpace(isbn))
+            {
+                return null;
+            }
+
+            var cleanIsbn = isbn.Replace(" ", "").Replace("-", "");
+
+            // Passo 1: Buscar o livro pelo ISBN para obter a chave do work
+            var bookUrl = $"{_baseUrl}/isbn/{cleanIsbn}.json";
+            var bookResponse = await _httpClient.GetAsync(bookUrl);
+            
+            if (!bookResponse.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha ao buscar livro para resumo por ISBN {ISBN}: {StatusCode}", cleanIsbn, bookResponse.StatusCode);
+                return null;
+            }
+
+            var bookJson = await bookResponse.Content.ReadAsStringAsync();
+            var bookData = JsonSerializer.Deserialize<OpenLibraryBookDto>(bookJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (bookData?.Works == null || !bookData.Works.Any())
+            {
+                _logger.LogInformation("Nenhum work encontrado para ISBN {ISBN}", cleanIsbn);
+                return null;
+            }
+
+            // Pegar o primeiro work
+            var workKey = bookData.Works.First().Key;
+            if (string.IsNullOrWhiteSpace(workKey))
+            {
+                _logger.LogWarning("Chave do work vazia para ISBN {ISBN}", cleanIsbn);
+                return null;
+            }
+
+            // Passo 2: Buscar o work para obter a descrição
+            var workUrl = $"{_baseUrl}{workKey}.json";
+            var workResponse = await _httpClient.GetAsync(workUrl);
+            
+            if (!workResponse.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha ao buscar work para resumo: {WorkUrl} - {StatusCode}", workUrl, workResponse.StatusCode);
+                return null;
+            }
+
+            var workJson = await workResponse.Content.ReadAsStringAsync();
+            var workData = JsonSerializer.Deserialize<OpenLibraryWorkResponseDto>(workJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (workData?.Description == null)
+            {
+                _logger.LogInformation("Nenhuma descrição encontrada para work {WorkKey}", workKey);
+                return null;
+            }
+
+            _logger.LogInformation("Resumo encontrado para ISBN {ISBN}: {SummaryLength} caracteres", cleanIsbn, workData.Description.Length);
+            return workData.Description;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar resumo do livro por ISBN {ISBN}", isbn);
+            return null;
+        }
+    }
+
+    private BookFromIsbnDto MapToBookFromIsbnDto(OpenLibraryBookDto openLibraryBook, string isbn, string? summary)
+    {
+        _logger.LogInformation("Mapeando dados do OpenLibrary: Title={Title}, Authors={Authors}, Publishers={Publishers}, Summary={HasSummary}", 
             openLibraryBook.Title, 
             openLibraryBook.Authors?.Count ?? 0, 
-            openLibraryBook.Publishers?.Count ?? 0);
+            openLibraryBook.Publishers?.Count ?? 0,
+            !string.IsNullOrEmpty(summary));
         
         var author = openLibraryBook.Authors?.FirstOrDefault()?.Name ?? "Autor desconhecido";
         var publisher = openLibraryBook.Publishers?.FirstOrDefault()?.Name ?? "Editora desconhecida";
@@ -169,11 +237,12 @@ public class OpenLibraryService : IOpenLibraryService
             Author = author,
             Publisher = mappedPublisher,
             Synopsis = synopsis,
-            CoverUrl = openLibraryBook.Cover?.Medium ?? openLibraryBook.Cover?.Large ?? openLibraryBook.Cover?.Small
+            CoverUrl = openLibraryBook.Cover?.Medium ?? openLibraryBook.Cover?.Large ?? openLibraryBook.Cover?.Small,
+            Summary = summary
         };
         
-        _logger.LogInformation("DTO mapeado: Title={Title}, ISBN={ISBN}, Genre={Genre} (valor: {GenreValue}), Author={Author}, Publisher={Publisher} (valor: {PublisherValue}), Synopsis={Synopsis}", 
-            result.Title, result.ISBN, result.Genre, (int)result.Genre, result.Author, result.Publisher, (int)result.Publisher, result.Synopsis);
+        _logger.LogInformation("DTO mapeado: Title={Title}, ISBN={ISBN}, Genre={Genre} (valor: {GenreValue}), Author={Author}, Publisher={Publisher} (valor: {PublisherValue}), Synopsis={Synopsis}, Summary={HasSummary}", 
+            result.Title, result.ISBN, result.Genre, (int)result.Genre, result.Author, result.Publisher, (int)result.Publisher, result.Synopsis, !string.IsNullOrEmpty(result.Summary));
         
         return result;
     }

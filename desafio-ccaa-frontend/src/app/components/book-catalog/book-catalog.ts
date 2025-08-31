@@ -51,6 +51,7 @@ export class BookCatalog implements OnInit {
     genre: BookGenre.Fiction,
     publisher: BookPublisher.Other,
     synopsis: '',
+    summary: '',
     photoPath: ''
   });
 
@@ -65,6 +66,10 @@ export class BookCatalog implements OnInit {
   isbnToCreate = signal('');
   downloadCover = signal(true);
   isCreatingFromIsbn = signal(false);
+
+  // Book details modal state
+  showBookDetailsModalSignal = signal(false);
+  selectedBookForDetails = signal<Book | null>(null);
 
   // Computed signals
   categoryCounts = computed(() => {
@@ -345,6 +350,7 @@ export class BookCatalog implements OnInit {
       genre: BookGenre.Fiction, // Usar valor padrão válido
       publisher: BookPublisher.Other, // Usar valor padrão válido
       synopsis: '',
+      summary: '',
       photoPath: ''
     });
     
@@ -416,6 +422,7 @@ export class BookCatalog implements OnInit {
       genre: book.genre,
       publisher: book.publisher,
       synopsis: book.synopsis,
+      summary: book.summary || '',
       photoPath: book.photoPath || ''
     });
     
@@ -596,6 +603,7 @@ export class BookCatalog implements OnInit {
       genre: BookGenre.Fiction,
       publisher: BookPublisher.Other,
       synopsis: '',
+      summary: '',
       photoPath: ''
     });
     this.selectedPhotoFile.set(null);
@@ -1299,5 +1307,28 @@ export class BookCatalog implements OnInit {
     
     console.warn('❌ Editora não reconhecida:', publisher);
     return null;
+  }
+
+  /**
+   * Exibe o modal de detalhes do livro
+   */
+  showBookDetails(book: Book): void {
+    this.selectedBookForDetails.set(book);
+    this.showBookDetailsModalSignal.set(true);
+  }
+
+  /**
+   * Fecha o modal de detalhes do livro
+   */
+  closeBookDetailsModal(): void {
+    this.showBookDetailsModalSignal.set(false);
+    this.selectedBookForDetails.set(null);
+  }
+
+  /**
+   * Getter para o signal do modal de detalhes
+   */
+  showBookDetailsModal(): boolean {
+    return this.showBookDetailsModalSignal();
   }
 }

@@ -68,6 +68,10 @@ namespace DesafioCCAA.Infrastructure.Migrations
                     b.Property<int>("Publisher")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Summary")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
+
                     b.Property<string>("Synopsis")
                         .IsRequired()
                         .HasMaxLength(5000)
@@ -91,14 +95,15 @@ namespace DesafioCCAA.Infrastructure.Migrations
 
                     b.HasIndex("Genre");
 
-                    b.HasIndex("ISBN")
-                        .IsUnique();
-
                     b.HasIndex("Publisher");
 
                     b.HasIndex("Title");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ISBN", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = true");
 
                     b.ToTable("Books");
                 });

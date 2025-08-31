@@ -26,6 +26,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
             entity.Property(e => e.Author).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Publisher).IsRequired();
             entity.Property(e => e.Synopsis).IsRequired().HasMaxLength(5000);
+            entity.Property(e => e.Summary).HasMaxLength(10000); // Resumo pode ser mais longo que a sinopse
             
             // Configuração para as novas propriedades de imagem
             entity.Property(e => e.PhotoBytes).HasColumnType("bytea"); // PostgreSQL para dados binários
