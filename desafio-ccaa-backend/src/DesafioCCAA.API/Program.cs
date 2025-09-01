@@ -186,7 +186,16 @@ builder.Services.AddScoped<IImageOptimizationService, ImageOptimizationService>(
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 
 // HTTP Client for external APIs
-builder.Services.AddHttpClient<IOpenLibraryService, OpenLibraryService>();
+builder.Services.AddHttpClient<IOpenLibraryService, OpenLibraryService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "DesafioCCAA/1.0");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+});
 
 // CORS
 builder.Services.AddCors(options =>

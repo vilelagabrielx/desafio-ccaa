@@ -105,6 +105,7 @@ public record OpenLibraryBookDto
 
 public record OpenLibraryAuthorDto
 {
+    public string? Key { get; init; }
     public string? Name { get; init; }
     public string? Url { get; init; }
 }
@@ -143,6 +144,7 @@ public record OpenLibraryWorkResponseDto
     public string? Title { get; init; }
     public string? Description { get; init; }
     public string? Key { get; init; }
+    public List<string>? Subjects { get; init; }
 }
 
 public record OpenLibrarySearchResponseDto

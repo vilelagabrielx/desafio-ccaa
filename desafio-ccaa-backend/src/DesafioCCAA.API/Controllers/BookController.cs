@@ -225,7 +225,7 @@ public class BookController : ControllerBase
     }
 
     /// <summary>
-    /// Obtém todas as categorias disponíveis com contagem de livros
+    /// Obtém categorias com contagem de livros
     /// </summary>
     [HttpGet("categories-with-count")]
     [AllowAnonymous]

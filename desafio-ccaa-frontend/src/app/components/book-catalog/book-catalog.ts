@@ -1,10 +1,12 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Book, BookGenre, BookPublisher } from '../../models/book.model';
 import { BookService } from '../../services/book.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
+import { LoadingService } from '../../services/loading.service';
 import { translateGenre, genreTranslations } from '../../utils/genre-translations';
 import { translatePublisher } from '../../utils/publisher-translations';
 
@@ -34,8 +36,6 @@ export class BookCatalog implements OnInit {
   
   // Form state
   showAddForm = signal(false);
-  selectedCategory = signal('');
-  searchCategory = signal('');
   showEditForm = signal(false);
   editingBook = signal<Book | null>(null);
   
@@ -57,6 +57,7 @@ export class BookCatalog implements OnInit {
 
   // Photo upload
   selectedPhotoFile = signal<File | null>(null);
+  photoPreviewUrl = signal<string>('');
 
   // ISBN sync state
   isSyncingIsbn = signal(false);
@@ -112,7 +113,10 @@ export class BookCatalog implements OnInit {
   constructor(
     private bookService: BookService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private loadingService: LoadingService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -174,6 +178,7 @@ export class BookCatalog implements OnInit {
 
   loadBooks(): void {
     console.log('📚 BookCatalog: Carregando livros...');
+    this.loadingService.show('Carregando livros...');
     this.bookService.getAllBooks().subscribe({
       next: (books) => {
         console.log('✅ BookCatalog: Livros carregados:', books.length);
@@ -202,18 +207,22 @@ export class BookCatalog implements OnInit {
         console.log('✅ BookCatalog: Livros válidos:', validBooks.length);
         this.books.set(validBooks);
         this.applyFilters();
+        this.loadingService.hide();
       },
       error: (error) => {
         console.error('❌ BookCatalog: Erro ao carregar livros:', error);
         // Em caso de erro, definir lista vazia para evitar problemas
         this.books.set([]);
         this.filteredBooks.set([]);
+        this.loadingService.hide();
+        this.toastService.showError('Erro ao carregar livros. Tente novamente.');
       }
     });
   }
 
   loadCategories(): void {
     console.log('🏷️ BookCatalog: Carregando categorias...');
+    this.loadingService.show('Carregando categorias...');
     this.bookService.getAllCategories().subscribe({
       next: (categories) => {
         console.log('✅ BookCatalog: Categorias carregadas:', categories.length);
@@ -225,15 +234,18 @@ export class BookCatalog implements OnInit {
         console.log('📊 Categorias ordenadas por contagem:', orderedCategories.map(c => `${c.name} (${c.count})`));
         
         this.categories.set(orderedCategories);
+        this.loadingService.hide();
       },
       error: (error) => {
         console.error('❌ BookCatalog: Erro ao carregar categorias:', error);
+        this.loadingService.hide();
+        this.toastService.showError('Erro ao carregar categorias. Tente novamente.');
       }
     });
   }
 
   searchBooks(): void {
-    console.log('🔍 BookCatalog: Buscando livros...');
+    console.log('🔍 BookCatalog: Buscando livros por título...');
     this.currentPage.set(1);
     this.applyFilters();
   }
@@ -261,16 +273,14 @@ export class BookCatalog implements OnInit {
     
     let filtered = [...validBooks];
     
-    // Aplicar filtro de busca
+    // Aplicar filtro de busca por nome/título do livro
     if (this.searchQuery()) {
-      const query = this.searchQuery().toLowerCase();
+      const query = this.searchQuery().toLowerCase().trim();
       const beforeSearch = filtered.length;
       filtered = filtered.filter(book => 
-        book.title.toLowerCase().includes(query) ||
-        book.author.toLowerCase().includes(query) ||
-        book.isbn.toLowerCase().includes(query)
+        book.title.toLowerCase().includes(query)
       );
-      console.log('🔍 BookCatalog: Filtro de busca aplicado:', beforeSearch, '->', filtered.length);
+      console.log('🔍 BookCatalog: Filtro de busca por título aplicado:', beforeSearch, '->', filtered.length);
     }
     
     // Aplicar filtro de gênero
@@ -473,38 +483,41 @@ export class BookCatalog implements OnInit {
     if (confirm(`Tem certeza que deseja excluir o livro "${book.title}"?`)) {
       console.log('🗑️ Excluindo livro:', book.title, 'ID:', bookId);
       
+      this.loadingService.show('Excluindo livro...');
       this.bookService.deleteBookApi(bookId).subscribe({
-        next: (response) => {
-          console.log('✅ Livro excluído com sucesso:', response);
-          
-          // Remover o livro da lista local
-          const currentBooks = this.books();
-          const updatedBooks = currentBooks.filter(b => b.id !== bookId);
-          this.books.set(updatedBooks);
-          
-          // Aplicar filtros para atualizar a lista
-          this.applyFilters();
-          
-          // Mostrar mensagem de sucesso
-          alert('Livro excluído com sucesso!');
-        },
-        error: (error) => {
-          console.error('❌ Erro ao excluir livro:', error);
-          
-          // Mostrar mensagem de erro clara
-          let errorMessage = 'Erro ao excluir o livro.';
-          if (error.error && error.error.error) {
-            errorMessage = error.error.error;
-          } else if (error.status === 401) {
-            errorMessage = 'Você não tem permissão para excluir este livro.';
-          } else if (error.status === 404) {
-            errorMessage = 'Livro não encontrado.';
-          } else if (error.status === 500) {
-            errorMessage = 'Erro interno do servidor. Tente novamente.';
+                  next: (response) => {
+            console.log('✅ Livro excluído com sucesso:', response);
+            
+            // Remover o livro da lista local
+            const currentBooks = this.books();
+            const updatedBooks = currentBooks.filter(b => b.id !== bookId);
+            this.books.set(updatedBooks);
+            
+            // Aplicar filtros para atualizar a lista
+            this.applyFilters();
+            
+            // Mostrar mensagem de sucesso
+            this.loadingService.hide();
+            this.toastService.showSuccess('Livro excluído com sucesso!');
+          },
+                  error: (error) => {
+            console.error('❌ Erro ao excluir livro:', error);
+            
+            // Mostrar mensagem de erro clara
+            let errorMessage = 'Erro ao excluir o livro.';
+            if (error.error && error.error.error) {
+              errorMessage = error.error.error;
+            } else if (error.status === 401) {
+              errorMessage = 'Você não tem permissão para excluir este livro.';
+            } else if (error.status === 404) {
+              errorMessage = 'Livro não encontrado.';
+            } else if (error.status === 500) {
+              errorMessage = 'Erro interno do servidor. Tente novamente.';
+            }
+            
+            this.loadingService.hide();
+            this.toastService.showError(errorMessage);
           }
-          
-          alert(`Erro: ${errorMessage}`);
-        }
       });
     }
   }
@@ -527,8 +540,6 @@ export class BookCatalog implements OnInit {
    * Filter books by category
    */
   filterByCategory(category: string): void {
-    this.selectedCategory.set(category);
-    
     // Se uma categoria específica foi selecionada, mapear para o enum e aplicar filtro
     if (category && category !== '' && category !== 'Todas as Categorias') {
       // Mapear o nome traduzido de volta para o enum
@@ -550,8 +561,13 @@ export class BookCatalog implements OnInit {
   /**
    * Mapeia o nome da categoria traduzida de volta para o enum BookGenre
    */
-  private mapCategoryNameToGenre(categoryName: string): BookGenre | '' {
+  mapCategoryNameToGenre(categoryName: string): BookGenre | '' {
     if (!categoryName) return '';
+    
+    // Ignorar categorias especiais que não precisam ser mapeadas
+    if (categoryName === 'Todas as Categorias' || categoryName === 'All Categories') {
+      return '';
+    }
     
     // Buscar o enum correspondente ao nome traduzido
     const genreEntry = Object.entries(genreTranslations).find(
@@ -596,6 +612,10 @@ export class BookCatalog implements OnInit {
    * Reset form to initial state
    */
   resetForm(): void {
+    // Limpar URL anterior se existir
+    if (this.photoPreviewUrl()) {
+      URL.revokeObjectURL(this.photoPreviewUrl());
+    }
     this.newBook.set({
       title: '',
       author: '',
@@ -607,6 +627,7 @@ export class BookCatalog implements OnInit {
       photoPath: ''
     });
     this.selectedPhotoFile.set(null);
+    this.photoPreviewUrl.set('');
   }
 
   // Photo upload methods
@@ -614,22 +635,31 @@ export class BookCatalog implements OnInit {
     const file = event.target.files[0];
     if (file && file.type.startsWith('image/')) {
       this.selectedPhotoFile.set(file);
+      // Criar URL do objeto e armazenar no signal
+      const url = URL.createObjectURL(file);
+      this.photoPreviewUrl.set(url);
       console.log('📸 Foto selecionada:', file.name, 'Tamanho:', this.formatFileSize(file.size));
     } else {
       console.error('❌ Arquivo inválido selecionado');
       this.selectedPhotoFile.set(null);
+      this.photoPreviewUrl.set('');
     }
   }
 
   removePhoto(): void {
+    // Limpar URL anterior se existir
+    if (this.photoPreviewUrl()) {
+      URL.revokeObjectURL(this.photoPreviewUrl());
+    }
     this.selectedPhotoFile.set(null);
+    this.photoPreviewUrl.set('');
     this.newBook.update(book => ({ ...book, photoPath: '' }));
   }
 
   getPhotoPreview(): string {
-    // Priorizar arquivo selecionado pelo usuário
-    if (this.selectedPhotoFile()) {
-      return URL.createObjectURL(this.selectedPhotoFile()!);
+    // Se já temos uma URL válida, retornar ela
+    if (this.photoPreviewUrl()) {
+      return this.photoPreviewUrl();
     }
     
     // Fallback para URL da foto sincronizada ou campo photoPath
@@ -655,6 +685,7 @@ export class BookCatalog implements OnInit {
   saveBook(): void {
     if (!this.isFormValid()) {
       console.error('❌ Formulário inválido');
+      this.toastService.showError('Por favor, corrija os erros no formulário.');
       return;
     }
 
@@ -669,6 +700,9 @@ export class BookCatalog implements OnInit {
     const bookData = this.newBook();
     const photoFile = this.selectedPhotoFile();
 
+    // Show loading
+    this.loadingService.show(isEditing ? 'Atualizando livro...' : 'Criando livro...');
+
     if (isEditing) {
       // Atualizar livro existente
       const bookId = this.editingBook()!.id;
@@ -679,40 +713,43 @@ export class BookCatalog implements OnInit {
           console.log('✅ Livro atualizado com sucesso:', response);
           this.loadBooks(); // Recarregar lista de livros
           this.closeEditModal();
-          alert('Livro atualizado com sucesso!');
+          this.loadingService.hide();
+          this.toastService.showSuccess('Livro atualizado com sucesso!');
         },
-        error: (error) => {
-          console.error('❌ Erro ao atualizar livro:', error);
-          
-          // Tratamento específico para diferentes tipos de erro
-          let errorMessage = 'Erro ao atualizar livro. Tente novamente.';
-          
-          if (error.error && error.error.error) {
-            // Erro retornado pelo backend
-            errorMessage = error.error.error;
+                  error: (error) => {
+            console.error('❌ Erro ao atualizar livro:', error);
             
-            // Check for specific ISBN duplicate error
-            if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
-              this.showIsbnDuplicateError(this.newBook().isbn);
-              return; // Don't show the generic error message
+            // Tratamento específico para diferentes tipos de erro
+            let errorMessage = 'Erro ao atualizar livro. Tente novamente.';
+            
+            if (error.error && error.error.error) {
+              // Erro retornado pelo backend
+              errorMessage = error.error.error;
+              
+              // Check for specific ISBN duplicate error
+              if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+                this.loadingService.hide();
+                this.showIsbnDuplicateError(this.newBook().isbn);
+                return; // Don't show the generic error message
+              }
+            } else if (error.error && error.error.message) {
+              // Erro com estrutura diferente
+              errorMessage = error.error.message;
+            } else if (error.status === 400) {
+              errorMessage = 'Dados inválidos. Verifique as informações do livro.';
+            } else if (error.status === 401) {
+              errorMessage = 'Você não tem permissão para atualizar este livro.';
+            } else if (error.status === 404) {
+              errorMessage = 'Livro não encontrado.';
+            } else if (error.status === 409) {
+              errorMessage = 'Já existe um livro com este ISBN. Por favor, use um ISBN diferente.';
+            } else if (error.status === 500) {
+              errorMessage = 'Erro interno do servidor. Tente novamente.';
             }
-          } else if (error.error && error.error.message) {
-            // Erro com estrutura diferente
-            errorMessage = error.error.message;
-          } else if (error.status === 400) {
-            errorMessage = 'Dados inválidos. Verifique as informações do livro.';
-          } else if (error.status === 401) {
-            errorMessage = 'Você não tem permissão para atualizar este livro.';
-          } else if (error.status === 404) {
-            errorMessage = 'Livro não encontrado.';
-          } else if (error.status === 409) {
-            errorMessage = 'Já existe um livro com este ISBN. Por favor, use um ISBN diferente.';
-          } else if (error.status === 500) {
-            errorMessage = 'Erro interno do servidor. Tente novamente.';
+            
+            this.loadingService.hide();
+            this.toastService.showError(errorMessage);
           }
-          
-          alert(`Erro: ${errorMessage}`);
-        }
       });
     } else {
       // Criar novo livro
@@ -724,7 +761,8 @@ export class BookCatalog implements OnInit {
           console.log('✅ Livro criado com sucesso:', response);
           this.loadBooks(); // Recarregar lista de livros
           this.closeModal();
-          alert('Livro criado com sucesso!');
+          this.loadingService.hide();
+          this.toastService.showSuccess('Livro criado com sucesso!');
         },
         error: (error) => {
           console.error('❌ Erro ao criar livro:', error);
@@ -738,6 +776,7 @@ export class BookCatalog implements OnInit {
             
             // Check for specific ISBN duplicate error
             if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+              this.loadingService.hide();
               this.showIsbnDuplicateError(this.newBook().isbn);
               return; // Don't show the generic error message
             }
@@ -754,7 +793,8 @@ export class BookCatalog implements OnInit {
             errorMessage = 'Erro interno do servidor. Tente novamente.';
           }
           
-          alert(`Erro: ${errorMessage}`);
+          this.loadingService.hide();
+          this.toastService.showError(errorMessage);
         }
       });
     }
@@ -813,17 +853,18 @@ export class BookCatalog implements OnInit {
     console.log('🔍 Debug syncIsbn - ISBN trim vazio?', isbn ? !isbn.trim() : true);
     
     if (!isbn) {
-      alert('Por favor, insira um ISBN válido.');
+      this.toastService.showError('Por favor, insira um ISBN válido.');
       return;
     }
 
     // Validação adicional para ISBN vazio após trim
     if (typeof isbn === 'string' && !isbn.trim()) {
-      alert('Por favor, insira um ISBN válido (não pode ser apenas espaços).');
+      this.toastService.showError('Por favor, insira um ISBN válido (não pode ser apenas espaços).');
       return;
     }
 
     this.isSyncingIsbn.set(true);
+    this.loadingService.show('Sincronizando dados do ISBN...');
     console.log('🔄 Sincronizando ISBN:', isbn);
 
     this.bookService.searchBookByIsbn(isbn).subscribe({
@@ -848,6 +889,11 @@ export class BookCatalog implements OnInit {
             photoPath: bookData.coverUrl || this.newBook().photoPath // Atualizar photoPath com a URL da capa
           });
           
+          // Atualizar URL da foto se disponível
+          if (bookData.coverUrl) {
+            this.photoPreviewUrl.set(bookData.coverUrl);
+          }
+          
           console.log('🔍 Debug - Novo livro após sincronização:', this.newBook());
           
           // Sincronizar a foto se disponível
@@ -866,12 +912,13 @@ export class BookCatalog implements OnInit {
             });
           }
           
-          alert('Dados do livro sincronizados com sucesso!');
+          this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
         } else {
-          alert('Nenhum livro encontrado para este ISBN.');
+          this.toastService.showWarning('Nenhum livro encontrado para este ISBN.');
         }
         
         this.isSyncingIsbn.set(false);
+        this.loadingService.hide();
       },
       error: (error) => {
         console.error('❌ Erro ao sincronizar ISBN:', error);
@@ -889,8 +936,9 @@ export class BookCatalog implements OnInit {
           errorMessage = 'Erro interno do servidor. Tente novamente.';
         }
         
-        alert(`Erro: ${errorMessage}`);
+        this.toastService.showError(errorMessage);
         this.isSyncingIsbn.set(false);
+        this.loadingService.hide();
       }
     });
   }
@@ -977,21 +1025,16 @@ export class BookCatalog implements OnInit {
    */
   showValidationError(message: string): void {
     console.warn('⚠️ Erro de validação:', message);
-    // You can replace this with a toast notification or better UI feedback
-    alert(`Erro de validação: ${message}`);
+    this.toastService.showError(`Erro de validação: ${message}`);
   }
 
   /**
    * Show ISBN duplicate error with suggestions
    */
   showIsbnDuplicateError(isbn: string): void {
-    const message = `O ISBN "${isbn}" já está sendo usado por outro livro.\n\n` +
-                   `Sugestões:\n` +
-                   `• Verifique se você digitou o ISBN corretamente\n` +
-                   `• Use um ISBN diferente para este livro\n` +
-                   `• Se for o mesmo livro, edite o existente em vez de criar um novo`;
+    const message = `O ISBN "${isbn}" já está sendo usado por outro livro. Verifique se você digitou o ISBN corretamente ou use um ISBN diferente.`;
     
-    alert(message);
+    this.toastService.showError(message);
   }
 
   /**
@@ -1068,24 +1111,25 @@ export class BookCatalog implements OnInit {
   createBookFromIsbn(): void {
     const isbn = this.isbnToCreate().trim();
     if (!isbn) {
-      alert('Por favor, digite um ISBN válido.');
+      this.toastService.showError('Por favor, digite um ISBN válido.');
       return;
     }
 
     // Validate ISBN format
     const cleanIsbn = isbn.replace(/[-\s]/g, '');
     if (!/^\d{10}(\d{3})?$/.test(cleanIsbn)) {
-      alert('ISBN inválido. Deve ter 10 ou 13 dígitos.');
+      this.toastService.showError('ISBN inválido. Deve ter 10 ou 13 dígitos.');
       return;
     }
 
     // Check if ISBN already exists in current books
     if (this.isIsbnDuplicate(isbn)) {
-      alert('Já existe um livro com este ISBN no seu catálogo.');
+      this.toastService.showError('Já existe um livro com este ISBN no seu catálogo.');
       return;
     }
 
     this.isCreatingFromIsbn.set(true);
+    this.loadingService.show('Criando livro por ISBN...');
     console.log('🔄 Criando livro por ISBN:', isbn);
 
     this.bookService.createBookFromIsbn(isbn, this.downloadCover()).subscribe({
@@ -1103,9 +1147,11 @@ export class BookCatalog implements OnInit {
           
           // Fechar modal e mostrar sucesso
           this.closeCreateFromIsbnModal();
-          alert(`Livro "${newBook.title}" criado com sucesso!`);
+          this.loadingService.hide();
+          this.toastService.showSuccess(`Livro "${newBook.title}" criado com sucesso!`);
         } else {
-          alert('Erro ao criar livro. Tente novamente.');
+          this.loadingService.hide();
+          this.toastService.showError('Erro ao criar livro. Tente novamente.');
         }
         
         this.isCreatingFromIsbn.set(false);
@@ -1119,6 +1165,7 @@ export class BookCatalog implements OnInit {
           
           // Check for specific ISBN duplicate error
           if (error.error.error.includes('ISBN') && error.error.error.includes('existe')) {
+            this.loadingService.hide();
             this.showIsbnDuplicateError(this.isbnToCreate());
             return; // Don't show the generic error message
           }
@@ -1134,7 +1181,8 @@ export class BookCatalog implements OnInit {
           errorMessage = 'Erro interno do servidor. Tente novamente.';
         }
         
-        alert(`Erro: ${errorMessage}`);
+        this.loadingService.hide();
+        this.toastService.showError(errorMessage);
         this.isCreatingFromIsbn.set(false);
       }
     });
@@ -1147,6 +1195,7 @@ export class BookCatalog implements OnInit {
     if (this.isGeneratingPdf()) return;
     
     this.isGeneratingPdf.set(true);
+    this.loadingService.show('Gerando relatório PDF...');
     console.log('📄 Gerando relatório PDF...');
     
     this.bookService.generatePdfReport().subscribe({
@@ -1154,12 +1203,14 @@ export class BookCatalog implements OnInit {
         console.log('✅ PDF gerado com sucesso!');
         this.downloadPdf(blob);
         this.isGeneratingPdf.set(false);
+        this.loadingService.hide();
+        this.toastService.showSuccess('Relatório PDF gerado com sucesso!');
       },
       error: (error) => {
         console.error('❌ Erro ao gerar PDF:', error);
         this.isGeneratingPdf.set(false);
-        // Aqui você pode adicionar uma notificação de erro para o usuário
-        alert('Erro ao gerar o relatório PDF. Tente novamente.');
+        this.loadingService.hide();
+        this.toastService.showError('Erro ao gerar o relatório PDF. Tente novamente.');
       }
     });
   }

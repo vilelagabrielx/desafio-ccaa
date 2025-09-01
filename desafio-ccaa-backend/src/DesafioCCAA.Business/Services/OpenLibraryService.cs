@@ -37,56 +37,66 @@ public class OpenLibraryService : IOpenLibraryService
             // Limpar o ISBN (remover espaços e hífens)
             var cleanIsbn = isbn.Replace(" ", "").Replace("-", "");
 
-            // Construir a URL da API usando o novo endpoint direto
-            var url = $"{_baseUrl}/isbn/{cleanIsbn}.json";
+            _logger.LogInformation("Iniciando busca por ISBN: {ISBN} seguindo o fluxo Books API → Authors API → Works API", cleanIsbn);
 
-            _logger.LogInformation("Buscando livro por ISBN: {ISBN} na API do OpenLibrary", cleanIsbn);
-
-            var response = await _httpClient.GetAsync(url);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Falha na busca por ISBN {ISBN}: {StatusCode}", cleanIsbn, response.StatusCode);
-                return ServiceResult<BookFromIsbnDto?>.Success(null); // Retorna null se não encontrar
-            }
-
-            var jsonContent = await response.Content.ReadAsStringAsync();
-            
-            _logger.LogInformation("Resposta da API para ISBN {ISBN}: {JsonContent}", cleanIsbn, jsonContent);
-            
-            if (string.IsNullOrWhiteSpace(jsonContent))
-            {
-                _logger.LogWarning("Resposta vazia da API para ISBN {ISBN}", cleanIsbn);
-                return ServiceResult<BookFromIsbnDto?>.Success(null);
-            }
-
-            // Deserializar a resposta diretamente
-            var bookData = JsonSerializer.Deserialize<OpenLibraryBookDto>(jsonContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
+            // PASSO 1: Books API - Buscar informações básicas do livro
+            var bookData = await GetBookDataFromIsbnAsync(cleanIsbn);
             if (bookData == null)
             {
-                _logger.LogWarning("Falha ao deserializar dados do livro para ISBN {ISBN}", cleanIsbn);
+                _logger.LogWarning("Livro não encontrado na Books API para ISBN {ISBN}", cleanIsbn);
                 return ServiceResult<BookFromIsbnDto?>.Success(null);
             }
 
-            _logger.LogInformation("Dados do livro encontrado: Title={Title}, Authors={Authors}, Publishers={Publishers}, Works={Works}", 
+            _logger.LogInformation("Dados básicos obtidos da Books API: Title={Title}, Authors={Authors}, Publishers={Publishers}, Works={Works}", 
                 bookData.Title, 
                 bookData.Authors?.Count ?? 0, 
                 bookData.Publishers?.Count ?? 0,
                 bookData.Works?.Count ?? 0);
 
-            // Buscar o resumo do livro
-            var summary = await GetBookSummaryAsync(cleanIsbn);
+            // PASSO 2: Authors API - Buscar nome(s) do(s) autor(es)
+            var authorNames = new List<string>();
+            if (bookData.Authors?.Any() == true)
+            {
+                foreach (var author in bookData.Authors)
+                {
+                    if (!string.IsNullOrWhiteSpace(author.Key))
+                    {
+                        var authorName = await GetAuthorNameAsync(author.Key);
+                        if (!string.IsNullOrWhiteSpace(authorName))
+                        {
+                            authorNames.Add(authorName);
+                        }
+                    }
+                }
+            }
+
+            _logger.LogInformation("Nomes dos autores obtidos: {AuthorNames}", string.Join(", ", authorNames));
+
+            // PASSO 3: Works API - Buscar sinopse e gêneros
+            string? summary = null;
+            List<string> genres = new();
             
+            if (bookData.Works?.Any() == true)
+            {
+                var workKey = bookData.Works.First().Key;
+                if (!string.IsNullOrWhiteSpace(workKey))
+                {
+                    var workData = await GetWorkDataAsync(workKey);
+                    if (workData != null)
+                    {
+                        summary = workData.Description;
+                        genres = workData.Subjects ?? new();
+                    }
+                }
+            }
+
+            _logger.LogInformation("Dados do work obtidos: Summary={HasSummary}, Genres={Genres}", 
+                !string.IsNullOrEmpty(summary), genres.Count);
+
             // Mapear para o DTO do sistema
-            var bookDto = MapToBookFromIsbnDto(bookData, cleanIsbn, summary);
+            var bookDto = MapToBookFromIsbnDto(bookData, cleanIsbn, authorNames, genres, summary);
             
-            _logger.LogInformation("Livro encontrado para ISBN {ISBN}: {Title}", cleanIsbn, bookDto.Title);
-            _logger.LogInformation("Dados mapeados: Author={Author}, Publisher={Publisher}, Genre={Genre}, Summary={HasSummary}", 
-                bookDto.Author, bookDto.Publisher, bookDto.Genre, !string.IsNullOrEmpty(bookDto.Summary));
+            _logger.LogInformation("Livro sincronizado com sucesso para ISBN {ISBN}: {Title}", cleanIsbn, bookDto.Title);
             
             return ServiceResult<BookFromIsbnDto?>.Success(bookDto);
         }
@@ -94,6 +104,160 @@ public class OpenLibraryService : IOpenLibraryService
         {
             _logger.LogError(ex, "Erro ao buscar livro por ISBN {ISBN}", isbn);
             return ServiceResult<BookFromIsbnDto?>.Failure("Erro interno ao buscar livro por ISBN");
+        }
+    }
+
+    private async Task<OpenLibraryBookDto?> GetBookDataFromIsbnAsync(string isbn)
+    {
+        try
+        {
+            // Usar a Books API: https://openlibrary.org/api/books?bibkeys=ISBN:9780140328721&format=json&jscmd=data
+            var url = $"{_baseUrl}/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data";
+            
+            _logger.LogInformation("Chamando Books API: {Url}", url);
+            
+            var response = await _httpClient.GetAsync(url);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha na Books API para ISBN {ISBN}: {StatusCode}", isbn, response.StatusCode);
+                return null;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation("Resposta da Books API para ISBN {ISBN}: {JsonContent}", isbn, jsonContent);
+            
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                _logger.LogWarning("Resposta vazia da Books API para ISBN {ISBN}", isbn);
+                return null;
+            }
+
+            // A resposta é um objeto com a chave "ISBN:9780140328721"
+            _logger.LogInformation("Tentando deserializar resposta da Books API...");
+            
+            var searchResponse = JsonSerializer.Deserialize<Dictionary<string, OpenLibraryBookDto>>(jsonContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            _logger.LogInformation("Deserialização concluída. Resultado: {SearchResponse}", searchResponse != null ? "Sucesso" : "Falha");
+
+            if (searchResponse == null || !searchResponse.Any())
+            {
+                _logger.LogWarning("Nenhum resultado encontrado na Books API para ISBN {ISBN}. SearchResponse é null: {IsNull}", isbn, searchResponse == null);
+                return null;
+            }
+
+            _logger.LogInformation("Encontrados {Count} resultados na Books API", searchResponse.Count);
+
+            // Pegar o primeiro resultado (deve ser apenas um para um ISBN específico)
+            var bookData = searchResponse.First().Value;
+            
+            _logger.LogInformation("Dados obtidos da Books API: Title={Title}, Authors={Authors}, Publishers={Publishers}", 
+                bookData.Title, bookData.Authors?.Count ?? 0, bookData.Publishers?.Count ?? 0);
+            
+            return bookData;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar dados do livro na Books API para ISBN {ISBN}", isbn);
+            return null;
+        }
+    }
+
+    private async Task<string?> GetAuthorNameAsync(string authorKey)
+    {
+        try
+        {
+            // Authors API: https://openlibrary.org/authors/OL34184A.json
+            var url = $"{_baseUrl}{authorKey}.json";
+            
+            _logger.LogInformation("Chamando Authors API: {Url}", url);
+            
+            var response = await _httpClient.GetAsync(url);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha na Authors API para author key {AuthorKey}: {StatusCode}", authorKey, response.StatusCode);
+                return null;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                _logger.LogWarning("Resposta vazia da Authors API para author key {AuthorKey}", authorKey);
+                return null;
+            }
+
+            var authorData = JsonSerializer.Deserialize<OpenLibraryAuthorResponseDto>(jsonContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (authorData?.Name == null)
+            {
+                _logger.LogWarning("Nome do autor não encontrado na Authors API para author key {AuthorKey}", authorKey);
+                return null;
+            }
+
+            _logger.LogInformation("Nome do autor obtido: {AuthorName} para author key {AuthorKey}", authorData.Name, authorKey);
+            return authorData.Name;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar nome do autor na Authors API para author key {AuthorKey}", authorKey);
+            return null;
+        }
+    }
+
+    private async Task<OpenLibraryWorkResponseDto?> GetWorkDataAsync(string workKey)
+    {
+        try
+        {
+            // Works API: https://openlibrary.org/works/OL45804W.json
+            var url = $"{_baseUrl}{workKey}.json";
+            
+            _logger.LogInformation("Chamando Works API: {Url}", url);
+            
+            var response = await _httpClient.GetAsync(url);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha na Works API para work key {WorkKey}: {StatusCode}", workKey, response.StatusCode);
+                return null;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                _logger.LogWarning("Resposta vazia da Works API para work key {WorkKey}", workKey);
+                return null;
+            }
+
+            var workData = JsonSerializer.Deserialize<OpenLibraryWorkResponseDto>(jsonContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (workData == null)
+            {
+                _logger.LogWarning("Falha ao deserializar dados do work para work key {WorkKey}", workKey);
+                return null;
+            }
+
+            _logger.LogInformation("Dados do work obtidos: Title={Title}, Description={HasDescription}, Subjects={Subjects}", 
+                workData.Title, !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+            
+            return workData;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar dados do work na Works API para work key {WorkKey}", workKey);
+            return null;
         }
     }
 
@@ -140,60 +304,21 @@ public class OpenLibraryService : IOpenLibraryService
 
             var cleanIsbn = isbn.Replace(" ", "").Replace("-", "");
 
-            // Passo 1: Buscar o livro pelo ISBN para obter a chave do work
-            var bookUrl = $"{_baseUrl}/isbn/{cleanIsbn}.json";
-            var bookResponse = await _httpClient.GetAsync(bookUrl);
-            
-            if (!bookResponse.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Falha ao buscar livro para resumo por ISBN {ISBN}: {StatusCode}", cleanIsbn, bookResponse.StatusCode);
-                return null;
-            }
-
-            var bookJson = await bookResponse.Content.ReadAsStringAsync();
-            var bookData = JsonSerializer.Deserialize<OpenLibraryBookDto>(bookJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
+            // Usar o mesmo fluxo da busca principal
+            var bookData = await GetBookDataFromIsbnAsync(cleanIsbn);
             if (bookData?.Works == null || !bookData.Works.Any())
             {
-                _logger.LogInformation("Nenhum work encontrado para ISBN {ISBN}", cleanIsbn);
                 return null;
             }
 
-            // Pegar o primeiro work
             var workKey = bookData.Works.First().Key;
             if (string.IsNullOrWhiteSpace(workKey))
             {
-                _logger.LogWarning("Chave do work vazia para ISBN {ISBN}", cleanIsbn);
                 return null;
             }
 
-            // Passo 2: Buscar o work para obter a descrição
-            var workUrl = $"{_baseUrl}{workKey}.json";
-            var workResponse = await _httpClient.GetAsync(workUrl);
-            
-            if (!workResponse.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Falha ao buscar work para resumo: {WorkUrl} - {StatusCode}", workUrl, workResponse.StatusCode);
-                return null;
-            }
-
-            var workJson = await workResponse.Content.ReadAsStringAsync();
-            var workData = JsonSerializer.Deserialize<OpenLibraryWorkResponseDto>(workJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            if (workData?.Description == null)
-            {
-                _logger.LogInformation("Nenhuma descrição encontrada para work {WorkKey}", workKey);
-                return null;
-            }
-
-            _logger.LogInformation("Resumo encontrado para ISBN {ISBN}: {SummaryLength} caracteres", cleanIsbn, workData.Description.Length);
-            return workData.Description;
+            var workData = await GetWorkDataAsync(workKey);
+            return workData?.Description;
         }
         catch (Exception ex)
         {
@@ -202,28 +327,29 @@ public class OpenLibraryService : IOpenLibraryService
         }
     }
 
-    private BookFromIsbnDto MapToBookFromIsbnDto(OpenLibraryBookDto openLibraryBook, string isbn, string? summary)
+    private BookFromIsbnDto MapToBookFromIsbnDto(OpenLibraryBookDto openLibraryBook, string isbn, List<string> authorNames, List<string> genres, string? summary)
     {
-        _logger.LogInformation("Mapeando dados do OpenLibrary: Title={Title}, Authors={Authors}, Publishers={Publishers}, Summary={HasSummary}", 
+        _logger.LogInformation("Mapeando dados do OpenLibrary: Title={Title}, AuthorNames={AuthorNames}, Publishers={Publishers}, Genres={Genres}, Summary={HasSummary}", 
             openLibraryBook.Title, 
-            openLibraryBook.Authors?.Count ?? 0, 
+            string.Join(", ", authorNames),
             openLibraryBook.Publishers?.Count ?? 0,
+            string.Join(", ", genres),
             !string.IsNullOrEmpty(summary));
         
-        var author = openLibraryBook.Authors?.FirstOrDefault()?.Name ?? "Autor desconhecido";
+        var author = authorNames.Any() ? string.Join(", ", authorNames) : "Autor desconhecido";
         var publisher = openLibraryBook.Publishers?.FirstOrDefault()?.Name ?? "Editora desconhecida";
         var title = openLibraryBook.Title ?? "Título não disponível";
         
         _logger.LogInformation("Dados extraídos: Author={Author}, Publisher={Publisher}, Title={Title}", 
             author, publisher, title);
         
-        // Determinar o gênero baseado nos assuntos
-        var genre = DetermineGenreFromSubjects(openLibraryBook.Subjects);
+        // Determinar o gênero baseado nos assuntos do work
+        var genre = DetermineGenreFromSubjects(genres);
         
-        _logger.LogInformation("Gênero determinado: {Genre}", genre);
+        _logger.LogInformation("Gênero determinado: {Genre} (baseado em: {Genres})", genre, string.Join(", ", genres));
         
-        // Criar sinopse a partir dos dados disponíveis
-        var synopsis = CreateSynopsisFromBookData(openLibraryBook);
+        // Criar sinopse a partir do summary ou dados disponíveis
+        var synopsis = !string.IsNullOrWhiteSpace(summary) ? summary : CreateSynopsisFromBookData(openLibraryBook);
 
         var mappedPublisher = MapPublisherToEnum(publisher);
         
@@ -237,7 +363,7 @@ public class OpenLibraryService : IOpenLibraryService
             Author = author,
             Publisher = mappedPublisher,
             Synopsis = synopsis,
-            CoverUrl = openLibraryBook.Cover?.Medium ?? openLibraryBook.Cover?.Large ?? openLibraryBook.Cover?.Small,
+            CoverUrl = openLibraryBook.Cover?.Medium ?? null,
             Summary = summary
         };
         
@@ -247,60 +373,53 @@ public class OpenLibraryService : IOpenLibraryService
         return result;
     }
 
-    private BookGenre DetermineGenreFromSubjects(List<OpenLibrarySubjectDto>? subjects)
+    private BookGenre DetermineGenreFromSubjects(List<string> subjects)
     {
         if (subjects == null || !subjects.Any())
         {
             return BookGenre.Other;
         }
 
-        var subjectNames = subjects.Select(s => s.Name?.ToLowerInvariant()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+        var subjectNames = subjects.Select(s => s.ToLowerInvariant()).ToList();
         
         _logger.LogInformation("Analisando assuntos para determinar gênero: {Subjects}", string.Join(", ", subjectNames));
-        
-        // Log detalhado de cada assunto
-        foreach (var subject in subjects.Take(10)) // Log dos primeiros 10 assuntos
-        {
-            _logger.LogInformation("Assunto: {SubjectName}", subject.Name);
-        }
 
         // Mapear assuntos para gêneros
-        if (subjectNames.Any(s => s!.Contains("fantasy") || s!.Contains("magic") || s!.Contains("wizard") || s!.Contains("witch")))
+        if (subjectNames.Any(s => s.Contains("fantasy") || s.Contains("magic") || s.Contains("wizard") || s.Contains("witch")))
         {
-            var fantasySubjects = subjectNames.Where(s => s!.Contains("fantasy") || s!.Contains("magic") || s!.Contains("wizard") || s!.Contains("witch")).ToList();
-            _logger.LogInformation("Gênero determinado: Fantasy (baseado em: {Subjects}) - Valor do enum: {EnumValue}", 
-                string.Join(", ", fantasySubjects), (int)BookGenre.Fantasy);
+            var fantasySubjects = subjectNames.Where(s => s.Contains("fantasy") || s.Contains("magic") || s.Contains("wizard") || s.Contains("witch")).ToList();
+            _logger.LogInformation("Gênero determinado: Fantasy (baseado em: {Subjects})", string.Join(", ", fantasySubjects));
             return BookGenre.Fantasy;
         }
-        if (subjectNames.Any(s => s!.Contains("science fiction") || s!.Contains("sci-fi")))
+        if (subjectNames.Any(s => s.Contains("science fiction") || s.Contains("sci-fi")))
             return BookGenre.ScienceFiction;
-        if (subjectNames.Any(s => s!.Contains("mystery") || s!.Contains("thriller")))
+        if (subjectNames.Any(s => s.Contains("mystery") || s.Contains("thriller")))
             return BookGenre.Mystery;
-        if (subjectNames.Any(s => s!.Contains("horror")))
+        if (subjectNames.Any(s => s.Contains("horror")))
             return BookGenre.Horror;
-        if (subjectNames.Any(s => s!.Contains("romance")))
+        if (subjectNames.Any(s => s.Contains("romance")))
             return BookGenre.Romance;
-        if (subjectNames.Any(s => s!.Contains("biography") || s!.Contains("autobiography")))
+        if (subjectNames.Any(s => s.Contains("biography") || s.Contains("autobiography")))
             return BookGenre.Biography;
-        if (subjectNames.Any(s => s!.Contains("history")))
+        if (subjectNames.Any(s => s.Contains("history")))
             return BookGenre.History;
-        if (subjectNames.Any(s => s!.Contains("science") || s!.Contains("technology")))
+        if (subjectNames.Any(s => s.Contains("science") || s.Contains("technology")))
             return BookGenre.Science;
-        if (subjectNames.Any(s => s!.Contains("philosophy") || s!.Contains("religion")))
+        if (subjectNames.Any(s => s.Contains("philosophy") || s.Contains("religion")))
             return BookGenre.Philosophy;
-        if (subjectNames.Any(s => s!.Contains("business") || s!.Contains("economics")))
+        if (subjectNames.Any(s => s.Contains("business") || s.Contains("economics")))
             return BookGenre.Business;
-        if (subjectNames.Any(s => s!.Contains("poetry")))
+        if (subjectNames.Any(s => s.Contains("poetry")))
             return BookGenre.Poetry;
-        if (subjectNames.Any(s => s!.Contains("drama") || s!.Contains("plays")))
+        if (subjectNames.Any(s => s.Contains("drama") || s.Contains("plays")))
             return BookGenre.Drama;
-        if (subjectNames.Any(s => s!.Contains("cookbook") || s!.Contains("cooking")))
+        if (subjectNames.Any(s => s.Contains("cookbook") || s.Contains("cooking")))
             return BookGenre.Cookbook;
-        if (subjectNames.Any(s => s!.Contains("travel")))
+        if (subjectNames.Any(s => s.Contains("travel")))
             return BookGenre.Travel;
-        if (subjectNames.Any(s => s!.Contains("juvenile") || s!.Contains("children") || s!.Contains("school") || s!.Contains("adventure")))
+        if (subjectNames.Any(s => s.Contains("juvenile") || s.Contains("children") || s.Contains("school") || s.Contains("adventure")))
             return BookGenre.Fiction; // Livros infantis, escolares e de aventura como ficção
-        if (subjectNames.Any(s => s!.Contains("fiction")))
+        if (subjectNames.Any(s => s.Contains("fiction")))
             return BookGenre.Fiction;
 
         return BookGenre.Other;
@@ -463,4 +582,15 @@ public class OpenLibraryService : IOpenLibraryService
         
         return result;
     }
+}
+
+// DTOs adicionais para as APIs
+public record OpenLibraryAuthorResponseDto
+{
+    public string? Key { get; init; }
+    public string? Name { get; init; }
+    public string? BirthDate { get; init; }
+    public string? DeathDate { get; init; }
+    public List<string>? AlternateNames { get; init; }
+    public string? Bio { get; init; }
 }

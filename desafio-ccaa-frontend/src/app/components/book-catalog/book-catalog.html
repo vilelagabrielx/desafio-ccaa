@@ -18,24 +18,13 @@
     <!-- Busca Centralizada -->
     <div class="search-section">
       <div class="search-container">
-        <div class="search-select-wrapper">
-          <svg class="search-select-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <select class="search-category" [(ngModel)]="searchCategory">
-            <option value="">Todo o Catálogo</option>
-            <option value="title">Por Título</option>
-            <option value="author">Por Autor</option>
-            <option value="genre">Por Categoria</option>
-          </select>
-        </div>
         <div class="search-input-wrapper">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <input 
             type="text" 
-            placeholder="Buscar livros..." 
+            placeholder="Buscar por nome do livro..." 
             class="search-input"
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
@@ -108,18 +97,10 @@
     
     <div class="mobile-search">
       <div class="search-container">
-        <div class="search-select-wrapper">
-          <select class="search-category" [(ngModel)]="searchCategory">
-            <option value="">Todo o Catálogo</option>
-            <option value="title">Por Título</option>
-            <option value="author">Por Autor</option>
-            <option value="genre">Por Categoria</option>
-          </select>
-        </div>
         <div class="search-input-wrapper">
           <input 
             type="text" 
-            placeholder="Buscar livros..." 
+            placeholder="Buscar por nome do livro..." 
             class="search-input"
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
@@ -216,7 +197,7 @@
           @for (category of categoryCounts(); track category.id; let i = $index) {
             <li 
               class="category-item" 
-              [class.active]="selectedCategory() === category.name"
+              [class.active]="selectedGenre() === mapCategoryNameToGenre(category.name)"
               (click)="filterByCategory(category.name); toggleSidebar()"
             >
               <div class="category-icon">
@@ -250,10 +231,10 @@
         </button>
 
         <!-- Filtro Ativo Mobile -->
-        @if (selectedCategory()) {
+        @if (selectedGenre()) {
           <div class="mobile-filter-info">
             <span class="filter-label">Filtro ativo:</span>
-            <span class="filter-value">{{ selectedCategory() }}</span>
+            <span class="filter-value">{{ getGenreTranslation(selectedGenre()) }}</span>
             <button class="clear-filter-btn" (click)="filterByCategory('')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -307,8 +288,8 @@
             <h3 class="books-title">Catálogo de Livros</h3>
             <div class="books-stats">
               <span class="books-count">{{ filteredBooks().length }} livro{{ filteredBooks().length !== 1 ? 's' : '' }}</span>
-              @if (selectedCategory()) {
-                <span class="books-filter">em {{ selectedCategory() }}</span>
+              @if (selectedGenre()) {
+                <span class="books-filter">em {{ getGenreTranslation(selectedGenre()) }}</span>
               }
             </div>
           </div>

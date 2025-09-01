@@ -2,13 +2,15 @@ import { Component } from '@angular/core';
 import { RouterOutlet, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthComponent } from './components/auth/auth.component';
+import { ToastComponent } from './components/toast/toast.component';
+import { LoadingComponent } from './components/loading/loading.component';
 import { AuthService } from './services/auth.service';
 import { Observable, map } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterModule, CommonModule, AuthComponent],
+  imports: [RouterOutlet, RouterModule, CommonModule, AuthComponent, ToastComponent, LoadingComponent],
   template: `
     <div class="app-container">
       <!-- Header com autenticação -->
@@ -41,6 +43,12 @@ import { Observable, map } from 'rxjs';
         <p>&copy; 2024 Desafio CCAA. Todos os direitos reservados.</p>
       </footer>
     </div>
+
+    <!-- Toast notifications -->
+    <app-toast></app-toast>
+
+    <!-- Loading overlay -->
+    <app-loading></app-loading>
   `,
   styles: [`
     .app-container {

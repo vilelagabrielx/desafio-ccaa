@@ -72,39 +72,7 @@
   border: 1px solid var(--ccaa-gray-200);
 }
 
-.search-select-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
 
-.search-select-icon {
-  position: absolute;
-  left: var(--space-3);
-  color: var(--ccaa-gray-500);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.search-category {
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-10);
-  border: none;
-  background: transparent;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--ccaa-gray-700);
-  cursor: pointer;
-  min-width: 140px;
-  
-  &:focus {
-    outline: none;
-  }
-  
-  option {
-    background: white;
-    color: var(--ccaa-gray-700);
-  }
-}
 
 .search-input-wrapper {
   position: relative;
