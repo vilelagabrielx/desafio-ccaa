@@ -873,6 +873,42 @@
   transition: opacity var(--transition-normal);
 }
 
+.book-status {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    &.recent {
+      background: rgba(34, 197, 94, 0.9);
+      color: white;
+    }
+    
+    &.updated {
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+    }
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+}
+
 .book-actions {
   display: flex;
   gap: var(--space-3);
@@ -946,6 +982,51 @@
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.book-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--ccaa-gray-200);
+  
+  .book-date {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.75rem;
+    color: var(--ccaa-text-tertiary);
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+  
+  .book-click-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.75rem;
+    color: var(--ccaa-primary);
+    font-weight: 500;
+    opacity: 0.8;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
 }
 
 .book-publisher {
@@ -1622,13 +1703,47 @@ textarea:focus {
   }
 }
 
+// Modal Base
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+  transform: scale(1);
+}
+
 // Modal de Detalhes do Livro
 .book-details-modal {
   .book-details-content {
     max-width: 900px;
     width: 90vw;
-    max-height: 90vh;
-    overflow-y: auto;
   }
   
   .book-details-container {
@@ -1661,12 +1776,52 @@ textarea:focus {
   }
   
   .book-info-section {
-    .book-title-large {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--ccaa-text-primary);
+    .book-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
       margin-bottom: var(--space-4);
-      line-height: 1.2;
+      gap: var(--space-4);
+      
+      .book-title-large {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ccaa-text-primary);
+        line-height: 1.2;
+        margin: 0;
+        flex: 1;
+      }
+      
+      .book-status-info {
+        .status-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: var(--space-1);
+          padding: var(--space-2) var(--space-3);
+          border-radius: var(--radius-full);
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          
+          &.recent {
+            background: var(--ccaa-success-light);
+            color: var(--ccaa-success);
+            border: 1px solid var(--ccaa-success);
+          }
+          
+          &.updated {
+            background: var(--ccaa-primary-light);
+            color: var(--ccaa-primary);
+            border: 1px solid var(--ccaa-primary);
+          }
+          
+          svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
     }
     
     .book-meta-grid {
@@ -1677,21 +1832,57 @@ textarea:focus {
       
       .meta-item {
         display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: var(--ccaa-gray-50);
+        border-radius: var(--radius-lg);
+        border-left: 4px solid var(--ccaa-primary);
         
-        label {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: var(--ccaa-text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .meta-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          background: var(--ccaa-primary-light);
+          border-radius: var(--radius-md);
+          color: var(--ccaa-primary);
+          flex-shrink: 0;
+          
+          svg {
+            width: 20px;
+            height: 20px;
+          }
         }
         
-        span {
-          font-size: 1rem;
-          color: var(--ccaa-text-primary);
-          font-weight: 500;
+        .meta-content {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-1);
+          flex: 1;
+          
+          label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--ccaa-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          span {
+            font-size: 1rem;
+            color: var(--ccaa-text-primary);
+            font-weight: 500;
+            
+            &.isbn-code {
+              font-family: 'Courier New', monospace;
+              background: var(--ccaa-gray-100);
+              padding: var(--space-1) var(--space-2);
+              border-radius: var(--radius-sm);
+              font-size: 0.875rem;
+            }
+          }
         }
       }
     }

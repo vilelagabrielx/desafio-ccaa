@@ -903,25 +903,60 @@ export class BookCatalog implements OnInit {
           if (bookData.coverUrl) {
             console.log('📸 Foto sincronizada:', bookData.coverUrl);
             
+            // Atualizar mensagem de loading para indicar download da imagem
+            this.loadingService.show('Baixando capa do livro...');
+            
+            // Timeout de segurança para garantir que o loading seja finalizado
+            const timeoutId = setTimeout(() => {
+              console.warn('⚠️ Timeout no download da imagem, finalizando loading...');
+              console.log('🔄 Executando timeout - chamando loadingService.hideAll()...');
+              this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
+              this.isSyncingIsbn.set(false);
+              this.loadingService.hideAll();
+              console.log('✅ Loading finalizado por timeout');
+            }, 10000); // 10 segundos de timeout
+            
             // Baixar a imagem da URL da capa de forma assíncrona
             this.downloadImageFromUrl(bookData.coverUrl).then(imageFile => {
+              clearTimeout(timeoutId); // Cancelar timeout se sucesso
+              console.log('🔄 Finalizando loading após download da imagem...');
+              
               if (imageFile) {
                 this.selectedPhotoFile.set(imageFile);
                 console.log('✅ Imagem baixada com sucesso:', imageFile.name);
               }
+              
+              // Finalizar loading após imagem baixada
+              console.log('🔄 Chamando loadingService.hideAll()...');
+              this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
+              this.isSyncingIsbn.set(false);
+              this.loadingService.hideAll();
+              console.log('✅ Loading finalizado com sucesso');
             }).catch(error => {
+              clearTimeout(timeoutId); // Cancelar timeout se erro
+              console.log('🔄 Finalizando loading após erro no download...');
+              
               console.error('❌ Erro ao baixar imagem da capa:', error);
               // A imagem ainda será exibida pela URL, mas não será baixada
+              
+              // Finalizar loading mesmo com erro na imagem
+              console.log('🔄 Chamando loadingService.hideAll() após erro...');
+              this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
+              this.isSyncingIsbn.set(false);
+              this.loadingService.hideAll();
+              console.log('✅ Loading finalizado após erro');
             });
+          } else {
+            // Se não há imagem para baixar, finalizar loading imediatamente
+            this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
+            this.isSyncingIsbn.set(false);
+            this.loadingService.hideAll();
           }
-          
-          this.toastService.showSuccess('Dados do livro sincronizados com sucesso!');
         } else {
           this.toastService.showWarning('Nenhum livro encontrado para este ISBN.');
+          this.isSyncingIsbn.set(false);
+          this.loadingService.hideAll();
         }
-        
-        this.isSyncingIsbn.set(false);
-        this.loadingService.hide();
       },
       error: (error) => {
         console.error('❌ Erro ao sincronizar ISBN:', error);
@@ -941,7 +976,7 @@ export class BookCatalog implements OnInit {
         
         this.toastService.showError(errorMessage);
         this.isSyncingIsbn.set(false);
-        this.loadingService.hide();
+        this.loadingService.hideAll();
       }
     });
   }
@@ -1259,6 +1294,7 @@ export class BookCatalog implements OnInit {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', url, true);
       xhr.responseType = 'blob';
+      xhr.timeout = 8000; // 8 segundos de timeout
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
@@ -1273,6 +1309,10 @@ export class BookCatalog implements OnInit {
 
       xhr.onerror = () => {
         reject(new Error('Erro de rede ao baixar imagem'));
+      };
+
+      xhr.ontimeout = () => {
+        reject(new Error('Timeout ao baixar imagem'));
       };
 
       xhr.send();
@@ -1377,6 +1417,17 @@ export class BookCatalog implements OnInit {
   closeBookDetailsModal(): void {
     this.showBookDetailsModalSignal.set(false);
     this.selectedBookForDetails.set(null);
+  }
+
+  /**
+   * Verifica se o livro foi adicionado recentemente (últimos 7 dias)
+   */
+  isRecentBook(book: Book): boolean {
+    const now = new Date();
+    const bookDate = new Date(book.createdAt);
+    const diffTime = Math.abs(now.getTime() - bookDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 7;
   }
 
   /**
