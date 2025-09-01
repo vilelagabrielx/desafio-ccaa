@@ -22,8 +22,16 @@ export class AuthGuard implements CanActivate {
     console.log('🔒 AuthGuard: Usuário presente:', !!this.authService.getCurrentUser());
     
     if (isAuthenticated) {
-      console.log('✅ AuthGuard: Acesso permitido');
-      return of(true);
+      // Verificar se o token ainda é válido
+      const token = this.authService.getToken();
+      if (token && this.authService.validateToken(token)) {
+        console.log('✅ AuthGuard: Token válido, acesso permitido');
+        return of(true);
+      } else {
+        console.log('⚠️ AuthGuard: Token inválido ou expirado, fazendo logout');
+        this.authService.logout();
+        return of(this.router.createUrlTree(['/login']));
+      }
     }
     
     console.log('❌ AuthGuard: Acesso negado, redirecionando para login');
@@ -63,5 +71,35 @@ export class PermissionGuard implements CanActivate {
     // Se não tiver permissão, redireciona para página de acesso negado
     this.router.navigate(['/access-denied']);
     return of(false);
+  }
+}
+
+/**
+ * Guarda para rotas que devem ser acessíveis apenas por usuários NÃO autenticados
+ * (ex: login, register, reset-password)
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class GuestGuard implements CanActivate {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  canActivate(): Observable<boolean | UrlTree> {
+    console.log('🚫 GuestGuard: Verificando se usuário está deslogado...');
+    
+    const isAuthenticated = this.authService.isAuthenticated();
+    console.log('🚫 GuestGuard: Usuário autenticado:', isAuthenticated);
+    
+    if (!isAuthenticated) {
+      console.log('✅ GuestGuard: Usuário não autenticado, acesso permitido');
+      return of(true);
+    }
+    
+    console.log('❌ GuestGuard: Usuário já autenticado, redirecionando para books');
+    // Usuário já está logado, redireciona para a página principal
+    return of(this.router.createUrlTree(['/books']));
   }
 }

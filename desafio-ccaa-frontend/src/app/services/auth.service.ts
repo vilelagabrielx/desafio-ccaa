@@ -144,7 +144,7 @@ export class AuthService {
   /**
    * Valida e decodifica o token JWT para debug
    */
-  private validateToken(token: string): boolean {
+  public validateToken(token: string): boolean {
     try {
       // Verificar se o token tem o formato correto (3 partes separadas por ponto)
       const parts = token.split('.');
@@ -218,7 +218,24 @@ export class AuthService {
         map(user => user), // Retorna o usuário sem alterações
         catchError(error => {
           console.error('❌ AuthService: Erro no login:', error);
-          return throwError(() => new Error(error.error?.error || 'Erro ao fazer login'));
+          
+          // Tratar especificamente credenciais inválidas
+          if (error.status === 401 || error.error?.error === 'Credenciais inválidas') {
+            return throwError(() => new Error('Credenciais inválidas. Verifique seu e-mail e senha.'));
+          }
+          
+          // Tratar outros erros de autenticação
+          if (error.status === 401) {
+            return throwError(() => new Error('Acesso negado. Verifique suas credenciais.'));
+          }
+          
+          // Tratar erros de rede/conexão
+          if (error.status === 0 || error.status >= 500) {
+            return throwError(() => new Error('Erro de conexão. Verifique sua internet e tente novamente.'));
+          }
+          
+          // Erro genérico
+          return throwError(() => new Error(error.error?.error || 'Erro ao fazer login. Tente novamente.'));
         })
       );
   }

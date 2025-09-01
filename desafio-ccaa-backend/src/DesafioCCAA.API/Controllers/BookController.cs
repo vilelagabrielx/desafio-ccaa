@@ -23,6 +23,24 @@ public class BookController : ControllerBase
     }
 
     /// <summary>
+    /// Lista todos os livros (público)
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAllBooks()
+    {
+        try
+        {
+            var books = await _bookService.GetAllBooksAsync();
+            return Ok(new { data = books });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
     /// Cria um novo livro
     /// </summary>
     [HttpPost]
@@ -188,23 +206,7 @@ public class BookController : ControllerBase
         return File(result.Data!, "application/pdf", $"relatorio-livros-{DateTime.Now:yyyyMMdd-HHmmss}.pdf");
     }
 
-    /// <summary>
-    /// Obtém todos os livros (público)
-    /// </summary>
-    [HttpGet("all")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetAllBooks()
-    {
-        try
-        {
-            var books = await _bookService.GetAllBooksAsync();
-            return Ok(new { data = books });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = "Erro ao buscar livros", details = ex.Message });
-        }
-    }
+
 
     /// <summary>
     /// Obtém todas as categorias disponíveis

@@ -621,3 +621,48 @@ $ccaa-warning: #FF9800;
     border-color: rgba(240, 98, 146, 0.1);
   }
 }
+
+// Animações de feedback
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes shake-strong {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+
+.shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+.login-card.shake {
+  animation: shake-strong 0.6s ease-in-out;
+  border: 2px solid $ccaa-error;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
+}
+
+.form-group.shake {
+  animation: shake 0.5s ease-in-out;
+  
+  .form-input {
+    border-color: $ccaa-error;
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.2);
+  }
+}
+
+// Estilos para botão bloqueado
+.btn.locked {
+  background: $ccaa-gray !important;
+  color: $ccaa-white !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  
+  &:hover {
+    background: $ccaa-gray !important;
+    transform: none !important;
+  }
+}

@@ -9,11 +9,26 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="dev-tools" *ngIf="isDevelopment">
-      <div class="dev-tools-header">
-        <h3>🛠️ Ferramentas de Desenvolvimento</h3>
-        <p>Disponível apenas em ambiente de desenvolvimento</p>
-      </div>
+    <!-- Botão flutuante para abrir ferramentas de dev -->
+    <div class="dev-tools-floating-btn" *ngIf="isDevelopment">
+      <button 
+        class="dev-btn"
+        (click)="toggleModal()"
+        [title]="'Ferramentas de Desenvolvimento'"
+      >
+        <span class="dev-icon">🛠️</span>
+        <span class="dev-text">Dev</span>
+      </button>
+    </div>
+
+    <!-- Modal de ferramentas de desenvolvimento -->
+    <div class="dev-modal-overlay" *ngIf="showModal" (click)="closeModal()">
+      <div class="dev-modal" (click)="$event.stopPropagation()">
+        <div class="dev-modal-header">
+          <h3>🛠️ Ferramentas de Desenvolvimento</h3>
+          <p>Disponível apenas em ambiente de desenvolvimento</p>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
       
       <div class="dev-tools-content">
         <!-- Informações do Ambiente -->
@@ -130,6 +145,109 @@ import { environment } from '../../../environments/environment';
     </div>
   `,
   styles: [`
+    /* Botão flutuante */
+    .dev-tools-floating-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .dev-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .dev-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .dev-icon {
+      font-size: 16px;
+    }
+
+    .dev-text {
+      font-size: 12px;
+    }
+
+    /* Modal */
+    .dev-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .dev-modal {
+      background: white;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .dev-modal-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px 12px 0 0;
+      position: relative;
+    }
+
+    .dev-modal-header h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+    }
+
+    .dev-modal-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
     .dev-tools {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 12px;
@@ -432,6 +550,7 @@ import { environment } from '../../../environments/environment';
 })
 export class DevToolsComponent implements OnInit {
   isDevelopment = true; // Assume desenvolvimento por padrão
+  showModal = false; // Controla se o modal está aberto
   environmentInfo: any = null;
   isDownloading = false;
   isLoading = false;
@@ -448,6 +567,24 @@ export class DevToolsComponent implements OnInit {
     console.log('🛠️ DevToolsComponent: Inicializando...');
     this.checkEnvironment();
     this.loadEnvironmentInfo();
+  }
+
+  /**
+   * Abre ou fecha o modal de ferramentas de desenvolvimento
+   */
+  toggleModal() {
+    this.showModal = !this.showModal;
+    if (this.showModal) {
+      // Recarregar informações quando abrir o modal
+      this.loadEnvironmentInfo();
+    }
+  }
+
+  /**
+   * Fecha o modal de ferramentas de desenvolvimento
+   */
+  closeModal() {
+    this.showModal = false;
   }
 
   private checkEnvironment() {

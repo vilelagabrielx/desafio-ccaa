@@ -118,17 +118,22 @@ import { DevToolsComponent } from '../dev-tools/dev-tools.component';
           <button 
             type="submit" 
             class="btn btn-primary btn-full"
-            [disabled]="loginForm.invalid || isSubmitting"
+            [disabled]="loginForm.invalid || isSubmitting || isLockedOut"
             [class.loading]="isSubmitting"
+            [class.locked]="isLockedOut"
             [@pulse]="isSubmitting ? 'pulse' : 'idle'"
           >
-            <span *ngIf="!isSubmitting" class="btn-content">
+            <span *ngIf="!isSubmitting && !isLockedOut" class="btn-content">
               <i class="fas fa-sign-in-alt"></i>
               Entrar
             </span>
             <span *ngIf="isSubmitting" class="btn-content">
               <div class="spinner"></div>
               Entrando...
+            </span>
+            <span *ngIf="isLockedOut" class="btn-content">
+              <i class="fas fa-lock"></i>
+              Bloqueado
             </span>
           </button>
 
@@ -194,6 +199,14 @@ export class LoginComponent implements OnInit, OnDestroy {
   successMessage = '';
   showPassword = false;
   private destroy$ = new Subject<void>();
+  
+  // Controle de tentativas de login
+  private loginAttempts = 0;
+  private maxAttempts = 3;
+  private lockoutTime = 5 * 60 * 1000; // 5 minutos em millisegundos
+  private lockoutUntil: Date | null = null;
+  isLockedOut = false;
+  remainingTime = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -221,6 +234,9 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     // Restaurar dados salvos
     this.restoreFormData();
+    
+    // Verificar status de bloqueio
+    this.checkLockoutStatus();
   }
 
   ngOnDestroy(): void {
@@ -271,6 +287,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Verificar se está bloqueado
+    if (this.isLockedOut) {
+      this.errorMessage = `Muitas tentativas de login. Tente novamente em ${Math.ceil(this.remainingTime / 1000)} segundos.`;
+      return;
+    }
+
     this.isSubmitting = true;
     this.clearMessages();
     this.saveFormData();
@@ -294,7 +316,16 @@ export class LoginComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ LoginComponent: Erro no login:', error);
-        this.errorMessage = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
+        
+        // Tratar especificamente credenciais inválidas
+        if (error.message?.includes('Credenciais inválidas')) {
+          this.handleInvalidCredentials();
+        } else if (error.message?.includes('Erro de conexão')) {
+          this.errorMessage = 'Problema de conexão. Verifique sua internet e tente novamente.';
+        } else {
+          this.errorMessage = error.message || 'Erro ao fazer login. Tente novamente.';
+        }
+        
         this.isSubmitting = false;
       }
     });
@@ -309,6 +340,88 @@ export class LoginComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.errorMessage = '';
     }, 3000);
+  }
+
+  /**
+   * Adiciona animação de shake para credenciais inválidas
+   */
+  private addShakeAnimation(): void {
+    setTimeout(() => {
+      const loginCard = document.querySelector('.login-card');
+      if (loginCard) {
+        loginCard.classList.add('shake');
+        setTimeout(() => loginCard.classList.remove('shake'), 600);
+      }
+      
+      // Também adicionar shake nos campos de email e senha
+      const emailField = document.querySelector('.form-group:has(#email)');
+      const passwordField = document.querySelector('.form-group:has(#password)');
+      
+      [emailField, passwordField].forEach(field => {
+        if (field) {
+          field.classList.add('shake');
+          setTimeout(() => field.classList.remove('shake'), 500);
+        }
+      });
+    }, 100);
+  }
+
+  /**
+   * Trata tentativas de credenciais inválidas
+   */
+  private handleInvalidCredentials(): void {
+    this.loginAttempts++;
+    
+    if (this.loginAttempts >= this.maxAttempts) {
+      this.lockoutUntil = new Date(Date.now() + this.lockoutTime);
+      this.isLockedOut = true;
+      this.startLockoutTimer();
+      this.errorMessage = `Muitas tentativas de login. Tente novamente em ${Math.ceil(this.lockoutTime / 1000 / 60)} minutos.`;
+    } else {
+      const remainingAttempts = this.maxAttempts - this.loginAttempts;
+      this.errorMessage = `E-mail ou senha incorretos. ${remainingAttempts} tentativa(s) restante(s).`;
+    }
+    
+    this.addShakeAnimation();
+  }
+
+  /**
+   * Inicia o timer de bloqueio
+   */
+  private startLockoutTimer(): void {
+    const timer = setInterval(() => {
+      if (!this.lockoutUntil) {
+        clearInterval(timer);
+        return;
+      }
+      
+      this.remainingTime = this.lockoutUntil.getTime() - Date.now();
+      
+      if (this.remainingTime <= 0) {
+        this.isLockedOut = false;
+        this.lockoutUntil = null;
+        this.loginAttempts = 0;
+        this.remainingTime = 0;
+        clearInterval(timer);
+      }
+    }, 1000);
+  }
+
+  /**
+   * Verifica se está bloqueado ao inicializar
+   */
+  private checkLockoutStatus(): void {
+    const savedLockout = localStorage.getItem('loginLockout');
+    if (savedLockout) {
+      const lockoutTime = new Date(savedLockout);
+      if (lockoutTime > new Date()) {
+        this.lockoutUntil = lockoutTime;
+        this.isLockedOut = true;
+        this.startLockoutTimer();
+      } else {
+        localStorage.removeItem('loginLockout');
+      }
+    }
   }
 
   /**

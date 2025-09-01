@@ -24,6 +24,7 @@ public class UserController : ControllerBase
     /// Registra um novo usuário
     /// </summary>
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] UserRegistrationDto registrationDto)
     {
         if (!ModelState.IsValid)
@@ -53,6 +54,7 @@ public class UserController : ControllerBase
     /// Realiza login do usuário
     /// </summary>
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] UserLoginDto loginDto)
     {
         var result = await _userService.LoginAsync(loginDto);
@@ -148,6 +150,7 @@ public class UserController : ControllerBase
     /// Solicita reset de senha
     /// </summary>
     [HttpPost("forgot-password")]
+    [AllowAnonymous]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
     {
         var result = await _userService.ForgotPasswordAsync(forgotPasswordDto);
@@ -164,6 +167,7 @@ public class UserController : ControllerBase
     /// Reseta senha com token
     /// </summary>
     [HttpPost("reset-password")]
+    [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
     {
         var result = await _userService.ResetPasswordAsync(resetPasswordDto);

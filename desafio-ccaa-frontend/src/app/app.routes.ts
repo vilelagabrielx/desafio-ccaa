@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components';
 import { BookCatalog } from './components/book-catalog/book-catalog';
-import { AuthGuard } from './services/auth.guard';
+import { AuthGuard, GuestGuard } from './services/auth.guard';
 import { RegisterComponent } from './components/register/register.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { ResetPasswordTokenComponent } from './components/reset-password-token/reset-password-token.component';
@@ -16,24 +16,29 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
 
-  // Rotas públicas (não requerem autenticação)
+  // Rotas públicas (apenas para usuários NÃO autenticados)
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
+    canActivate: [GuestGuard]
   },
   {
     path: 'register',
-    component: RegisterComponent
+    component: RegisterComponent,
+    canActivate: [GuestGuard]
   },
-
   {
     path: 'reset-password',
-    component: ResetPasswordComponent
+    component: ResetPasswordComponent,
+    canActivate: [GuestGuard]
   },
   {
     path: 'reset-password-token',
-    component: ResetPasswordTokenComponent
+    component: ResetPasswordTokenComponent,
+    canActivate: [GuestGuard]
   },
+  
+  // Rota de acesso negado (acessível por todos)
   {
     path: 'access-denied',
     component: AccessDeniedComponent

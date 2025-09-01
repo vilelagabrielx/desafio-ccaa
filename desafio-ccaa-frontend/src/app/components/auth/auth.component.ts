@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService, LocalUser } from '../../services/auth.service';
 import { Observable, map } from 'rxjs';
 
@@ -16,7 +16,7 @@ import { Observable, map } from 'rxjs';
       </div>
 
       <!-- Usuário não autenticado -->
-      <div *ngIf="!(isAuthenticated$ | async) && !(isLoading$ | async)" class="not-authenticated">
+      <div *ngIf="!(isAuthenticated$ | async) && !(isLoading$ | async) && !isOnAuthPage()" class="not-authenticated">
         <div class="auth-options">
           <button 
             routerLink="/login" 
@@ -197,7 +197,10 @@ export class AuthComponent implements OnInit {
   isLoading$: Observable<boolean>;
   userProfile$: Observable<LocalUser | null>;
 
-  constructor(private authService: AuthService) {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.isAuthenticated$ = this.authService.currentUser$.pipe(
       map(user => !!user)
     );
@@ -206,6 +209,16 @@ export class AuthComponent implements OnInit {
   }
 
   ngOnInit(): void {}
+
+  /**
+   * Verifica se está em uma página de autenticação (login, register, reset-password)
+   */
+  isOnAuthPage(): boolean {
+    const currentUrl = this.router.url;
+    return currentUrl.includes('/login') || 
+           currentUrl.includes('/register') || 
+           currentUrl.includes('/reset-password');
+  }
 
   logout(): void {
     console.log('🚪 AuthComponent: Iniciando logout...');
