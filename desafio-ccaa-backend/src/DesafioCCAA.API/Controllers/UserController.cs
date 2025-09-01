@@ -12,10 +12,12 @@ namespace DesafioCCAA.API.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IEnvironmentService _environmentService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IEnvironmentService environmentService)
     {
         _userService = userService;
+        _environmentService = environmentService;
     }
 
     /// <summary>
@@ -176,6 +178,68 @@ public class UserController : ControllerBase
         }
 
         return Ok(new { message = "Senha resetada com sucesso" });
+    }
+
+    /// <summary>
+    /// Obtém informações sobre o ambiente atual
+    /// </summary>
+    [HttpGet("environment-info")]
+    public IActionResult GetEnvironmentInfo()
+    {
+        return Ok(new { 
+            environment = _environmentService.GetEnvironmentName(),
+            isDevelopment = _environmentService.IsDevelopment(),
+            isUAT = _environmentService.IsUAT(),
+            isProduction = _environmentService.IsProduction(),
+            isDevelopmentOrUAT = _environmentService.IsDevelopmentOrUAT()
+        });
+    }
+
+    /// <summary>
+    /// Baixa o template do email de reset mais recente (apenas para desenvolvimento)
+    /// </summary>
+    [HttpGet("download-email-template")]
+    public IActionResult DownloadEmailTemplate()
+    {
+        // Verificar se está em ambiente de desenvolvimento ou UAT
+        if (!_environmentService.IsDevelopmentOrUAT())
+        {
+            return BadRequest(new { error = "Esta funcionalidade está disponível apenas em ambiente de desenvolvimento ou UAT" });
+        }
+
+        try
+        {
+            var pickupDirectory = _userService.GetEmailPickupDirectory();
+            
+            if (!Directory.Exists(pickupDirectory))
+            {
+                return NotFound(new { error = "Diretório de emails não encontrado" });
+            }
+
+            // Buscar o arquivo .eml mais recente
+            var emailFiles = Directory.GetFiles(pickupDirectory, "password_reset_*.eml")
+                .OrderByDescending(f => System.IO.File.GetCreationTime(f))
+                .ToArray();
+
+            if (emailFiles.Length == 0)
+            {
+                return NotFound(new { error = "Nenhum email de reset encontrado" });
+            }
+
+            var latestEmailFile = emailFiles[0];
+            var fileContent = System.IO.File.ReadAllText(latestEmailFile);
+            var fileName = Path.GetFileName(latestEmailFile);
+
+            return File(
+                System.Text.Encoding.UTF8.GetBytes(fileContent),
+                "message/rfc822",
+                fileName
+            );
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = $"Erro ao baixar template: {ex.Message}" });
+        }
     }
 
     /// <summary>

@@ -18,6 +18,8 @@ export class AuthGuard implements CanActivate {
     // Verificar autenticação
     const isAuthenticated = this.authService.isAuthenticated();
     console.log('🔒 AuthGuard: Resultado da verificação:', isAuthenticated);
+    console.log('🔒 AuthGuard: Token presente:', !!this.authService.getToken());
+    console.log('🔒 AuthGuard: Usuário presente:', !!this.authService.getCurrentUser());
     
     if (isAuthenticated) {
       console.log('✅ AuthGuard: Acesso permitido');

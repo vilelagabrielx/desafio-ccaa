@@ -18,7 +18,8 @@ public class UserService(
     SignInManager<User> signInManager,
     IConfiguration configuration,
     ILogger<UserService> logger,
-    IUserRepository userRepository) : IUserService
+    IUserRepository userRepository,
+    IEmailService emailService) : IUserService
 {
     public async Task<ServiceResult<UserResponseDto>> RegisterAsync(UserRegistrationDto registrationDto)
     {
@@ -297,59 +298,110 @@ public class UserService(
     {
         try
         {
-            var pickupDirectory = configuration["Email:PickupDirectory"] ?? "C:\\temp\\emails";
+            var frontendBaseUrl = configuration["Frontend:BaseUrl"] ?? "http://localhost:4200";
             
-            // Ensure directory exists
-            if (!Directory.Exists(pickupDirectory))
+            // Criar link de reset
+            var resetLink = $"{frontendBaseUrl}/reset-password-token?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(email)}";
+
+            var subject = "Reset de Senha - Desafio CCAA";
+            var body = $@"
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }}
+                        .reset-button {{ display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
+                        .reset-button:hover {{ background: #0056b3; }}
+                        .token-info {{ background: #e9ecef; padding: 15px; border-radius: 5px; margin: 15px 0; font-family: monospace; word-break: break-all; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>🔐 Reset de Senha</h1>
+                            <p>Desafio CCAA - Sistema de Gerenciamento de Livros</p>
+                        </div>
+                        <div class='content'>
+                            <h2>Olá {fullName}!</h2>
+                            <p>Você solicitou um reset de senha para sua conta no sistema Desafio CCAA.</p>
+                            
+                            <p><strong>Para redefinir sua senha, clique no botão abaixo:</strong></p>
+                            
+                            <div style='text-align: center;'>
+                                <a href='{resetLink}' class='reset-button'>
+                                    🔑 Redefinir Senha
+                                </a>
+                            </div>
+                            
+                            <p><strong>Ou copie e cole este link no seu navegador:</strong></p>
+                            <div class='token-info'>
+                                {resetLink}
+                            </div>
+                            
+                            <div style='background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                                <p><strong>⚠️ Importante:</strong></p>
+                                <ul>
+                                    <li>Este link expira em <strong>1 hora</strong></li>
+                                    <li>Use apenas uma vez</li>
+                                    <li>Se você não solicitou este reset, ignore este e-mail</li>
+                                </ul>
+                            </div>
+                            
+                            <p>Se o botão não funcionar, copie o link acima e cole na barra de endereços do seu navegador.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>Atenciosamente,<br><strong>Equipe Desafio CCAA</strong></p>
+                            <p>Este é um e-mail automático, não responda.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            // Usar o EmailService para enviar
+            var emailSent = await emailService.SendEmailAsync(email, subject, body, true);
+            
+            if (emailSent)
             {
-                Directory.CreateDirectory(pickupDirectory);
+                logger.LogInformation("E-mail de reset de senha enviado com sucesso para: {Email}", email);
             }
-
-            var message = new MailMessage
+            else
             {
-                From = new MailAddress("noreply@desafioccaa.com", "Desafio CCAA"),
-                Subject = "Reset de Senha",
-                Body = $@"
-                    <html>
-                    <body>
-                        <h2>Reset de Senha</h2>
-                        <p>Olá {fullName},</p>
-                        <p>Você solicitou um reset de senha para sua conta.</p>
-                        <p>Use o token abaixo para redefinir sua senha:</p>
-                        <h3>{token}</h3>
-                        <p>Este token expira em 1 hora.</p>
-                        <p>Se você não solicitou este reset, ignore este e-mail.</p>
-                        <br>
-                        <p>Atenciosamente,<br>Equipe Desafio CCAA</p>
-                    </body>
-                    </html>",
-                IsBodyHtml = true
-            };
+                logger.LogWarning("Falha ao enviar e-mail de reset de senha para: {Email}", email);
+            }
             
-            message.To.Add(new MailAddress(email, fullName));
-
-            // Save to pickup directory
-            var fileName = $"password_reset_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid()}.eml";
-            var filePath = Path.Combine(pickupDirectory, fileName);
-            
-            // Create .eml file content manually
-            var emlContent = $@"From: {message.From}
-To: {string.Join(", ", message.To.Select(t => t.ToString()))}
-Subject: {message.Subject}
-MIME-Version: 1.0
-Content-Type: {message.BodyEncoding?.WebName ?? "text/html; charset=utf-8"}
-
-{message.Body}";
-            
-            // Save to file
-            await File.WriteAllTextAsync(filePath, emlContent);
-            
-            logger.LogInformation("E-mail de reset de senha salvo em: {FilePath}", filePath);
+            // Em modo desenvolvimento, mostrar o token e link no console
+            logger.LogWarning("🔑 TOKEN DE RESET DE SENHA (DESENVOLVIMENTO): {Token}", token);
+            logger.LogWarning("🔗 LINK DE RESET (DESENVOLVIMENTO): {ResetLink}", resetLink);
+            logger.LogWarning("📧 Email: {Email}", email);
+            logger.LogWarning("👤 Nome: {FullName}", fullName);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Erro ao enviar e-mail de reset de senha para: {Email}", email);
             // Don't throw - email failure shouldn't break the password reset flow
+        }
+    }
+
+    public string GetEmailPickupDirectory()
+    {
+        return configuration["Email:PickupDirectory"] ?? "C:\\temp\\emails";
+    }
+
+    public async Task<ServiceResult<bool>> CheckEmailExistsAsync(string email)
+    {
+        try
+        {
+            var exists = await userRepository.EmailExistsAsync(email);
+            return ServiceResult<bool>.Success(exists);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao verificar se email existe: {Email}", email);
+            return ServiceResult<bool>.Failure("Erro interno ao verificar email");
         }
     }
 

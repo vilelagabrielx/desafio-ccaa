@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { AuthService, LocalUserLogin } from '../../services/auth.service';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { loginAnimations } from './login.animations';
+import { DevToolsComponent } from '../dev-tools/dev-tools.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DevToolsComponent],
   animations: loginAnimations,
   template: `
     <div class="login-container">
@@ -179,6 +180,9 @@ import { loginAnimations } from './login.animations';
           {{ successMessage }}
         </div>
       </div>
+
+      <!-- Ferramentas de Desenvolvimento -->
+      <app-dev-tools></app-dev-tools>
     </div>
   `,
   styleUrls: ['./login.component.scss']
@@ -284,19 +288,9 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.successMessage = 'Login realizado com sucesso! Redirecionando...';
         this.isSubmitting = false;
         
-        // Verificar se a autenticação foi realmente estabelecida
-        setTimeout(() => {
-          const isAuth = this.authService.isAuthenticated();
-          console.log('🔐 LoginComponent: Verificação pós-login - isAuthenticated:', isAuth);
-          
-          if (isAuth) {
-            console.log('✅ LoginComponent: Usuário autenticado, redirecionando...');
-            this.router.navigate(['/books']);
-          } else {
-            console.log('❌ LoginComponent: Usuário não autenticado após login, mostrando erro');
-            this.errorMessage = 'Erro na autenticação. Tente novamente.';
-          }
-        }, 500);
+        // Redirecionar imediatamente após login bem-sucedido
+        console.log('✅ LoginComponent: Login bem-sucedido, redirecionando...');
+        this.router.navigate(['/books']);
       },
       error: (error) => {
         console.error('❌ LoginComponent: Erro no login:', error);

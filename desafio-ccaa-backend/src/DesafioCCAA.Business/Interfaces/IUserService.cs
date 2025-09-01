@@ -13,6 +13,8 @@ public interface IUserService
     Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
     Task<ServiceResult<bool>> UpdateProfileAsync(string userId, UpdateProfileDto updateDto);
     Task<ServiceResult<bool>> DeactivateUserAsync(string userId);
+    Task<ServiceResult<bool>> CheckEmailExistsAsync(string email);
+    string GetEmailPickupDirectory();
 }
 
 public record ServiceResult<T>

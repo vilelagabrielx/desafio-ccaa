@@ -42,15 +42,36 @@ function shouldAddToken(request: any): boolean {
   // Adiciona token apenas para requisições da API
   const apiUrl = environment.api.baseUrl;
   
-  // Se a URL da requisição começar com a URL da API, adiciona o token
-  if (request.url.startsWith(apiUrl)) {
-    return true;
+  // Verifica se é uma requisição para a API
+  const isApiRequest = request.url.startsWith(apiUrl) || request.url.startsWith('/api/');
+  
+  if (!isApiRequest) {
+    return false;
   }
   
-  // Se for uma requisição relativa (para o mesmo domínio), adiciona o token
-  if (request.url.startsWith('/api/')) {
-    return true;
+  // Lista de endpoints públicos que NÃO precisam de token
+  const publicEndpoints = [
+    '/api/user/login',
+    '/api/user/register',
+    '/api/user/forgot-password',
+    '/api/user/reset-password',
+    '/api/user/environment-info',
+    '/api/user/download-email-template',
+    '/api/user/check-email-exists',
+    '/api/user/test-smtp',
+    '/api/user/send-test-email'
+  ];
+  
+  // Verifica se a requisição é para um endpoint público
+  const isPublicEndpoint = publicEndpoints.some(endpoint => 
+    request.url.includes(endpoint)
+  );
+  
+  // Se for um endpoint público, não adiciona o token
+  if (isPublicEndpoint) {
+    return false;
   }
   
-  return false;
+  // Para todos os outros endpoints da API, adiciona o token
+  return true;
 }

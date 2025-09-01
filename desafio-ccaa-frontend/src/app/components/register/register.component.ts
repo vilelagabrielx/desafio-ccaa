@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, LocalUserRegistration } from '../../services/auth.service';
+import { DevToolsComponent } from '../dev-tools/dev-tools.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DevToolsComponent],
   template: `
     <div class="register-container">
       <div class="register-card">
@@ -133,6 +134,9 @@ import { AuthService, LocalUserRegistration } from '../../services/auth.service'
           {{ successMessage }}
         </div>
       </div>
+
+      <!-- Ferramentas de Desenvolvimento -->
+      <app-dev-tools></app-dev-tools>
     </div>
   `,
   styles: [`

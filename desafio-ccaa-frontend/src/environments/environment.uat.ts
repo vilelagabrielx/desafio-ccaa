@@ -1,35 +1,34 @@
-// src/environments/environment.ts
 export const environment = {
   production: false,
-
+  
   // 🔧 CONFIGURAÇÃO: Ambiente
   environment: {
-    name: 'dev', // 'dev', 'uat', 'prod'
+    name: 'uat', // 'dev', 'uat', 'prod'
   },
-
+  
   // 🔧 CONFIGURAÇÃO: Serviços
   services: {
-    useMock: false, // true = Mock, false = API
-    fallbackToMock: true, // ✅ HABILITADO: Usa mock em caso de erro da API
+    useMock: false, // Em UAT, usar API real
+    fallbackToMock: true, // Em UAT, pode usar fallback para mock
   },
-
+  
   // 🔧 CONFIGURAÇÃO: API
   api: {
-    baseUrl: 'http://localhost:5000', // API local do backend
+    baseUrl: 'https://api-uat.seudominio.com', // Altere para sua API de UAT
     timeout: 30000, // Timeout em ms
     retryAttempts: 3, // Tentativas de retry
   },
-
+  
   // 🔧 CONFIGURAÇÃO: JWT
   jwt: {
     tokenKey: 'auth_token',
     userKey: 'current_user',
   },
-
+  
   // 🔧 CONFIGURAÇÃO: Logging
   logging: {
-    level: 'debug', // 'debug', 'info', 'warn', 'error'
+    level: 'info', // Em UAT, logs mais detalhados
     enableConsole: true,
-    enableRemote: false, // Para serviços como Sentry
+    enableRemote: true, // Para monitoramento
   }
 };

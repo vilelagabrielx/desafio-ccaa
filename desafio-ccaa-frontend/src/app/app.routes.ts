@@ -4,6 +4,7 @@ import { BookCatalog } from './components/book-catalog/book-catalog';
 import { AuthGuard } from './services/auth.guard';
 import { RegisterComponent } from './components/register/register.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
+import { ResetPasswordTokenComponent } from './components/reset-password-token/reset-password-token.component';
 import { AccessDeniedComponent } from './components/access-denied/access-denied.component';
 import { ProfileComponent } from './components/profile/profile.component';
 
@@ -28,6 +29,10 @@ export const routes: Routes = [
   {
     path: 'reset-password',
     component: ResetPasswordComponent
+  },
+  {
+    path: 'reset-password-token',
+    component: ResetPasswordTokenComponent
   },
   {
     path: 'access-denied',

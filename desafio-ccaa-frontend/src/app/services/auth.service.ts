@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { map, catchError, tap, switchMap } from 'rxjs/operators';
+import { EnvironmentService, EnvironmentInfo } from './environment.service';
 
 export interface UserProfile {
   id: string;
@@ -65,6 +66,7 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
+    private environmentService: EnvironmentService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     // Verificar se há token salvo apenas no browser
@@ -105,15 +107,20 @@ export class AuthService {
     // Verificar se há token E usuário
     const hasToken = !!this.authToken;
     const hasUser = !!this.currentUserSubject.value;
-    const isAuth = hasToken && hasUser;
     
-    console.log('🔐 AuthService: isAuthenticated() =', isAuth, 'Token:', hasToken, 'User:', hasUser);
-    
-    // Se há token mas não há usuário, tentar restaurar
+    // Se há token mas não há usuário, tentar restaurar do localStorage
     if (hasToken && !hasUser) {
       console.log('⚠️ AuthService: Token encontrado mas usuário não, tentando restaurar...');
       this.checkSavedToken();
+      // Verificar novamente após tentativa de restauração
+      const hasUserAfterRestore = !!this.currentUserSubject.value;
+      const isAuth = hasToken && hasUserAfterRestore;
+      console.log('🔐 AuthService: isAuthenticated() após restauração =', isAuth, 'Token:', hasToken, 'User:', hasUserAfterRestore);
+      return isAuth;
     }
+    
+    const isAuth = hasToken && hasUser;
+    console.log('🔐 AuthService: isAuthenticated() =', isAuth, 'Token:', hasToken, 'User:', hasUser);
     
     return isAuth;
   }
@@ -131,6 +138,8 @@ export class AuthService {
   getToken(): string | null {
     return this.authToken;
   }
+
+
 
   /**
    * Valida e decodifica o token JWT para debug
@@ -354,9 +363,83 @@ export class AuthService {
       }),
       catchError(error => {
         console.error('Erro ao resetar senha:', error);
-        return throwError(() => new Error(error.error?.error || 'Erro ao resetar senha'));
+        
+        // Tratar erros de validação do backend
+        if (error.error?.errors && Array.isArray(error.error.errors)) {
+          const errorMessages = error.error.errors.join(', ');
+          return throwError(() => new Error(errorMessages));
+        }
+        
+        // Tratar outros tipos de erro
+        return throwError(() => new Error(error.error?.error || error.error?.message || 'Erro ao resetar senha'));
       })
     );
+  }
+
+  /**
+   * Obtém informações sobre o ambiente atual
+   */
+  getEnvironmentInfo(): Observable<EnvironmentInfo> {
+    return this.http.get<EnvironmentInfo>(`${environment.api.baseUrl}/api/user/environment-info`).pipe(
+      catchError(error => {
+        console.error('Erro ao obter informações do ambiente:', error);
+        // Fallback para informações locais em caso de erro
+        return of(this.environmentService.getEnvironmentInfo());
+      })
+    );
+  }
+
+  /**
+   * Verifica se o sistema está em modo de desenvolvimento
+   */
+  isDevelopmentMode(): Observable<boolean> {
+    return this.getEnvironmentInfo().pipe(
+      map(info => info.isDevelopment)
+    );
+  }
+
+  /**
+   * Verifica se o sistema está em modo de desenvolvimento ou UAT
+   */
+  isDevelopmentOrUATMode(): Observable<boolean> {
+    return this.getEnvironmentInfo().pipe(
+      map(info => info.isDevelopmentOrUAT)
+    );
+  }
+
+  /**
+   * Baixa o template do email de reset mais recente
+   */
+  downloadEmailTemplate(): Observable<Blob> {
+    return this.http.get(`${environment.api.baseUrl}/api/user/download-email-template`, {
+      responseType: 'blob'
+    }).pipe(
+      catchError(error => {
+        console.error('Erro ao baixar template do email:', error);
+        return throwError(() => new Error(error.error?.error || 'Erro ao baixar template do email'));
+      })
+    );
+  }
+
+  /**
+   * Verifica se um email de usuário existe (apenas para desenvolvimento)
+   */
+  checkEmailExists(email: string): Observable<{email: string, exists: boolean, message: string}> {
+    return this.http.get<{email: string, exists: boolean, message: string}>(`${environment.api.baseUrl}/api/user/check-email-exists?email=${encodeURIComponent(email)}`);
+  }
+
+  /**
+   * Testa a conexão SMTP (apenas para desenvolvimento)
+   */
+  testSmtpConnection(): Observable<{success: boolean, message: string, smtpConfig?: any}> {
+    return this.http.post<{success: boolean, message: string, smtpConfig?: any}>(`${environment.api.baseUrl}/api/user/test-smtp`, {});
+  }
+
+  /**
+   * Envia email de teste (apenas para desenvolvimento)
+   */
+  sendTestEmail(email: string): Observable<{success: boolean, message: string}> {
+    return this.http.post<{success: boolean, message: string}>(`${environment.api.baseUrl}/api/user/send-test-email`, { email });
   }
 
   /**

@@ -1,6 +1,11 @@
 export const environment = {
   production: true,
   
+  // 🔧 CONFIGURAÇÃO: Ambiente
+  environment: {
+    name: 'prod', // 'dev', 'uat', 'prod'
+  },
+  
   // 🔧 CONFIGURAÇÃO: Serviços
   services: {
     useMock: false, // Em produção, sempre usar API real
