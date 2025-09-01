@@ -357,13 +357,34 @@ export class RegisterComponent {
 
     this.authService.registerLocalUser(userData).subscribe({
       next: (user) => {
-        this.successMessage = 'Conta criada com sucesso! Redirecionando...';
-        this.isSubmitting = false;
+        this.successMessage = 'Conta criada com sucesso! Fazendo login...';
         
-        // Redirecionar após 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/']);
-        }, 2000);
+        // Fazer login automático após registro
+        const loginData = {
+          email: userData.email,
+          password: userData.password
+        };
+        
+        this.authService.login(loginData).subscribe({
+          next: (loggedInUser) => {
+            this.successMessage = 'Conta criada e login realizado com sucesso! Redirecionando...';
+            this.isSubmitting = false;
+            
+            // Redirecionar para página de livros
+            setTimeout(() => {
+              this.router.navigate(['/books']);
+            }, 1500);
+          },
+          error: (loginError) => {
+            this.successMessage = 'Conta criada com sucesso! Faça login para continuar.';
+            this.isSubmitting = false;
+            
+            // Redirecionar para login se houver erro no login automático
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          }
+        });
       },
       error: (error) => {
         this.errorMessage = error.message || 'Erro ao criar conta. Tente novamente.';

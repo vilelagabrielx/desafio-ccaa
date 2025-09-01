@@ -267,17 +267,26 @@ public class BookService(
     {
         try
         {
+            logger.LogInformation("Iniciando geração de relatório PDF para usuário: {UserId}", userId);
+            
             var books = await bookRepository.GetBooksByUserIdAsync(userId);
+            logger.LogInformation("Encontrados {Count} livros para o usuário {UserId}", books.Count(), userId);
+            
             if (!books.Any())
             {
-                return ServiceResult<byte[]>.Failure("Nenhum livro encontrado para gerar relatório");
+                logger.LogWarning("Nenhum livro encontrado para gerar relatório para usuário: {UserId}", userId);
+                return ServiceResult<byte[]>.Failure("Você ainda não possui livros cadastrados. Adicione alguns livros à sua biblioteca antes de gerar o relatório.");
             }
 
+            logger.LogInformation("Criando PDF para {Count} livros", books.Count());
+            
             using var memoryStream = new MemoryStream();
             var writer = new PdfWriter(memoryStream);
             var pdf = new PdfDocument(writer);
             var document = new Document(pdf);
 
+            logger.LogInformation("Adicionando título ao PDF");
+            
             // Add title
             var title = new Paragraph("Relatório de Livros")
                 .SetFontSize(16)
@@ -299,12 +308,16 @@ public class BookService(
             }
             else
             {
+                logger.LogInformation("Criando tabela com {Count} livros", books.Count());
+                
                 // Create table
                 var table = new Table(5)
                     .SetWidth(UnitValue.CreatePercentValue(100))
                     .SetMarginTop(10)
                     .SetMarginBottom(10);
 
+                logger.LogInformation("Adicionando cabeçalhos da tabela");
+                
                 // Add headers
                 table.AddHeaderCell(new Cell().Add(new Paragraph("Título").SetBold()));
                 table.AddHeaderCell(new Cell().Add(new Paragraph("ISBN").SetBold()));
@@ -313,15 +326,26 @@ public class BookService(
                 table.AddHeaderCell(new Cell().Add(new Paragraph("Editora").SetBold()));
 
                 // Add data
+                logger.LogInformation("Adicionando dados dos livros à tabela");
                 foreach (var book in books)
                 {
-                    table.AddCell(new Cell().Add(new Paragraph(book.Title)));
-                    table.AddCell(new Cell().Add(new Paragraph(book.ISBN)));
-                    table.AddCell(new Cell().Add(new Paragraph(book.Author)));
-                    table.AddCell(new Cell().Add(new Paragraph(book.Genre.ToString())));
-                    table.AddCell(new Cell().Add(new Paragraph(book.Publisher.ToString())));
+                    try
+                    {
+                        logger.LogDebug("Adicionando livro: {Title} - {ISBN}", book.Title, book.ISBN);
+                        table.AddCell(new Cell().Add(new Paragraph(book.Title ?? "N/A")));
+                        table.AddCell(new Cell().Add(new Paragraph(book.ISBN ?? "N/A")));
+                        table.AddCell(new Cell().Add(new Paragraph(book.Author ?? "N/A")));
+                        table.AddCell(new Cell().Add(new Paragraph(book.Genre.ToString())));
+                        table.AddCell(new Cell().Add(new Paragraph(book.Publisher.ToString())));
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Erro ao adicionar livro {Title} à tabela: {Message}", book.Title, ex.Message);
+                        throw;
+                    }
                 }
 
+                logger.LogInformation("Adicionando tabela ao documento");
                 document.Add(table);
 
                 // Add summary
@@ -330,17 +354,19 @@ public class BookService(
                 document.Add(summary);
             }
 
+            logger.LogInformation("Fechando documento PDF");
             document.Close();
 
             var pdfBytes = memoryStream.ToArray();
-            logger.LogInformation("Relatório PDF gerado com sucesso para: {UserId}", userId);
+            logger.LogInformation("Relatório PDF gerado com sucesso para: {UserId}. Tamanho: {Size} bytes", userId, pdfBytes.Length);
 
             return ServiceResult<byte[]>.Success(pdfBytes);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Erro ao gerar relatório PDF para: {UserId}", userId);
-            return ServiceResult<byte[]>.Failure("Erro interno ao gerar relatório");
+            logger.LogError(ex, "Erro ao gerar relatório PDF para: {UserId}. Detalhes: {Message}", userId, ex.Message);
+            logger.LogError("Stack trace: {StackTrace}", ex.StackTrace);
+            return ServiceResult<byte[]>.Failure($"Erro interno ao gerar relatório: {ex.Message}");
         }
     }
 

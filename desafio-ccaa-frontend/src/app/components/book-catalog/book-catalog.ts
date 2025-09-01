@@ -1248,7 +1248,27 @@ export class BookCatalog implements OnInit {
         console.error('❌ Erro ao gerar PDF:', error);
         this.isGeneratingPdf.set(false);
         this.loadingService.hide();
-        this.toastService.showError('Erro ao gerar o relatório PDF. Tente novamente.');
+        
+        // Verificar se é erro de "nenhum livro encontrado"
+        if (error.status === 400) {
+          // Tentar extrair a mensagem do erro
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result as string);
+              if (errorData.error && errorData.error.includes('não possui livros cadastrados')) {
+                this.toastService.showWarning(errorData.error);
+              } else {
+                this.toastService.showError(errorData.error || 'Erro ao gerar o relatório PDF.');
+              }
+            } catch (e) {
+              this.toastService.showError('Erro ao gerar o relatório PDF. Tente novamente.');
+            }
+          };
+          reader.readAsText(error.error);
+        } else {
+          this.toastService.showError('Erro ao gerar o relatório PDF. Tente novamente.');
+        }
       }
     });
   }
