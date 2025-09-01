@@ -877,6 +877,7 @@ export class BookCatalog implements OnInit {
           console.log('🔍 Debug - Dados recebidos do backend:', bookData);
           console.log('🔍 Debug - Genre recebido:', bookData.genre, 'Tipo:', typeof bookData.genre);
           console.log('🔍 Debug - Publisher recebido:', bookData.publisher, 'Tipo:', typeof bookData.publisher);
+          console.log('🔍 Debug - Summary recebido:', bookData.summary, 'Tipo:', typeof bookData.summary);
           
           // Preencher os campos com os dados obtidos
           this.newBook.set({
@@ -886,6 +887,7 @@ export class BookCatalog implements OnInit {
             genre: this.mapGenreFromBackend(bookData.genre) || this.newBook().genre,
             publisher: this.mapPublisherFromBackend(bookData.publisher) || this.newBook().publisher,
             synopsis: bookData.synopsis || this.newBook().synopsis,
+            summary: bookData.summary || this.newBook().summary,
             photoPath: bookData.coverUrl || this.newBook().photoPath // Atualizar photoPath com a URL da capa
           });
           
@@ -895,6 +897,7 @@ export class BookCatalog implements OnInit {
           }
           
           console.log('🔍 Debug - Novo livro após sincronização:', this.newBook());
+          console.log('🔍 Debug - Summary após mapeamento:', this.newBook().summary);
           
           // Sincronizar a foto se disponível
           if (bookData.coverUrl) {

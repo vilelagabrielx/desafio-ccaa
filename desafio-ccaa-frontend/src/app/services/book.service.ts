@@ -6,6 +6,18 @@ import { BookApiService } from './book-api.service';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 
+// Interface para resposta da API de busca por ISBN
+export interface BookFromIsbnResponse {
+  title: string;
+  isbn: string;
+  genre: string;
+  author: string;
+  publisher: string;
+  synopsis: string;
+  summary: string;
+  coverUrl: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -134,9 +146,9 @@ export class BookService implements IBookService {
   /**
    * Busca livro por ISBN na API do OpenLibrary
    */
-  searchBookByIsbn(isbn: string): Observable<any> {
+  searchBookByIsbn(isbn: string): Observable<{data: BookFromIsbnResponse}> {
     const url = `${this.apiUrl}/api/book/search-isbn/${isbn}`;
-    return this.http.get(url, {
+    return this.http.get<{data: BookFromIsbnResponse}>(url, {
       headers: this.getAuthHeaders()
     });
   }

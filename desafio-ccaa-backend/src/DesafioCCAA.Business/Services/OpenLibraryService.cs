@@ -59,11 +59,19 @@ public class OpenLibraryService : IOpenLibraryService
             {
                 foreach (var author in bookData.Authors)
                 {
-                    if (!string.IsNullOrWhiteSpace(author.Key))
+                    // Priorizar o nome direto da Books API se disponível
+                    if (!string.IsNullOrWhiteSpace(author.Name))
                     {
+                        _logger.LogInformation("Nome do autor obtido diretamente da Books API: {AuthorName}", author.Name);
+                        authorNames.Add(author.Name);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(author.Key))
+                    {
+                        // Fallback para Authors API se o nome não estiver disponível
                         var authorName = await GetAuthorNameAsync(author.Key);
                         if (!string.IsNullOrWhiteSpace(authorName))
                         {
+                            _logger.LogInformation("Nome do autor obtido via Authors API: {AuthorName}", authorName);
                             authorNames.Add(authorName);
                         }
                     }
@@ -76,18 +84,64 @@ public class OpenLibraryService : IOpenLibraryService
             string? summary = null;
             List<string> genres = new();
             
+            // Se não temos works diretamente, tentar obter via book key
             if (bookData.Works?.Any() == true)
             {
                 var workKey = bookData.Works.First().Key;
+                _logger.LogInformation("Work key encontrado: {WorkKey}", workKey);
+                
                 if (!string.IsNullOrWhiteSpace(workKey))
                 {
                     var workData = await GetWorkDataAsync(workKey);
                     if (workData != null)
                     {
+                        _logger.LogInformation("Work data obtido: Description={HasDescription}, Subjects={SubjectsCount}", 
+                            !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+                        
                         summary = workData.Description;
                         genres = workData.Subjects ?? new();
+                        
+                        _logger.LogInformation("Summary extraído: {Summary}", summary);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Work data é null para work key: {WorkKey}", workKey);
                     }
                 }
+                else
+                {
+                    _logger.LogWarning("Work key está vazio ou nulo");
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(bookData.Key))
+            {
+                // Tentar obter work key via book API
+                _logger.LogInformation("Tentando obter work key via book API: {BookKey}", bookData.Key);
+                var workKey = await GetWorkKeyFromBookAsync(bookData.Key);
+                
+                if (!string.IsNullOrWhiteSpace(workKey))
+                {
+                    _logger.LogInformation("Work key obtido via book API: {WorkKey}", workKey);
+                    var workData = await GetWorkDataAsync(workKey);
+                    if (workData != null)
+                    {
+                        _logger.LogInformation("Work data obtido: Description={HasDescription}, Subjects={SubjectsCount}", 
+                            !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+                        
+                        summary = workData.Description;
+                        genres = workData.Subjects ?? new();
+                        
+                        _logger.LogInformation("Summary extraído: {Summary}", summary);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Não foi possível obter work key via book API");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Nenhum work encontrado e book key não disponível");
             }
 
             _logger.LogInformation("Dados do work obtidos: Summary={HasSummary}, Genres={Genres}", 
@@ -209,6 +263,58 @@ public class OpenLibraryService : IOpenLibraryService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar nome do autor na Authors API para author key {AuthorKey}", authorKey);
+            return null;
+        }
+    }
+
+    private async Task<string?> GetWorkKeyFromBookAsync(string bookKey)
+    {
+        try
+        {
+            // Book API: https://openlibrary.org/books/OL7353617M.json
+            var url = $"{_baseUrl}{bookKey}.json";
+            
+            _logger.LogInformation("Chamando Book API para obter work key: {Url}", url);
+            
+            var response = await _httpClient.GetAsync(url);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Falha na Book API para book key {BookKey}: {StatusCode}", bookKey, response.StatusCode);
+                return null;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                _logger.LogWarning("Resposta vazia da Book API para book key {BookKey}", bookKey);
+                return null;
+            }
+
+            // Deserializar para obter o work key
+            using var document = JsonDocument.Parse(jsonContent);
+            if (document.RootElement.TryGetProperty("works", out var worksElement) && worksElement.ValueKind == JsonValueKind.Array)
+            {
+                var worksArray = worksElement.EnumerateArray();
+                if (worksArray.MoveNext())
+                {
+                    var firstWork = worksArray.Current;
+                    if (firstWork.TryGetProperty("key", out var workKeyElement))
+                    {
+                        var workKey = workKeyElement.GetString();
+                        _logger.LogInformation("Work key obtido da Book API: {WorkKey}", workKey);
+                        return workKey;
+                    }
+                }
+            }
+
+            _logger.LogWarning("Work key não encontrado na Book API para book key {BookKey}", bookKey);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar work key na Book API para book key {BookKey}", bookKey);
             return null;
         }
     }

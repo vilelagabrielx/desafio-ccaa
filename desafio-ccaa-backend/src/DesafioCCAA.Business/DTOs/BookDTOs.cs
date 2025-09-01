@@ -92,6 +92,7 @@ public record CategoryWithCountDto
 // DTOs para busca por ISBN via OpenLibrary API
 public record OpenLibraryBookDto
 {
+    public string? Key { get; init; }
     public string? Title { get; init; }
     public List<OpenLibraryAuthorDto>? Authors { get; init; } = [];
     public int? NumberOfPages { get; init; }
