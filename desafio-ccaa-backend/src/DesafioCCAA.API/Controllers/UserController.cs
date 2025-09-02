@@ -30,7 +30,8 @@ public class UserController : ControllerBase
         if (!ModelState.IsValid)
         {
             var errors = ModelState
-                .SelectMany(x => x.Value.Errors)
+                .Where(x => x.Value != null)
+                .SelectMany(x => x.Value!.Errors)
                 .Select(x => x.ErrorMessage)
                 .ToList();
             return BadRequest(new { errors });
@@ -93,12 +94,15 @@ public class UserController : ControllerBase
     {
         // Debug: Log das claims do usuário
         Console.WriteLine("🔐 GetCurrentUser: Claims do usuário:");
-        foreach (var claim in User.Claims)
+        if (User?.Claims != null)
         {
-            Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+            foreach (var claim in User.Claims)
+            {
+                Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+            }
         }
 
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         Console.WriteLine($"🔐 GetCurrentUser: UserId extraído: {userId}");
         
         if (string.IsNullOrEmpty(userId))
@@ -109,10 +113,10 @@ public class UserController : ControllerBase
 
         var result = await _userService.GetUserByIdAsync(userId);
         
-        if (!result.IsSuccess)
+        if (result == null || !result.IsSuccess)
         {
-            Console.WriteLine($"❌ GetCurrentUser: Erro ao buscar usuário: {result.ErrorMessage}");
-            return NotFound(new { error = result.ErrorMessage });
+            Console.WriteLine($"❌ GetCurrentUser: Erro ao buscar usuário: {result?.ErrorMessage}");
+            return NotFound(new { error = result?.ErrorMessage ?? "Erro desconhecido" });
         }
 
         Console.WriteLine($"✅ GetCurrentUser: Usuário encontrado: {result.Data?.Email}");
@@ -126,7 +130,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -253,7 +257,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateDto)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });

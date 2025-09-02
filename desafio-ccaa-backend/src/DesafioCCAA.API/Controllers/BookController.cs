@@ -34,7 +34,7 @@ public class BookController : ControllerBase
             var books = await _bookService.GetAllBooksAsync();
             return Ok(new { data = books });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new { error = "Erro interno do servidor" });
         }
@@ -46,7 +46,7 @@ public class BookController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateBook([FromForm] CreateBookDto createBookDto, IFormFile? photo)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -85,7 +85,7 @@ public class BookController : ControllerBase
     [HttpGet("my/{id}")]
     public async Task<IActionResult> GetMyBookById(int id)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -107,7 +107,7 @@ public class BookController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyBooks()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -146,7 +146,7 @@ public class BookController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBook(int id, [FromForm] UpdateBookDto updateBookDto, IFormFile? photo)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -168,7 +168,7 @@ public class BookController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBook(int id)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -190,7 +190,7 @@ public class BookController : ControllerBase
     [HttpGet("report/pdf")]
     public async Task<IActionResult> GenerateReportPdf()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });
@@ -326,7 +326,7 @@ public class BookController : ControllerBase
     [HttpPost("create-from-isbn")]
     public async Task<IActionResult> CreateBookFromIsbn([FromBody] CreateBookFromIsbnDto createBookDto)
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(new { error = "Token inválido" });

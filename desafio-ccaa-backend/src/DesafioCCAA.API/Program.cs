@@ -11,6 +11,7 @@ using DesafioCCAA.Business.Services;
 using DesafioCCAA.Business.Validators;
 using DesafioCCAA.Infrastructure.Data;
 using DesafioCCAA.Infrastructure.Repositories;
+using DesafioCCAA.Infrastructure;
 using DesafioCCAA.Business.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -175,7 +176,10 @@ builder.Services.AddValidatorsFromAssemblyContaining<UserRegistrationDtoValidato
 // Mapster Configuration
 TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
 
-// Repository Registration
+// UnitOfWork Registration
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Repository Registration (mantido para compatibilidade)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 

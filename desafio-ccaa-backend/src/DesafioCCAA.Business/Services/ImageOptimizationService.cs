@@ -123,7 +123,7 @@ public class ImageOptimizationService : IImageOptimizationService
         try
         {
             // Usar configuração personalizada ou fallback para ContentRootPath
-            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads");
+            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads") ?? "uploads";
             var basePath = Environment.CurrentDirectory;
             var uploadsBasePath = Path.Combine(basePath, uploadsFolder);
             
@@ -172,7 +172,7 @@ public class ImageOptimizationService : IImageOptimizationService
                 return Task.FromResult(false);
             }
             
-            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads");
+            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads") ?? "uploads";
             var basePath = Environment.CurrentDirectory;
             var uploadsBasePath = Path.Combine(basePath, uploadsFolder);
             var fullPath = Path.Combine(uploadsBasePath, cleanImagePath ?? string.Empty);
@@ -206,7 +206,7 @@ public class ImageOptimizationService : IImageOptimizationService
                 throw new ArgumentException("Caminho da imagem inválido", nameof(imagePath));
             }
             
-            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads");
+            var uploadsFolder = _configuration.GetValue<string>("ImageOptimization:UploadsFolder", "uploads") ?? "uploads";
             var basePath = Environment.CurrentDirectory;
             var uploadsBasePath = Path.Combine(basePath, uploadsFolder);
             var fullPath = Path.Combine(uploadsBasePath, cleanImagePath ?? string.Empty);

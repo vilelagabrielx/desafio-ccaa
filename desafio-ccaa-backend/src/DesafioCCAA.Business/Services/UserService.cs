@@ -409,7 +409,7 @@ public class UserService(
         new()
         {
             Id = user.Id,
-            Email = user.Email,
+            Email = user.Email ?? string.Empty,
             FirstName = user.FirstName,
             LastName = user.LastName,
             FullName = user.FullName ?? string.Empty,
