@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
 import { Book, BookGenre, BookPublisher } from '../models/book.model';
-import { IBookService } from './book.interface';
+import { IBookService, BookSearchParams, BookSearchResult } from './book.interface';
 import { environment } from '../../environments/environment';
 import { translateGenre } from '../utils/genre-translations';
 
@@ -145,6 +145,46 @@ export class BookApiService implements IBookService {
     })
       .pipe(
         catchError(this.handleError<Book[]>('searchBooks', []))
+      );
+  }
+
+  // Advanced Search
+  searchBooksAdvanced(params: BookSearchParams): Observable<BookSearchResult> {
+    let httpParams = new HttpParams();
+    
+    if (params.title) httpParams = httpParams.set('title', params.title);
+    if (params.isbn) httpParams = httpParams.set('isbn', params.isbn);
+    if (params.author) httpParams = httpParams.set('author', params.author);
+    if (params.genre) httpParams = httpParams.set('genre', params.genre);
+    if (params.publisher) httpParams = httpParams.set('publisher', params.publisher);
+    if (params.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params.pageSize) httpParams = httpParams.set('pageSize', params.pageSize.toString());
+
+    return this.http.get<{ data: BookSearchResult }>(`${this.API_BASE_URL}/search`, { 
+      ...this.httpOptions, 
+      params: httpParams
+    })
+      .pipe(
+        map(response => {
+          if (response && response.data) {
+            return response.data;
+          }
+          console.warn('API retornou formato inesperado para busca avançada:', response);
+          return {
+            books: [],
+            totalCount: 0,
+            page: 1,
+            pageSize: 10,
+            totalPages: 0
+          };
+        }),
+        catchError(this.handleError<BookSearchResult>('searchBooksAdvanced', {
+          books: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 10,
+          totalPages: 0
+        }))
       );
   }
 

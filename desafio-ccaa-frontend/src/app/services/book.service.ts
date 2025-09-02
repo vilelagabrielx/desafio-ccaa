@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { IBookService } from './book.interface';
+import { IBookService, BookSearchParams, BookSearchResult } from './book.interface';
 import { BookMockService } from './book-mock.service';
 import { BookApiService } from './book-api.service';
 import { environment } from '../../environments/environment';
@@ -76,6 +76,10 @@ export class BookService implements IBookService {
 
   searchBooks(query: string) {
     return this.service.searchBooks(query);
+  }
+
+  searchBooksAdvanced(params: BookSearchParams): Observable<BookSearchResult> {
+    return this.service.searchBooksAdvanced(params);
   }
 
   getBooksByCategory(category: string) {

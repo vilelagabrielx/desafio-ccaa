@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Book, BookGenre, BookPublisher } from '../models/book.model';
 import { translateGenre } from '../utils/genre-translations';
-import { IBookService } from './book.interface';
+import { IBookService, BookSearchParams, BookSearchResult } from './book.interface';
 
 @Injectable()
 export class BookMockService implements IBookService {
@@ -163,6 +163,59 @@ export class BookMockService implements IBookService {
       book.genre.toLowerCase().includes(query.toLowerCase())
     );
     return of(filtered);
+  }
+
+  // Advanced Search
+  searchBooksAdvanced(params: BookSearchParams): Observable<BookSearchResult> {
+    let filtered = [...this.books];
+    
+    // Aplicar filtros
+    if (params.title) {
+      filtered = filtered.filter(book => 
+        book.title.toLowerCase().includes(params.title!.toLowerCase())
+      );
+    }
+    
+    if (params.isbn) {
+      filtered = filtered.filter(book => 
+        book.isbn.toLowerCase().includes(params.isbn!.toLowerCase())
+      );
+    }
+    
+    if (params.author) {
+      filtered = filtered.filter(book => 
+        book.author.toLowerCase().includes(params.author!.toLowerCase())
+      );
+    }
+    
+    if (params.genre) {
+      filtered = filtered.filter(book => 
+        book.genre.toLowerCase() === params.genre!.toLowerCase()
+      );
+    }
+    
+    if (params.publisher) {
+      filtered = filtered.filter(book => 
+        book.publisher.toLowerCase() === params.publisher!.toLowerCase()
+      );
+    }
+    
+    // Paginação
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 10;
+    const totalCount = filtered.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedBooks = filtered.slice(startIndex, endIndex);
+    
+    return of({
+      books: paginatedBooks,
+      totalCount,
+      page,
+      pageSize,
+      totalPages
+    });
   }
 
   getBooksByCategory(category: string): Observable<Book[]> {

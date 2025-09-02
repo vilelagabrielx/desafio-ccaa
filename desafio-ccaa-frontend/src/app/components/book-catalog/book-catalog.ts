@@ -9,6 +9,7 @@ import { ToastService } from '../../services/toast.service';
 import { LoadingService } from '../../services/loading.service';
 import { translateGenre, genreTranslations } from '../../utils/genre-translations';
 import { translatePublisher } from '../../utils/publisher-translations';
+import { BookSearchParams, BookSearchResult } from '../../services/book.interface';
 
 @Component({
   selector: 'app-book-catalog',
