@@ -6,12 +6,11 @@ namespace DesafioCCAA.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<User>
 {
-    private readonly string _databaseProvider;
+    private string? _databaseProvider;
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
-        // Detectar o provider do banco de dados
-        _databaseProvider = Database.ProviderName ?? "";
+        // Database provider will be detected lazily when needed
     }
 
     public DbSet<Book> Books { get; set; }
@@ -117,7 +116,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     /// </summary>
     private bool IsPostgreSQL()
     {
-        return _databaseProvider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase);
+        var provider = GetDatabaseProvider();
+        return provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -125,7 +125,28 @@ public class ApplicationDbContext : IdentityDbContext<User>
     /// </summary>
     private bool IsSQLServer()
     {
-        return _databaseProvider.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) ||
-               _databaseProvider.Contains("Microsoft.Data.SqlClient", StringComparison.OrdinalIgnoreCase);
+        var provider = GetDatabaseProvider();
+        return provider.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) ||
+               provider.Contains("Microsoft.Data.SqlClient", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Obtém o provider do banco de dados de forma lazy
+    /// </summary>
+    private string GetDatabaseProvider()
+    {
+        if (_databaseProvider == null)
+        {
+            try
+            {
+                _databaseProvider = Database.ProviderName ?? "";
+            }
+            catch
+            {
+                // Se não conseguir acessar o Database.ProviderName, usar string vazia
+                _databaseProvider = "";
+            }
+        }
+        return _databaseProvider;
     }
 }

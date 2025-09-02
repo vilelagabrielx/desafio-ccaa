@@ -1,0 +1,661 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Desafio CCAA API",
+		"description": "Coleção completa da API do Sistema de Gestão de Livros Desafio CCAA",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"email\": \"joao@email.com\",\n  \"password\": \"Senha123!\",\n  \"confirmPassword\": \"Senha123!\",\n  \"dateOfBirth\": \"1990-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"register"
+							]
+						},
+						"description": "Registra um novo usuário no sistema"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao@email.com\",\n  \"password\": \"Senha123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"login"
+							]
+						},
+						"description": "Realiza login do usuário e retorna token JWT"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao@email.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"forgot-password"
+							]
+						},
+						"description": "Envia email para reset de senha"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao@email.com\",\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NovaSenha123!\",\n  \"confirmPassword\": \"NovaSenha123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"reset-password"
+							]
+						},
+						"description": "Reseta a senha usando token do email"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação e gestão de usuários"
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/user/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						},
+						"description": "Obtém informações do usuário logado"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"João\",\n  \"lastName\": \"Silva\",\n  \"dateOfBirth\": \"1990-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						},
+						"description": "Atualiza informações do perfil do usuário"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"Senha123!\",\n  \"newPassword\": \"NovaSenha123!\",\n  \"confirmPassword\": \"NovaSenha123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"change-password"
+							]
+						},
+						"description": "Altera a senha do usuário logado"
+					},
+					"response": []
+				}
+			],
+			"description": "Gestão de perfil e dados do usuário"
+		},
+		{
+			"name": "Books Management",
+			"item": [
+				{
+					"name": "Get All Books",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book"
+							]
+						},
+						"description": "Lista todos os livros do usuário logado"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"{{bookId}}"
+							]
+						},
+						"description": "Obtém um livro específico por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Book",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "O Senhor dos Anéis",
+									"type": "text"
+								},
+								{
+									"key": "isbn",
+									"value": "9788533613379",
+									"type": "text"
+								},
+								{
+									"key": "genre",
+									"value": "Fantasy",
+									"type": "text"
+								},
+								{
+									"key": "author",
+									"value": "J.R.R. Tolkien",
+									"type": "text"
+								},
+								{
+									"key": "publisher",
+									"value": "HarperCollins",
+									"type": "text"
+								},
+								{
+									"key": "synopsis",
+									"value": "Uma aventura épica na Terra Média...",
+									"type": "text"
+								},
+								{
+									"key": "photoFile",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/book",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book"
+							]
+						},
+						"description": "Cria um novo livro com foto"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Book",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "O Senhor dos Anéis - Edição Especial",
+									"type": "text"
+								},
+								{
+									"key": "synopsis",
+									"value": "Uma aventura épica na Terra Média - Edição comemorativa...",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/book/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"{{bookId}}"
+							]
+						},
+						"description": "Atualiza um livro existente"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Book",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"{{bookId}}"
+							]
+						},
+						"description": "Exclui um livro"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Books",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/search?query=senhor&type=title",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "senhor"
+								},
+								{
+									"key": "type",
+									"value": "title"
+								}
+							]
+						},
+						"description": "Busca livros por título, autor, ISBN, editora ou gênero"
+					},
+					"response": []
+				}
+			],
+			"description": "CRUD completo de livros"
+		},
+		{
+			"name": "ISBN Search (OpenLibrary)",
+			"item": [
+				{
+					"name": "Search Book by ISBN",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/search-isbn/9788533613379",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"search-isbn",
+								"9788533613379"
+							]
+						},
+						"description": "Busca informações de um livro na API do OpenLibrary usando ISBN"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Book from ISBN",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isbn\": \"9788533613379\",\n  \"downloadCover\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/book/create-from-isbn",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"create-from-isbn"
+							]
+						},
+						"description": "Cria automaticamente um livro usando dados da API OpenLibrary"
+					},
+					"response": []
+				}
+			],
+			"description": "Integração com OpenLibrary API para busca automática de livros"
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Generate PDF Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/report/pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"report",
+								"pdf"
+							]
+						},
+						"description": "Gera relatório PDF com todos os livros do usuário"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Excel Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/report/excel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"report",
+								"excel"
+							]
+						},
+						"description": "Gera relatório Excel com todos os livros do usuário"
+					},
+					"response": []
+				}
+			],
+			"description": "Geração de relatórios em PDF e Excel"
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"categories"
+							]
+						},
+						"description": "Lista todas as categorias de gêneros disponíveis"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories with Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/book/categories/count",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"book",
+								"categories",
+								"count"
+							]
+						},
+						"description": "Lista categorias com contagem de livros por categoria"
+					},
+					"response": []
+				}
+			],
+			"description": "Gestão de categorias e gêneros"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bookId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
