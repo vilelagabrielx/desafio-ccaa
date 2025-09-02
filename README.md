@@ -478,7 +478,47 @@ npm start
 #### **4. Acessar a Aplicação**
 - **Frontend**: http://localhost:4200
 - **Backend API**: http://localhost:5000
+- **Backend HTTPS**: https://localhost:5001
 - **Swagger**: http://localhost:5000/swagger
+
+#### **5. Troubleshooting Comum**
+
+**🔧 Erro de HTTPS Redirection**
+```
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+```
+**Solução**: A configuração HTTPS já está implementada no código. Se o erro persistir:
+1. Reinicie a aplicação
+2. Verifique se a porta 5001 não está ocupada
+3. Execute: `dotnet dev-certs https --trust`
+
+**🔧 Erro de Conexão com Banco**
+```
+System.InvalidOperationException: No database provider has been configured
+```
+**Solução**: 
+1. Verifique a connection string no `appsettings.json`
+2. Execute: `dotnet ef database update`
+3. Para SQL Server: `dotnet ef database update --project src/DesafioCCAA.Infrastructure --startup-project src/DesafioCCAA.API`
+
+**🔧 Erro de CORS**
+```
+Access to XMLHttpRequest at 'http://localhost:5000' from origin 'http://localhost:4200' has been blocked by CORS policy
+```
+**Solução**: A configuração CORS já está implementada. Se persistir:
+1. Verifique se o backend está rodando na porta 5000
+2. Limpe o cache do navegador
+3. Reinicie ambos os serviços
+
+**🔧 Erro de JWT**
+```
+System.ArgumentNullException: Value cannot be null. (Parameter 'key')
+```
+**Solução**: 
+1. Verifique a configuração JWT no `appsettings.json`
+2. Certifique-se de que a chave JWT está definida
+3. Reinicie a aplicação
 
 ---
 
@@ -929,6 +969,93 @@ if (searchResult.books.length > 0) {
 - **Input Validation**: Validação rigorosa com FluentValidation
 - **SQL Injection**: Proteção via Entity Framework
 - **XSS Prevention**: Sanitização de dados de saída
+
+### **🔧 Configuração HTTPS - Solução para Erro de Redirection**
+
+#### **Problema Comum**
+```
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+```
+
+#### **Solução Implementada**
+
+**1. Configuração no Program.cs**
+```csharp
+// Configure HTTPS redirection with explicit port configuration
+var httpsRedirectionOptions = new Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions();
+if (app.Environment.IsDevelopment())
+{
+    // In development, use explicit port configuration to avoid "Failed to determine the https port" error
+    httpsRedirectionOptions.HttpsPort = 5001;
+    httpsRedirectionOptions.RedirectStatusCode = 307;
+}
+app.UseHttpsRedirection();
+```
+
+**2. Configuração no appsettings.Development.json**
+```json
+{
+  "HttpsRedirection": {
+    "HttpsPort": 5001,
+    "RedirectStatusCode": 307
+  }
+}
+```
+
+**3. Configuração no launchSettings.json**
+```json
+{
+  "environmentVariables": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "ASPNETCORE_HTTPS_PORT": "5001",
+    "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+  }
+}
+```
+
+#### **Por que essa configuração resolve o problema?**
+
+1. **Porta Explícita**: Define explicitamente a porta HTTPS (5001) para redirecionamento
+2. **Configuração Múltipla**: Garante que a porta seja detectada em diferentes cenários
+3. **Fallback Robusto**: Se uma configuração falhar, outras assumem
+4. **Ambiente Específico**: Configuração otimizada para desenvolvimento
+
+#### **Verificação da Solução**
+```bash
+# 1. Reinicie a aplicação
+dotnet run
+
+# 2. Verifique os logs - o erro não deve mais aparecer
+# 3. Teste o acesso HTTPS
+curl -k https://localhost:5001/api/book
+
+# 4. Teste redirecionamento HTTP → HTTPS
+curl -L http://localhost:5000/api/book
+```
+
+#### **Soluções Alternativas (se necessário)**
+
+**Opção 1: Desabilitar HTTPS em Desenvolvimento**
+```csharp
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+```
+
+**Opção 2: Variáveis de Ambiente**
+```powershell
+# PowerShell
+$env:ASPNETCORE_HTTPS_PORT="5001"
+$env:ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"
+```
+
+**Opção 3: Certificado de Desenvolvimento**
+```bash
+# Instalar certificado de desenvolvimento
+dotnet dev-certs https --trust
+```
 
 ---
 

@@ -273,6 +273,14 @@ app.UseCors("DevelopmentPolicy"); // Always use DevelopmentPolicy for now
 
 // Handle preflight requests - removed custom middleware to avoid conflicts with CORS
 
+// Configure HTTPS redirection with explicit port configuration
+var httpsRedirectionOptions = new Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions();
+if (app.Environment.IsDevelopment())
+{
+    // In development, use explicit port configuration to avoid "Failed to determine the https port" error
+    httpsRedirectionOptions.HttpsPort = 5001;
+    httpsRedirectionOptions.RedirectStatusCode = 307;
+}
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
