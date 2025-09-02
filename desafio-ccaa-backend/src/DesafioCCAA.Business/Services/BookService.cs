@@ -1,10 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Element;
-using iText.Layout.Properties;
-
 using Microsoft.AspNetCore.Http;
 using DesafioCCAA.Business.DTOs;
 using DesafioCCAA.Business.Entities;
@@ -16,8 +11,7 @@ public class BookService(
     IBookRepository bookRepository, 
     IUserRepository userRepository, 
     IImageOptimizationService imageService,
-    IOpenLibraryService openLibraryService,
-    ILogger<BookService> logger) : IBookService
+    ILogger<BookService> logger) : IBookCrudService
 {
     public async Task<ServiceResult<BookResponseDto>> CreateBookAsync(string userId, CreateBookDto createBookDto, IFormFile? photoFile)
     {
@@ -263,112 +257,7 @@ public class BookService(
         }
     }
 
-    public async Task<ServiceResult<byte[]>> GenerateBooksReportPdfAsync(string userId)
-    {
-        try
-        {
-            logger.LogInformation("Iniciando geração de relatório PDF para usuário: {UserId}", userId);
-            
-            var books = await bookRepository.GetBooksByUserIdAsync(userId);
-            logger.LogInformation("Encontrados {Count} livros para o usuário {UserId}", books.Count(), userId);
-            
-            if (!books.Any())
-            {
-                logger.LogWarning("Nenhum livro encontrado para gerar relatório para usuário: {UserId}", userId);
-                return ServiceResult<byte[]>.Failure("Você ainda não possui livros cadastrados. Adicione alguns livros à sua biblioteca antes de gerar o relatório.");
-            }
 
-            logger.LogInformation("Criando PDF para {Count} livros", books.Count());
-            
-            using var memoryStream = new MemoryStream();
-            var writer = new PdfWriter(memoryStream);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf);
-
-            logger.LogInformation("Adicionando título ao PDF");
-            
-            // Add title
-            var title = new Paragraph("Relatório de Livros")
-                .SetFontSize(16)
-                .SetBold()
-                .SetTextAlignment(TextAlignment.CENTER);
-            document.Add(title);
-
-            // Add subtitle
-            var subtitle = new Paragraph($"Gerado em: {DateTime.Now:dd/MM/yyyy HH:mm:ss}")
-                .SetFontSize(10)
-                .SetTextAlignment(TextAlignment.CENTER);
-            document.Add(subtitle);
-
-            if (!books.Any())
-            {
-                var noBooks = new Paragraph("Nenhum livro encontrado.")
-                    .SetFontSize(10);
-                document.Add(noBooks);
-            }
-            else
-            {
-                logger.LogInformation("Criando tabela com {Count} livros", books.Count());
-                
-                // Create table
-                var table = new Table(5)
-                    .SetWidth(UnitValue.CreatePercentValue(100))
-                    .SetMarginTop(10)
-                    .SetMarginBottom(10);
-
-                logger.LogInformation("Adicionando cabeçalhos da tabela");
-                
-                // Add headers
-                table.AddHeaderCell(new Cell().Add(new Paragraph("Título").SetBold()));
-                table.AddHeaderCell(new Cell().Add(new Paragraph("ISBN").SetBold()));
-                table.AddHeaderCell(new Cell().Add(new Paragraph("Autor").SetBold()));
-                table.AddHeaderCell(new Cell().Add(new Paragraph("Gênero").SetBold()));
-                table.AddHeaderCell(new Cell().Add(new Paragraph("Editora").SetBold()));
-
-                // Add data
-                logger.LogInformation("Adicionando dados dos livros à tabela");
-                foreach (var book in books)
-                {
-                    try
-                    {
-                        logger.LogDebug("Adicionando livro: {Title} - {ISBN}", book.Title, book.ISBN);
-                        table.AddCell(new Cell().Add(new Paragraph(book.Title ?? "N/A")));
-                        table.AddCell(new Cell().Add(new Paragraph(book.ISBN ?? "N/A")));
-                        table.AddCell(new Cell().Add(new Paragraph(book.Author ?? "N/A")));
-                        table.AddCell(new Cell().Add(new Paragraph(book.Genre.ToString())));
-                        table.AddCell(new Cell().Add(new Paragraph(book.Publisher.ToString())));
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Erro ao adicionar livro {Title} à tabela: {Message}", book.Title, ex.Message);
-                        throw;
-                    }
-                }
-
-                logger.LogInformation("Adicionando tabela ao documento");
-                document.Add(table);
-
-                // Add summary
-                var summary = new Paragraph($"Total de livros: {books.Count()}")
-                    .SetFontSize(10);
-                document.Add(summary);
-            }
-
-            logger.LogInformation("Fechando documento PDF");
-            document.Close();
-
-            var pdfBytes = memoryStream.ToArray();
-            logger.LogInformation("Relatório PDF gerado com sucesso para: {UserId}. Tamanho: {Size} bytes", userId, pdfBytes.Length);
-
-            return ServiceResult<byte[]>.Success(pdfBytes);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao gerar relatório PDF para: {UserId}. Detalhes: {Message}", userId, ex.Message);
-            logger.LogError("Stack trace: {StackTrace}", ex.StackTrace);
-            return ServiceResult<byte[]>.Failure($"Erro interno ao gerar relatório: {ex.Message}");
-        }
-    }
 
     public async Task<List<BookResponseDto>> GetAllBooksAsync()
     {
@@ -467,132 +356,7 @@ public class BookService(
         }
     }
 
-    public async Task<byte[]> GetOptimizedImageAsync(string imagePath, int? maxWidth = null, int? maxHeight = null)
-    {
-        try
-        {
-            return await imageService.GetOptimizedImageAsync(imagePath, maxWidth, maxHeight);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao obter imagem otimizada: {ImagePath}", imagePath);
-            throw;
-        }
-    }
 
-    public async Task<ServiceResult<BookFromIsbnDto?>> SearchBookByIsbnAsync(string isbn)
-    {
-        try
-        {
-            logger.LogInformation("Iniciando busca por ISBN: {ISBN}", isbn);
-            
-            var result = await openLibraryService.SearchBookByIsbnAsync(isbn);
-            
-            if (!result.IsSuccess)
-            {
-                logger.LogWarning("Falha na busca por ISBN {ISBN}: {ErrorMessage}", isbn, result.ErrorMessage);
-                return ServiceResult<BookFromIsbnDto?>.Failure(result.ErrorMessage ?? "Erro desconhecido na busca por ISBN");
-            }
-
-            logger.LogInformation("Busca por ISBN {ISBN} concluída com sucesso", isbn);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro interno ao buscar livro por ISBN: {ISBN}", isbn);
-            return ServiceResult<BookFromIsbnDto?>.Failure("Erro interno ao buscar livro por ISBN");
-        }
-    }
-
-    public async Task<ServiceResult<BookResponseDto>> CreateBookFromIsbnAsync(string userId, CreateBookFromIsbnDto createBookDto)
-    {
-        try
-        {
-            var user = await userRepository.GetByIdAsync(userId);
-            if (user is null)
-            {
-                return ServiceResult<BookResponseDto>.Failure("Usuário não encontrado");
-            }
-
-            // Buscar livro na API do OpenLibrary
-            var openLibraryResult = await openLibraryService.SearchBookByIsbnAsync(createBookDto.ISBN);
-            if (!openLibraryResult.IsSuccess)
-            {
-                return ServiceResult<BookResponseDto>.Failure($"Erro ao buscar livro por ISBN: {openLibraryResult.ErrorMessage}");
-            }
-
-            var bookData = openLibraryResult.Data;
-            if (bookData == null)
-            {
-                return ServiceResult<BookResponseDto>.Failure("Livro não encontrado na API do OpenLibrary");
-            }
-
-            // Verificar se ISBN já existe (apenas livros ativos)
-            var existingBooks = await bookRepository.GetAllAsync();
-            if (existingBooks.Any(b => b.ISBN == bookData.ISBN))
-            {
-                return ServiceResult<BookResponseDto>.Failure("ISBN já está em uso");
-            }
-
-            // Download da imagem de capa se solicitado
-            byte[]? photoBytes = null;
-            string? photoContentType = null;
-            if (createBookDto.DownloadCover && !string.IsNullOrWhiteSpace(bookData.CoverUrl))
-            {
-                try
-                {
-                    var coverImageBytes = await openLibraryService.DownloadCoverImageAsync(bookData.CoverUrl);
-                    if (coverImageBytes != null)
-                    {
-                        // Otimizar a imagem baixada
-                        var imageData = await imageService.OptimizeImageToBytesAsync(coverImageBytes, $"cover_{bookData.ISBN}.jpg");
-                        photoBytes = imageData.Data;
-                        photoContentType = imageData.ContentType;
-                        logger.LogInformation("Imagem de capa baixada e otimizada para ISBN {ISBN}", bookData.ISBN);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Erro ao baixar imagem de capa para ISBN {ISBN}, continuando sem imagem", bookData.ISBN);
-                }
-            }
-
-            // Criar o livro
-            var book = new Book
-            {
-                Title = bookData.Title,
-                ISBN = bookData.ISBN,
-                Genre = bookData.Genre,
-                Author = bookData.Author,
-                Publisher = bookData.Publisher,
-                Synopsis = bookData.Synopsis,
-                Summary = bookData.Summary, // Resumo obtido via API do OpenLibrary
-                UserId = userId,
-                CoverUrl = bookData.CoverUrl // Salvar a URL da capa do OpenLibrary
-            };
-
-            // Adicionar foto se baixada
-            if (photoBytes != null && photoContentType != null)
-            {
-                book.PhotoBytes = photoBytes;
-                book.PhotoContentType = photoContentType;
-
-            }
-
-            var createdBook = await bookRepository.AddAsync(book);
-            var bookResponse = MapToBookResponseDto(createdBook);
-
-            logger.LogInformation("Livro criado com sucesso a partir do ISBN: {Title} ({ISBN}) por {UserId}", 
-                bookData.Title, bookData.ISBN, userId);
-            
-            return ServiceResult<BookResponseDto>.Success(bookResponse);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao criar livro a partir do ISBN: {ISBN} por {UserId}", createBookDto.ISBN, userId);
-            return ServiceResult<BookResponseDto>.Failure("Erro interno ao criar livro a partir do ISBN");
-        }
-    }
 
 
 
@@ -618,27 +382,5 @@ public class BookService(
             UserFullName = book.User?.FullName ?? string.Empty
         };
 
-    /// <summary>
-    /// Redimensiona a foto de um livro
-    /// </summary>
-    public async Task<byte[]> ResizeBookPhotoAsync(int bookId, int? width, int? height)
-    {
-        try
-        {
-            var book = await bookRepository.GetByIdAsync(bookId);
-            if (book?.PhotoBytes == null || book.PhotoBytes.Length == 0)
-            {
-                throw new InvalidOperationException("Livro não possui foto");
-            }
 
-            // Redimensionar a imagem usando o ImageOptimizationService
-            var resizedBytes = await imageService.ResizeImageBytesAsync(book.PhotoBytes, width, height);
-            return resizedBytes;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Erro ao redimensionar foto do livro: {BookId}", bookId);
-            throw;
-        }
-    }
 }

@@ -187,7 +187,17 @@ builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IEnvironmentService, EnvironmentService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Book Services - Separated by responsibility
+builder.Services.AddScoped<IBookCrudService, BookService>();
+builder.Services.AddScoped<IBookReportService, BookReportService>();
+builder.Services.AddScoped<IBookSearchService, BookSearchService>();
+builder.Services.AddScoped<IBookImageService, BookImageService>();
+
+// Legacy interface for backward compatibility
 builder.Services.AddScoped<IBookService, BookService>();
+
+// Other services
 builder.Services.AddScoped<IImageOptimizationService, ImageOptimizationService>();
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 

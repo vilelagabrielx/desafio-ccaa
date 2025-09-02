@@ -13,13 +13,21 @@ namespace DesafioCCAA.API.Controllers;
 [Authorize]
 public class BookController : ControllerBase
 {
-    private readonly IBookService _bookService;
-    private readonly IImageOptimizationService _imageService;
+    private readonly IBookCrudService _bookService;
+    private readonly IBookReportService _bookReportService;
+    private readonly IBookSearchService _bookSearchService;
+    private readonly IBookImageService _bookImageService;
 
-    public BookController(IBookService bookService, IImageOptimizationService imageService)
+    public BookController(
+        IBookCrudService bookService, 
+        IBookReportService bookReportService,
+        IBookSearchService bookSearchService,
+        IBookImageService bookImageService)
     {
         _bookService = bookService;
-        _imageService = imageService;
+        _bookReportService = bookReportService;
+        _bookSearchService = bookSearchService;
+        _bookImageService = bookImageService;
     }
 
     /// <summary>
@@ -196,7 +204,7 @@ public class BookController : ControllerBase
             return Unauthorized(new { error = "Token inválido" });
         }
 
-        var result = await _bookService.GenerateBooksReportPdfAsync(userId);
+        var result = await _bookReportService.GenerateBooksReportPdfAsync(userId);
         
         if (!result.IsSuccess)
         {
@@ -204,6 +212,28 @@ public class BookController : ControllerBase
         }
 
         return File(result.Data!, "application/pdf", $"relatorio-livros-{DateTime.Now:yyyyMMdd-HHmmss}.pdf");
+    }
+
+    /// <summary>
+    /// Gera relatório Excel dos livros do usuário
+    /// </summary>
+    [HttpGet("report/excel")]
+    public async Task<IActionResult> GenerateReportExcel()
+    {
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { error = "Token inválido" });
+        }
+
+        var result = await _bookReportService.GenerateBooksReportExcelAsync(userId);
+        
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { error = result.ErrorMessage });
+        }
+
+        return File(result.Data!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"relatorio-livros-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx");
     }
 
 
@@ -278,7 +308,7 @@ public class BookController : ControllerBase
             if (width.HasValue || height.HasValue)
             {
                 Console.WriteLine($"🔄 Redimensionando imagem para {width}x{height}");
-                imageBytes = await _imageService.ResizeImageBytesAsync(book.PhotoBytes, width, height);
+                imageBytes = await _bookImageService.ResizeBookPhotoAsync(bookId, width, height);
             }
 
             // Determinar o tipo de conteúdo
@@ -305,7 +335,7 @@ public class BookController : ControllerBase
     {
         try
         {
-            var result = await _bookService.SearchBookByIsbnAsync(isbn);
+            var result = await _bookSearchService.SearchBookByIsbnAsync(isbn);
             
             if (!result.IsSuccess)
             {
@@ -332,7 +362,7 @@ public class BookController : ControllerBase
             return Unauthorized(new { error = "Token inválido" });
         }
 
-        var result = await _bookService.CreateBookFromIsbnAsync(userId, createBookDto);
+        var result = await _bookSearchService.CreateBookFromIsbnAsync(userId, createBookDto);
         
         if (!result.IsSuccess)
         {
