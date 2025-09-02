@@ -631,7 +631,23 @@ dotnet test --collect:"XPlat Code Coverage"
 
 # Testes específicos
 dotnet test --filter "UserServiceTests"
+dotnet test --filter "BookDeleteTests"  # Testes de Hard Delete
+dotnet test --filter "EmailServiceTests"
+dotnet test --filter "ValidationTests"
+dotnet test --filter "ControllerIntegrationTests"
+
+# Usar script automatizado (recomendado)
+run-backend-tests.bat
 ```
+
+### **Testes de Hard Delete** 🗑️
+- **BookDeleteTests**: Verifica se a exclusão de livros remove fisicamente os registros do banco
+- **5 cenários testados**:
+  - ✅ Exclusão bem-sucedida (registro removido do banco)
+  - ✅ Falha quando livro não existe
+  - ✅ Falha quando usuário não é dono do livro
+  - ✅ Exclusão por ISBN (método direto)
+  - ✅ Falha quando ISBN não existe
 
 ### **Frontend**
 ```bash
@@ -649,6 +665,13 @@ npm run e2e
 - **Backend**: 85%+ (Serviços principais)
 - **Frontend**: 90%+ (Componentes e serviços)
 - **Integração**: 80%+ (Controllers e APIs)
+
+### **Migração para Hard Delete** 🔄
+- **Removida coluna `IsActive`** da tabela `Books` e `AspNetUsers`
+- **Migração aplicada**: `RemoveIsActiveColumn` (2025-01-02)
+- **Índice atualizado**: `IX_Books_ISBN` (único, sem filtro de ativo)
+- **Script de verificação**: `verify-hard-delete.sql`
+- **Resultado**: Exclusão de livros agora remove fisicamente os registros do banco
 
 ---
 

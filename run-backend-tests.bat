@@ -67,11 +67,13 @@ echo ========================================
 echo.
 echo 1. UserServiceTests
 echo 2. BookServiceTests
-echo 3. EmailServiceTests
-echo 4. ValidationTests
-echo 5. Voltar ao menu principal
+echo 3. BookDeleteTests (Hard Delete)
+echo 4. EmailServiceTests
+echo 5. ValidationTests
+echo 6. ControllerIntegrationTests
+echo 7. Voltar ao menu principal
 echo.
-set /p test_choice="Escolha o teste (1-5): "
+set /p test_choice="Escolha o teste (1-7): "
 
 if "%test_choice%"=="1" (
     echo Executando UserServiceTests...
@@ -80,12 +82,18 @@ if "%test_choice%"=="1" (
     echo Executando BookServiceTests...
     dotnet test tests/DesafioCCAA.Tests/DesafioCCAA.Tests.csproj --filter "BookServiceTests" --verbosity normal
 ) else if "%test_choice%"=="3" (
+    echo Executando BookDeleteTests (Hard Delete)...
+    dotnet test tests/DesafioCCAA.Tests/DesafioCCAA.Tests.csproj --filter "BookDeleteTests" --verbosity normal
+) else if "%test_choice%"=="4" (
     echo Executando EmailServiceTests...
     dotnet test tests/DesafioCCAA.Tests/DesafioCCAA.Tests.csproj --filter "EmailServiceTests" --verbosity normal
-) else if "%test_choice%"=="4" (
+) else if "%test_choice%"=="5" (
     echo Executando ValidationTests...
     dotnet test tests/DesafioCCAA.Tests/DesafioCCAA.Tests.csproj --filter "ValidationTests" --verbosity normal
-) else if "%test_choice%"=="5" (
+) else if "%test_choice%"=="6" (
+    echo Executando ControllerIntegrationTests...
+    dotnet test tests/DesafioCCAA.Tests/DesafioCCAA.Tests.csproj --filter "ControllerIntegrationTests" --verbosity normal
+) else if "%test_choice%"=="7" (
     goto start
 ) else (
     echo Opcao invalida!
