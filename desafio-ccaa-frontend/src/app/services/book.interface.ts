@@ -8,6 +8,7 @@ export interface IBookService {
   updateBook(id: number, updates: Partial<Book>): Observable<Book | undefined>;
   deleteBook(id: number): Observable<boolean>;
   getAllCategories(): Observable<{ id: number; name: string; count: number }[]>;
+  getMyCategories(): Observable<{ id: number; name: string; count: number }[]>;
   searchBooks(query: string): Observable<Book[]>;
   getBooksByCategory(category: string): Observable<Book[]>;
 }

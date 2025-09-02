@@ -83,6 +83,26 @@ export class BookApiService implements IBookService {
       );
   }
 
+  // Categories do usuário logado
+  getMyCategories(): Observable<{ id: number; name: string; count: number }[]> {
+    return this.http.get<{ data: { id: number; name: string; count: number }[] }>(`${this.API_BASE_URL}/my/categories-with-count`, this.httpOptions)
+      .pipe(
+        map(response => {
+          // Garantir que sempre retorne um array válido
+          if (response && Array.isArray(response.data)) {
+            // Traduzir os nomes das categorias de inglês para português
+            return response.data.map(category => ({
+              ...category,
+              name: this.translateCategoryName(category.name)
+            }));
+          }
+          console.warn('API retornou formato inesperado para categorias do usuário:', response);
+          return [];
+        }),
+        catchError(this.handleError<{ id: number; name: string; count: number }[]>('getMyCategories', []))
+      );
+  }
+
   // Método auxiliar para traduzir nomes de categorias
   private translateCategoryName(englishName: string): string {
     // Mapear nomes em inglês para português

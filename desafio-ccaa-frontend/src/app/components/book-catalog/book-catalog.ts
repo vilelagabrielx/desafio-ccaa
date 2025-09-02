@@ -221,23 +221,23 @@ export class BookCatalog implements OnInit {
   }
 
   loadCategories(): void {
-    console.log('🏷️ BookCatalog: Carregando categorias...');
+    console.log('🏷️ BookCatalog: Carregando categorias do usuário...');
     this.loadingService.show('Carregando categorias...');
-    this.bookService.getAllCategories().subscribe({
+    this.bookService.getMyCategories().subscribe({
       next: (categories) => {
-        console.log('✅ BookCatalog: Categorias carregadas:', categories.length);
+        console.log('✅ BookCatalog: Categorias do usuário carregadas:', categories.length);
         console.log('🔍 Debug - Categorias recebidas do backend:', categories);
         
         // Garantir que a ordem do backend seja mantida
         // O backend já retorna ordenado por contagem decrescente
         const orderedCategories = [...categories];
-        console.log('📊 Categorias ordenadas por contagem:', orderedCategories.map(c => `${c.name} (${c.count})`));
+        console.log('📊 Categorias do usuário ordenadas por contagem:', orderedCategories.map(c => `${c.name} (${c.count})`));
         
         this.categories.set(orderedCategories);
         this.loadingService.hide();
       },
       error: (error) => {
-        console.error('❌ BookCatalog: Erro ao carregar categorias:', error);
+        console.error('❌ BookCatalog: Erro ao carregar categorias do usuário:', error);
         this.loadingService.hide();
         this.toastService.showError('Erro ao carregar categorias. Tente novamente.');
       }
@@ -496,6 +496,9 @@ export class BookCatalog implements OnInit {
             // Aplicar filtros para atualizar a lista
             this.applyFilters();
             
+            // Recarregar categorias para atualizar contagens
+            this.loadCategories();
+            
             // Mostrar mensagem de sucesso
             this.loadingService.hide();
             this.toastService.showSuccess('Livro excluído com sucesso!');
@@ -712,6 +715,7 @@ export class BookCatalog implements OnInit {
         next: (response) => {
           console.log('✅ Livro atualizado com sucesso:', response);
           this.loadBooks(); // Recarregar lista de livros
+          this.loadCategories(); // Recarregar categorias
           this.closeEditModal();
           this.loadingService.hide();
           this.toastService.showSuccess('Livro atualizado com sucesso!');
@@ -760,6 +764,7 @@ export class BookCatalog implements OnInit {
         next: (response) => {
           console.log('✅ Livro criado com sucesso:', response);
           this.loadBooks(); // Recarregar lista de livros
+          this.loadCategories(); // Recarregar categorias
           this.closeModal();
           this.loadingService.hide();
           this.toastService.showSuccess('Livro criado com sucesso!');
@@ -1182,6 +1187,9 @@ export class BookCatalog implements OnInit {
           
           // Aplicar filtros para atualizar a lista
           this.applyFilters();
+          
+          // Recarregar categorias para atualizar contagens
+          this.loadCategories();
           
           // Fechar modal e mostrar sucesso
           this.closeCreateFromIsbnModal();

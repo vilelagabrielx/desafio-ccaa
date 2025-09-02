@@ -62,6 +62,9 @@ public class BookServiceFacade : IBookService
     public Task<List<CategoryWithCountDto>> GetCategoriesWithCountAsync()
         => _bookCrudService.GetCategoriesWithCountAsync();
 
+    public Task<List<CategoryWithCountDto>> GetCategoriesWithCountByUserIdAsync(string userId)
+        => _bookCrudService.GetCategoriesWithCountByUserIdAsync(userId);
+
     // IBookReportService delegates
     public Task<ServiceResult<byte[]>> GenerateBooksReportPdfAsync(string userId)
         => _bookReportService.GenerateBooksReportPdfAsync(userId);

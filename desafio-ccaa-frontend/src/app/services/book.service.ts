@@ -70,6 +70,10 @@ export class BookService implements IBookService {
     return this.service.getAllCategories();
   }
 
+  getMyCategories() {
+    return this.service.getMyCategories();
+  }
+
   searchBooks(query: string) {
     return this.service.searchBooks(query);
   }

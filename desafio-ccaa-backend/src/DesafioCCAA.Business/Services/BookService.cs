@@ -356,6 +356,59 @@ public class BookService(
         }
     }
 
+    public async Task<List<CategoryWithCountDto>> GetCategoriesWithCountByUserIdAsync(string userId)
+    {
+        try
+        {
+            var categories = new List<CategoryWithCountDto>();
+            var genreValues = Enum.GetValues<BookGenre>();
+            
+            // Obter apenas os livros do usuário para calcular contagens
+            var userBooks = (await bookRepository.GetByUserIdAsync(userId)).ToList();
+            
+            // Usar IDs únicos começando de 1 para evitar conflito com "Todas as Categorias"
+            for (int i = 0; i < genreValues.Length; i++)
+            {
+                var genre = genreValues[i];
+                var count = userBooks.Count(book => book.Genre == genre);
+                
+                categories.Add(new CategoryWithCountDto 
+                { 
+                    Id = i + 1, // ID único começando de 1
+                    Name = genre.ToString(),
+                    Count = count
+                });
+            }
+            
+            // Adicionar "Todas as Categorias" no início com ID único
+            var allCategories = new List<CategoryWithCountDto>
+            {
+                new CategoryWithCountDto
+                {
+                    Id = 0, // ID único para "Todas as Categorias"
+                    Name = "Todas as Categorias",
+                    Count = userBooks.Count
+                }
+            };
+            
+            allCategories.AddRange(categories);
+            
+            // Ordenar categorias por contagem decrescente (mais livros primeiro)
+            // "Todas as Categorias" sempre fica no topo
+            var sortedCategories = allCategories
+                .OrderByDescending(c => c.Count)
+                .ToList();
+            
+            logger.LogInformation("Categorias do usuário {UserId} com contagem ordenadas por quantidade. Total: {Count}", userId, sortedCategories.Count);
+            return sortedCategories;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao buscar categorias com contagem do usuário {UserId}", userId);
+            return new List<CategoryWithCountDto>();
+        }
+    }
+
 
 
 

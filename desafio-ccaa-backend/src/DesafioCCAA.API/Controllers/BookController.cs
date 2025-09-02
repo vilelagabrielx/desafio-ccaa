@@ -275,6 +275,29 @@ public class BookController : ControllerBase
     }
 
     /// <summary>
+    /// Obtém categorias com contagem de livros do usuário logado
+    /// </summary>
+    [HttpGet("my/categories-with-count")]
+    public async Task<IActionResult> GetMyCategoriesWithCount()
+    {
+        try
+        {
+            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { error = "Token inválido" });
+            }
+
+            var categories = await _bookService.GetCategoriesWithCountByUserIdAsync(userId);
+            return Ok(new { data = categories });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = "Erro ao buscar categorias com contagem do usuário", details = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Obtém imagem otimizada do livro
     /// </summary>
     [HttpGet("photo/{bookId}")]

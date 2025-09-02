@@ -149,6 +149,12 @@ export class BookMockService implements IBookService {
     return of(allCategories);
   }
 
+  // Categories do usuário logado (mesmo comportamento para mock)
+  getMyCategories(): Observable<{ id: number; name: string; count: number }[]> {
+    // Para o mock, retorna as mesmas categorias (simula que todos os livros são do usuário)
+    return this.getAllCategories();
+  }
+
   // Search and Filter
   searchBooks(query: string): Observable<Book[]> {
     const filtered = this.books.filter(book =>

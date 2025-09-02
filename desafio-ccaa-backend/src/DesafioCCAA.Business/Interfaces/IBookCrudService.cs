@@ -18,4 +18,5 @@ public interface IBookCrudService
     Task<List<BookResponseDto>> GetAllBooksAsync();
     Task<List<CategoryDto>> GetCategoriesAsync();
     Task<List<CategoryWithCountDto>> GetCategoriesWithCountAsync();
+    Task<List<CategoryWithCountDto>> GetCategoriesWithCountByUserIdAsync(string userId);
 }
