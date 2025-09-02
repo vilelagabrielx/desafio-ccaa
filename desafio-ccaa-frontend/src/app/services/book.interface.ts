@@ -21,6 +21,7 @@ export interface BookSearchResult {
 
 export interface IBookService {
   getAllBooks(): Observable<Book[]>;
+  getMyBooks(page?: number, pageSize?: number): Observable<BookSearchResult>;
   getBookById(id: number): Observable<Book | undefined>;
   createBook(book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Observable<Book>;
   updateBook(id: number, updates: Partial<Book>): Observable<Book | undefined>;

@@ -139,6 +139,42 @@ public class BookService(
         }
     }
 
+    public async Task<ServiceResult<BookSearchResultDto>> GetBooksByUserIdAsync(string userId, int page, int pageSize)
+    {
+        try
+        {
+            // Criar um DTO de busca para reutilizar a lógica existente
+            var searchDto = new BookSearchDto
+            {
+                Page = page,
+                PageSize = pageSize
+            };
+
+            // Buscar livros paginados
+            var books = await bookRepository.GetBooksByUserIdPaginatedAsync(userId, page, pageSize);
+            var totalCount = await bookRepository.GetBooksCountByUserIdAsync(userId);
+            
+            var bookResponses = books.Select(MapToBookResponseDto).ToList();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var result = new BookSearchResultDto
+            {
+                Books = bookResponses,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+
+            return ServiceResult<BookSearchResultDto>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro ao buscar livros paginados do usuário: {UserId}", userId);
+            return ServiceResult<BookSearchResultDto>.Failure("Erro interno ao buscar livros");
+        }
+    }
+
     public async Task<ServiceResult<BookSearchResultDto>> SearchBooksAsync(BookSearchDto searchDto)
     {
         try

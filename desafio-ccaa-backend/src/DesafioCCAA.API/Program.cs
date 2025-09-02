@@ -14,6 +14,7 @@ using DesafioCCAA.Infrastructure.Repositories;
 using DesafioCCAA.Infrastructure;
 using DesafioCCAA.Business.Entities;
 using Microsoft.AspNetCore.Identity;
+using DesafioCCAA.API.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +35,8 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "Desafio CCAA API", 
         Version = "v1",
-        Description = "API para gerenciamento de livros com autenticação JWT + Identity"
+        Description = "API para gerenciamento de livros com autenticação JWT + Identity. " +
+                     "Health Checks disponíveis em: /health, /health/ready, /health/live, /health-ui"
     });
 
     // JWT Configuration for Swagger
@@ -235,6 +237,23 @@ builder.Services.AddHttpClient<IOpenLibraryService, OpenLibraryService>(client =
     AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
 });
 
+// Health Checks Configuration
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "ready", "database" })
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "self" })
+    .AddCheck<OpenLibraryHealthCheck>("openlibrary", tags: new[] { "external", "api" })
+    .AddCheck<EmailServiceHealthCheck>("email", tags: new[] { "external", "email" });
+
+// Health Checks UI
+builder.Services.AddHealthChecksUI(opt =>
+{
+    opt.SetEvaluationTimeInSeconds(15); // time in seconds between check
+    opt.MaximumHistoryEntriesPerEndpoint(60); // maximum history of checks
+    opt.SetApiMaxActiveRequests(1); // api requests concurrency limit
+    
+    opt.AddHealthCheckEndpoint("DesafioCCAA API", "/health"); // map health check api
+}).AddInMemoryStorage();
+
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -248,10 +267,30 @@ builder.Services.AddCors(options =>
     // More specific policy for development
     options.AddPolicy("DevelopmentPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+        policy.WithOrigins(
+                "http://localhost:4200", 
+                "https://localhost:4200",
+                "http://localhost:4201",  // Alternative Angular port
+                "https://localhost:4201"
+              )
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials()
+              .SetIsOriginAllowedToAllowWildcardSubdomains();
+    });
+    
+    // Fallback policy for any localhost development
+    options.AddPolicy("LocalhostPolicy", policy =>
+    {
+        policy.SetIsOriginAllowed(origin => 
+        {
+            return origin != null && 
+                   (origin.StartsWith("http://localhost:") || 
+                    origin.StartsWith("https://localhost:"));
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
 });
 
@@ -269,9 +308,14 @@ if (app.Environment.IsDevelopment())
 }
 
 // CORS must be applied before other middleware
-app.UseCors("DevelopmentPolicy"); // Always use DevelopmentPolicy for now
-
-// Handle preflight requests - removed custom middleware to avoid conflicts with CORS
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("LocalhostPolicy"); // Use flexible localhost policy for development
+}
+else
+{
+    app.UseCors("DevelopmentPolicy"); // Use specific policy for production
+}
 
 // Configure HTTPS redirection with explicit port configuration
 var httpsRedirectionOptions = new Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions();
@@ -289,6 +333,42 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health Check endpoints
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                duration = entry.Value.Duration.ToString("c"), // Formato TimeSpan compatível
+                tags = entry.Value.Tags
+            }),
+            totalDuration = report.TotalDuration.ToString("c") // Formato TimeSpan compatível
+        };
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+    }
+});
+
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+
+// Health Checks UI endpoint
+app.MapHealthChecksUI(options => options.UIPath = "/health-ui");
 
 // Ensure database is created
 using (var scope = app.Services.CreateScope())

@@ -27,8 +27,32 @@ export class BookCatalog implements OnInit {
   selectedPublisher = signal<string>('');
   sortBy = signal<string>('title');
   currentPage = signal(1);
-  pageSize = signal(12);
+  pageSize = signal(20); // Aumentado de 12 para 20 para melhor performance
   totalPages = signal(1);
+  totalItems = signal(0);
+
+  // Computed para gerar números das páginas
+  pageNumbers = computed(() => {
+    const current = this.currentPage();
+    const total = this.totalPages();
+    const pages: number[] = [];
+    
+    // Mostrar até 5 páginas por vez
+    const maxVisible = 5;
+    let start = Math.max(1, current - Math.floor(maxVisible / 2));
+    let end = Math.min(total, start + maxVisible - 1);
+    
+    // Ajustar início se estivermos no final
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  });
 
   // User information
   userProfile = signal<any>(null);
@@ -180,12 +204,14 @@ export class BookCatalog implements OnInit {
   loadBooks(): void {
     console.log('📚 BookCatalog: Carregando livros...');
     this.loadingService.show('Carregando livros...');
-    this.bookService.getAllBooks().subscribe({
-      next: (books) => {
-        console.log('✅ BookCatalog: Livros carregados:', books.length);
+    
+    // Usar a nova API paginada
+    this.bookService.getMyBooks(this.currentPage(), this.pageSize()).subscribe({
+      next: (result) => {
+        console.log('✅ BookCatalog: Livros carregados:', result.books.length, 'de', result.totalCount);
         
         // Validar e filtrar livros com IDs válidos
-        const validBooks = books.filter(book => {
+        const validBooks = result.books.filter(book => {
           if (!book || typeof book.id === 'undefined' || book.id === null) {
             console.warn('⚠️ Livro inválido encontrado:', book);
             return false;
@@ -207,6 +233,11 @@ export class BookCatalog implements OnInit {
         
         console.log('✅ BookCatalog: Livros válidos:', validBooks.length);
         this.books.set(validBooks);
+        this.totalItems.set(result.totalCount);
+        this.totalPages.set(result.totalPages);
+        this.currentPage.set(result.page);
+        
+        // Aplicar filtros locais (busca, gênero, etc.)
         this.applyFilters();
         this.loadingService.hide();
       },
@@ -248,12 +279,14 @@ export class BookCatalog implements OnInit {
   searchBooks(): void {
     console.log('🔍 BookCatalog: Buscando livros por título...');
     this.currentPage.set(1);
-    this.applyFilters();
+    this.loadBooks(); // Recarregar livros do servidor com nova busca
   }
 
   applyFilters(): void {
+    // Com paginação do servidor, apenas aplicamos filtros locais simples
+    // A paginação real é feita no servidor via loadBooks()
     const allBooks = this.books();
-    console.log('🔍 BookCatalog: Aplicando filtros em', allBooks.length, 'livros');
+    console.log('🔍 BookCatalog: Aplicando filtros locais em', allBooks.length, 'livros');
     
     // Validar livros antes de aplicar filtros
     const validBooks = allBooks.filter(book => {
@@ -274,7 +307,7 @@ export class BookCatalog implements OnInit {
     
     let filtered = [...validBooks];
     
-    // Aplicar filtro de busca por nome/título do livro
+    // Aplicar filtro de busca por nome/título do livro (local)
     if (this.searchQuery()) {
       const query = this.searchQuery().toLowerCase().trim();
       const beforeSearch = filtered.length;
@@ -284,21 +317,21 @@ export class BookCatalog implements OnInit {
       console.log('🔍 BookCatalog: Filtro de busca por título aplicado:', beforeSearch, '->', filtered.length);
     }
     
-    // Aplicar filtro de gênero
+    // Aplicar filtro de gênero (local)
     if (this.selectedGenre()) {
       const beforeGenre = filtered.length;
       filtered = filtered.filter(book => book.genre === this.selectedGenre());
       console.log('🔍 BookCatalog: Filtro de gênero aplicado:', beforeGenre, '->', filtered.length);
     }
     
-    // Aplicar filtro de editora
+    // Aplicar filtro de editora (local)
     if (this.selectedPublisher()) {
       const beforePublisher = filtered.length;
       filtered = filtered.filter(book => book.publisher === this.selectedPublisher());
       console.log('🔍 BookCatalog: Filtro de editora aplicado:', beforePublisher, '->', filtered.length);
     }
     
-    // Aplicar ordenação
+    // Aplicar ordenação (local)
     filtered.sort((a, b) => {
       const sortBy = this.sortBy();
       switch (sortBy) {
@@ -315,22 +348,45 @@ export class BookCatalog implements OnInit {
       }
     });
     
-    // Aplicar paginação
-    const startIndex = (this.currentPage() - 1) * this.pageSize();
-    const endIndex = startIndex + this.pageSize();
-    const paginatedBooks = filtered.slice(startIndex, endIndex);
+    // Com paginação do servidor, não fazemos paginação local
+    // Apenas definimos os livros filtrados
+    this.filteredBooks.set(filtered);
     
-    this.filteredBooks.set(paginatedBooks);
-    this.totalPages.set(Math.ceil(filtered.length / this.pageSize()));
-    
-    console.log('✅ BookCatalog: Filtros aplicados, livros filtrados:', filtered.length, 'páginas:', this.totalPages());
+    console.log('✅ BookCatalog: Filtros locais aplicados, livros filtrados:', filtered.length);
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages()) {
       this.currentPage.set(page);
-      this.applyFilters();
+      this.loadBooks(); // Carregar livros da API com paginação
     }
+  }
+
+  goToNextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.goToPage(this.currentPage() + 1);
+    }
+  }
+
+  goToPreviousPage(): void {
+    if (this.currentPage() > 1) {
+      this.goToPage(this.currentPage() - 1);
+    }
+  }
+
+  goToFirstPage(): void {
+    this.goToPage(1);
+  }
+
+  goToLastPage(): void {
+    this.goToPage(this.totalPages());
+  }
+
+  // Método para calcular o range de itens exibidos
+  getItemsRange(): string {
+    const start = (this.currentPage() - 1) * this.pageSize() + 1;
+    const end = Math.min(this.currentPage() * this.pageSize(), this.totalItems());
+    return `${start} - ${end}`;
   }
 
   getGenres(): string[] {

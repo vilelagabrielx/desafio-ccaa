@@ -89,6 +89,22 @@ export class BookMockService implements IBookService {
     return of(this.books);
   }
 
+  getMyBooks(page: number = 1, pageSize: number = 20): Observable<BookSearchResult> {
+    const totalCount = this.books.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedBooks = this.books.slice(startIndex, endIndex);
+    
+    return of({
+      books: paginatedBooks,
+      totalCount,
+      page,
+      pageSize,
+      totalPages
+    });
+  }
+
   getBookById(id: number): Observable<Book | undefined> {
     const book = this.books.find(b => b.id === id);
     return of(book);

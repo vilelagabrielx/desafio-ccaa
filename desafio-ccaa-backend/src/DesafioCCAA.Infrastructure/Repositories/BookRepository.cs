@@ -100,6 +100,24 @@ public class BookRepository : IBookRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Book>> GetBooksByUserIdPaginatedAsync(string userId, int page, int pageSize)
+    {
+        return await _context.Books
+            .Include(b => b.User)
+            .Where(b => b.UserId == userId)
+            .OrderByDescending(b => b.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetBooksCountByUserIdAsync(string userId)
+    {
+        return await _context.Books
+            .Where(b => b.UserId == userId)
+            .CountAsync();
+    }
+
     public async Task<IEnumerable<Book>> SearchAsync(BookSearchDto searchDto)
     {
         var query = _context.Books

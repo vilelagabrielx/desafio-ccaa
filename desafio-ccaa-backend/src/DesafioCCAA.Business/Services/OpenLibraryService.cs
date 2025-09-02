@@ -96,9 +96,9 @@ public class OpenLibraryService : IOpenLibraryService
                     if (workData != null)
                     {
                         _logger.LogInformation("Work data obtido: Description={HasDescription}, Subjects={SubjectsCount}", 
-                            !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+                            !string.IsNullOrEmpty(ExtractDescriptionFromWorkData(workData.Description)), workData.Subjects?.Count ?? 0);
                         
-                        summary = workData.Description;
+                        summary = ExtractDescriptionFromWorkData(workData.Description);
                         genres = workData.Subjects ?? new();
                         
                         _logger.LogInformation("Summary extraído: {Summary}", summary);
@@ -126,9 +126,9 @@ public class OpenLibraryService : IOpenLibraryService
                     if (workData != null)
                     {
                         _logger.LogInformation("Work data obtido: Description={HasDescription}, Subjects={SubjectsCount}", 
-                            !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+                            !string.IsNullOrEmpty(ExtractDescriptionFromWorkData(workData.Description)), workData.Subjects?.Count ?? 0);
                         
-                        summary = workData.Description;
+                        summary = ExtractDescriptionFromWorkData(workData.Description);
                         genres = workData.Subjects ?? new();
                         
                         _logger.LogInformation("Summary extraído: {Summary}", summary);
@@ -356,7 +356,7 @@ public class OpenLibraryService : IOpenLibraryService
             }
 
             _logger.LogInformation("Dados do work obtidos: Title={Title}, Description={HasDescription}, Subjects={Subjects}", 
-                workData.Title, !string.IsNullOrEmpty(workData.Description), workData.Subjects?.Count ?? 0);
+                workData.Title, !string.IsNullOrEmpty(ExtractDescriptionFromWorkData(workData.Description)), workData.Subjects?.Count ?? 0);
             
             return workData;
         }
@@ -424,7 +424,7 @@ public class OpenLibraryService : IOpenLibraryService
             }
 
             var workData = await GetWorkDataAsync(workKey);
-            return workData?.Description;
+            return workData != null ? ExtractDescriptionFromWorkData(workData.Description) : null;
         }
         catch (Exception ex)
         {
@@ -687,6 +687,50 @@ public class OpenLibraryService : IOpenLibraryService
             publisherName, result, (int)result);
         
         return result;
+    }
+
+    private string? ExtractDescriptionFromWorkData(object? description)
+    {
+        if (description == null)
+        {
+            return null;
+        }
+
+        // Se for uma string, retorna diretamente
+        if (description is string stringDescription)
+        {
+            return stringDescription;
+        }
+
+        // Se for um objeto, tenta extrair o valor
+        if (description is JsonElement jsonElement)
+        {
+            // Tenta obter o valor como string
+            if (jsonElement.ValueKind == JsonValueKind.String)
+            {
+                return jsonElement.GetString();
+            }
+            
+            // Se for um objeto, tenta extrair o campo "value" ou "description"
+            if (jsonElement.ValueKind == JsonValueKind.Object)
+            {
+                if (jsonElement.TryGetProperty("value", out var valueElement) && valueElement.ValueKind == JsonValueKind.String)
+                {
+                    return valueElement.GetString();
+                }
+                
+                if (jsonElement.TryGetProperty("description", out var descElement) && descElement.ValueKind == JsonValueKind.String)
+                {
+                    return descElement.GetString();
+                }
+                
+                // Se não encontrar campos específicos, tenta converter o objeto para string
+                return jsonElement.ToString();
+            }
+        }
+
+        // Fallback: converte para string
+        return description.ToString();
     }
 }
 

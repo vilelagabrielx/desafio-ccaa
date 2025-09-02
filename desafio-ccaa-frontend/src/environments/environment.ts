@@ -15,7 +15,7 @@ export const environment = {
 
   // 🔧 CONFIGURAÇÃO: API
   api: {
-    baseUrl: 'http://localhost:5000', // API local do backend
+    baseUrl: 'https://localhost:5001', // API local do backend (HTTPS)
     timeout: 30000, // Timeout em ms
     retryAttempts: 3, // Tentativas de retry
   },

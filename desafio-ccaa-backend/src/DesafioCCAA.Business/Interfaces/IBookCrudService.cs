@@ -12,6 +12,7 @@ public interface IBookCrudService
     Task<ServiceResult<BookResponseDto>> GetBookByIdAsync(int bookId);
     Task<ServiceResult<BookResponseDto>> GetBookByIdAsync(int bookId, string userId);
     Task<ServiceResult<List<BookResponseDto>>> GetBooksByUserIdAsync(string userId);
+    Task<ServiceResult<BookSearchResultDto>> GetBooksByUserIdAsync(string userId, int page, int pageSize);
     Task<ServiceResult<BookSearchResultDto>> SearchBooksAsync(BookSearchDto searchDto);
     Task<ServiceResult<BookResponseDto>> UpdateBookAsync(int bookId, string userId, UpdateBookDto updateBookDto, IFormFile? photoFile);
     Task<ServiceResult<bool>> DeleteBookAsync(int bookId, string userId);

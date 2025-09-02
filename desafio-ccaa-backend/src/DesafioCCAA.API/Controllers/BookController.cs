@@ -110,10 +110,10 @@ public class BookController : ControllerBase
     }
 
     /// <summary>
-    /// Obtém todos os livros do usuário logado
+    /// Obtém todos os livros do usuário logado (com paginação)
     /// </summary>
     [HttpGet("my")]
-    public async Task<IActionResult> GetMyBooks()
+    public async Task<IActionResult> GetMyBooks([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
@@ -121,7 +121,11 @@ public class BookController : ControllerBase
             return Unauthorized(new { error = "Token inválido" });
         }
 
-        var result = await _bookService.GetBooksByUserIdAsync(userId);
+        // Validar parâmetros de paginação
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20; // Máximo 100 itens por página
+
+        var result = await _bookService.GetBooksByUserIdAsync(userId, page, pageSize);
         
         if (!result.IsSuccess)
         {

@@ -44,6 +44,9 @@ public class BookServiceFacade : IBookService
     public Task<ServiceResult<List<BookResponseDto>>> GetBooksByUserIdAsync(string userId)
         => _bookCrudService.GetBooksByUserIdAsync(userId);
 
+    public Task<ServiceResult<BookSearchResultDto>> GetBooksByUserIdAsync(string userId, int page, int pageSize)
+        => _bookCrudService.GetBooksByUserIdAsync(userId, page, pageSize);
+
     public Task<ServiceResult<BookSearchResultDto>> SearchBooksAsync(BookSearchDto searchDto)
         => _bookCrudService.SearchBooksAsync(searchDto);
 

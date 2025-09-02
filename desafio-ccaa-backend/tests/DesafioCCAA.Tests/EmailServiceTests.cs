@@ -4,6 +4,7 @@ using Moq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using DesafioCCAA.Business.Services;
+using DesafioCCAA.Business.Interfaces;
 
 namespace DesafioCCAA.Tests;
 

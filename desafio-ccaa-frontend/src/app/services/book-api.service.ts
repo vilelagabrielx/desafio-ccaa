@@ -34,6 +34,40 @@ export class BookApiService implements IBookService {
       );
   }
 
+  // Get user's books with pagination
+  getMyBooks(page: number = 1, pageSize: number = 20): Observable<BookSearchResult> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<{ data: BookSearchResult }>(`${this.API_BASE_URL}/my`, { 
+      ...this.httpOptions, 
+      params: params
+    })
+      .pipe(
+        map(response => {
+          if (response && response.data) {
+            return response.data;
+          }
+          console.warn('API retornou formato inesperado para livros paginados:', response);
+          return {
+            books: [],
+            totalCount: 0,
+            page: 1,
+            pageSize: 20,
+            totalPages: 0
+          };
+        }),
+        catchError(this.handleError<BookSearchResult>('getMyBooks', {
+          books: [],
+          totalCount: 0,
+          page: 1,
+          pageSize: 20,
+          totalPages: 0
+        }))
+      );
+  }
+
   getBookById(id: number): Observable<Book | undefined> {
     return this.http.get<Book>(`${this.API_BASE_URL}/${id}`, this.httpOptions)
       .pipe(

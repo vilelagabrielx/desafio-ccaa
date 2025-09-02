@@ -2,27 +2,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
+using DesafioCCAA.Business.Interfaces;
 
 namespace DesafioCCAA.Business.Services;
-
-public interface IEmailService
-{
-    Task<bool> SendEmailAsync(string to, string subject, string body, bool isHtml = true);
-    Task<bool> TestSmtpConnectionAsync();
-    SmtpConfiguration GetSmtpConfiguration();
-}
-
-public class SmtpConfiguration
-{
-    public string Host { get; set; } = string.Empty;
-    public int Port { get; set; } = 587;
-    public bool EnableSsl { get; set; } = true;
-    public bool UseDefaultCredentials { get; set; } = false;
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string FromEmail { get; set; } = string.Empty;
-    public string FromName { get; set; } = string.Empty;
-}
 
 public class EmailService : IEmailService
 {
@@ -182,5 +164,10 @@ Content-Type: {(isHtml ? "text/html" : "text/plain")}; charset=utf-8
             _logger.LogError(ex, "Erro no teste de conexão SMTP: {Error}", ex.Message);
             return false;
         }
+    }
+
+    public string GetEmailPickupDirectory()
+    {
+        return _configuration["Email:PickupDirectory"] ?? string.Empty;
     }
 }

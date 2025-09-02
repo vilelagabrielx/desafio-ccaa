@@ -1980,3 +1980,142 @@ textarea:focus {
   border-radius: var(--border-radius);
   border-left: 3px solid var(--ccaa-primary);
 }
+
+// ============================================================================
+// PAGINAÇÃO
+// ============================================================================
+
+.pagination-section {
+  margin: var(--space-8) 0;
+  padding: 0 var(--space-6);
+}
+
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+}
+
+.pagination-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination-text {
+  color: var(--ccaa-gray-600);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--ccaa-gray-50);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ccaa-gray-200);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: white;
+  padding: var(--space-2);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--ccaa-gray-200);
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--ccaa-gray-600);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &:hover:not(.disabled) {
+    background: var(--ccaa-primary-light);
+    color: var(--ccaa-primary);
+    transform: translateY(-1px);
+  }
+  
+  &.active {
+    background: var(--ccaa-primary);
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+  }
+  
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  &.page-number {
+    min-width: 40px;
+    font-size: 0.875rem;
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Responsividade da paginação
+@media (max-width: 768px) {
+  .pagination-section {
+    padding: 0 var(--space-4);
+  }
+  
+  .pagination-container {
+    gap: var(--space-3);
+  }
+  
+  .pagination-controls {
+    gap: var(--space-1);
+    padding: var(--space-1);
+  }
+  
+  .pagination-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+    
+    &.page-number {
+      min-width: 36px;
+    }
+  }
+  
+  .pagination-text {
+    font-size: 0.8rem;
+    padding: var(--space-1) var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+    
+    &.page-number {
+      min-width: 32px;
+    }
+  }
+}

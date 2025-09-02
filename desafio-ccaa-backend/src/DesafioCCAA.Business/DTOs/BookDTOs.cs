@@ -64,7 +64,7 @@ public record BookSearchDto
     public BookGenre? Genre { get; init; }
     public BookPublisher? Publisher { get; init; }
     public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 10;
+    public int PageSize { get; init; } = 20; // Aumentado de 10 para 20 para melhor performance
 }
 
 public record BookSearchResultDto
@@ -143,7 +143,7 @@ public record OpenLibraryWorkDto
 public record OpenLibraryWorkResponseDto
 {
     public string? Title { get; init; }
-    public string? Description { get; init; }
+    public object? Description { get; init; } // Pode ser string ou objeto
     public string? Key { get; init; }
     public List<string>? Subjects { get; init; }
 }

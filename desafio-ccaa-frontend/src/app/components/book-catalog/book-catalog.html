@@ -421,6 +421,83 @@
       </div>
     </div>
 
+    <!-- Paginação -->
+    @if (totalPages() > 1) {
+      <div class="pagination-section">
+        <div class="pagination-container">
+          <div class="pagination-info">
+            <span class="pagination-text">
+              Mostrando {{ getItemsRange() }} de {{ totalItems() }} livros
+            </span>
+          </div>
+          
+          <div class="pagination-controls">
+            <!-- Primeira página -->
+            <button 
+              class="pagination-btn" 
+              [class.disabled]="currentPage() === 1"
+              (click)="goToFirstPage()"
+              title="Primeira página"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M11 19L4 12L11 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20 19L13 12L20 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            
+            <!-- Página anterior -->
+            <button 
+              class="pagination-btn" 
+              [class.disabled]="currentPage() === 1"
+              (click)="goToPreviousPage()"
+              title="Página anterior"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            
+            <!-- Números das páginas -->
+            @for (page of pageNumbers(); track page) {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)"
+                [title]="'Página ' + page"
+              >
+                {{ page }}
+              </button>
+            }
+            
+            <!-- Próxima página -->
+            <button 
+              class="pagination-btn" 
+              [class.disabled]="currentPage() === totalPages()"
+              (click)="goToNextPage()"
+              title="Próxima página"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            
+            <!-- Última página -->
+            <button 
+              class="pagination-btn" 
+              [class.disabled]="currentPage() === totalPages()"
+              (click)="goToLastPage()"
+              title="Última página"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M13 5L20 12L13 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 5L11 12L4 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Seção de Ações -->
     <section class="actions-section">
       <div class="actions-container">

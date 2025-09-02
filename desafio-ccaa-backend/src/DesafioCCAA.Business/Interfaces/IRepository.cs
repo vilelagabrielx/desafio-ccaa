@@ -30,6 +30,8 @@ public interface IBookRepository : IRepository<Book>
 {
     Task<IEnumerable<Book>> GetByUserIdAsync(string userId);
     Task<IEnumerable<Book>> GetBooksByUserIdAsync(string userId);
+    Task<IEnumerable<Book>> GetBooksByUserIdPaginatedAsync(string userId, int page, int pageSize);
+    Task<int> GetBooksCountByUserIdAsync(string userId);
     Task<IEnumerable<Book>> SearchAsync(BookSearchDto searchDto);
     Task<int> GetTotalCountAsync(BookSearchDto searchDto);
     Task<Book?> GetByIdWithUserAsync(int id);

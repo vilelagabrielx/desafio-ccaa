@@ -50,6 +50,10 @@ export class BookService implements IBookService {
     return this.service.getAllBooks();
   }
 
+  getMyBooks(page: number = 1, pageSize: number = 20): Observable<BookSearchResult> {
+    return this.service.getMyBooks(page, pageSize);
+  }
+
   getBookById(id: number) {
     return this.service.getBookById(id);
   }

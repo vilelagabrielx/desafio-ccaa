@@ -345,10 +345,36 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 - ✅ `EmailServiceTests.cs` - Testes de email
 - ✅ `ValidationTests.cs` - Testes de validação
 - ✅ `ControllerIntegrationTests.cs` - Testes de integração
+
+### 13. **Health Checks e Monitoramento** ✅ (Diferencial)
+**Como implementei**: Sistema completo de health checks para monitoramento da aplicação.
+
+**Endpoints implementados**:
+- ✅ `/health` - Health check completo com JSON detalhado
+- ✅ `/health/ready` - Readiness probe (Kubernetes)
+- ✅ `/health/live` - Liveness probe (Kubernetes)
+- ✅ `/health-ui` - Interface visual dos health checks
+- ✅ `/api/health/detailed` - Health check detalhado via API
+- ✅ `/api/health/database-stats` - Estatísticas do banco de dados
+
+**Health Checks implementados**:
+- ✅ **Database Health Check**: Conectividade e estatísticas do banco
+- ✅ **OpenLibrary API Health Check**: Verificação da API externa
+- ✅ **Email Service Health Check**: Verificação do serviço de email
+- ✅ **Self Health Check**: Verificação básica da aplicação
+
+**Funcionalidades**:
+- ✅ Monitoramento em tempo real
+- ✅ Interface visual com histórico
+- ✅ Integração com Kubernetes (readiness/liveness probes)
+- ✅ Logs estruturados para troubleshooting
+- ✅ Métricas de performance e duração
+- ✅ Tratamento robusto de erros de deserialização JSON
+- ✅ Formato TimeSpan compatível com HealthChecks.UI
 - ✅ `EnvironmentServiceTests.cs` - Testes de configuração de ambiente
 
 **Cobertura de testes**:
-- ✅ **72 testes automatizados** executando com sucesso
+- ✅ **82 testes automatizados** executando com sucesso
 - ✅ **Backend**: 90%+ (Serviços principais e business logic)
 - ✅ **Integração**: 85%+ (Controllers e APIs)
 - ✅ **XUnit**: Framework de testes implementado
@@ -1104,6 +1130,7 @@ Este projeto demonstra competências em:
 - **Documentação completa**: README, API docs, Swagger
 - **Código limpo**: Padrões e convenções
 - **Segurança robusta**: Validações e proteções
+- **Health Checks**: Monitoramento completo da aplicação
 
 ### **Funcionalidades**
 - **Requisitos**: Todos implementados
