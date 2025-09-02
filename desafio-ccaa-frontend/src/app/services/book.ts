@@ -18,7 +18,7 @@ export class BookService {
       photoPath: 'https://via.placeholder.com/150x200/4CAF50/FFFFFF?text=Senhor+dos+Aneis',
       createdAt: new Date('2024-01-15'),
       updatedAt: new Date('2024-01-15'),
-      isActive: true,
+
       userId: '1',
       userFullName: 'João Silva'
     },
@@ -33,7 +33,7 @@ export class BookService {
       photoPath: 'https://via.placeholder.com/150x200/2196F3/FFFFFF?text=Dom+Casmurro',
       createdAt: new Date('2024-01-10'),
       updatedAt: new Date('2024-01-10'),
-      isActive: true,
+
       userId: '1',
       userFullName: 'João Silva'
     },
@@ -48,7 +48,7 @@ export class BookService {
       photoPath: 'https://via.placeholder.com/150x200/FF9800/FFFFFF?text=Poder+do+Habito',
       createdAt: new Date('2024-01-12'),
       updatedAt: new Date('2024-01-12'),
-      isActive: true,
+
       userId: '1',
       userFullName: 'João Silva'
     },
@@ -63,7 +63,7 @@ export class BookService {
       photoPath: 'https://via.placeholder.com/150x200/9C27B0/FFFFFF?text=Steve+Jobs',
       createdAt: new Date('2024-01-08'),
       updatedAt: new Date('2024-01-08'),
-      isActive: true,
+
       userId: '1',
       userFullName: 'João Silva'
     },
@@ -78,7 +78,7 @@ export class BookService {
       photoPath: 'https://via.placeholder.com/150x200/607D8B/FFFFFF?text=Batman+Ano+Um',
       createdAt: new Date('2024-01-05'),
       updatedAt: new Date('2024-01-05'),
-      isActive: true,
+
       userId: '1',
       userFullName: 'João Silva'
     }

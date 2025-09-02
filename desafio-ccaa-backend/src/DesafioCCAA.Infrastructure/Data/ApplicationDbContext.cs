@@ -41,7 +41,6 @@ public class ApplicationDbContext : IdentityDbContext<User>
             
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt);
-            entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
 
             // Relationships
             entity.HasOne(e => e.User)
@@ -61,7 +60,6 @@ public class ApplicationDbContext : IdentityDbContext<User>
             entity.Property(e => e.DateOfBirth).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt);
-            entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true);
 
             // Indexes
             entity.HasIndex(e => e.Email).IsUnique();
@@ -93,15 +91,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     /// </summary>
     private void ConfigureIndexes(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Book> entity)
     {
-        // Índice único para ISBN ativo
-        var isbnIndex = entity.HasIndex(e => new { e.ISBN, e.IsActive }).IsUnique();
-        
-        if (IsPostgreSQL())
-        {
-            // PostgreSQL suporta filtros de índice
-            isbnIndex.HasFilter("\"IsActive\" = true");
-        }
-        // SQL Server não suporta filtros de índice da mesma forma, então usamos apenas o índice composto
+        // Índice único para ISBN
+        entity.HasIndex(e => e.ISBN).IsUnique();
 
         // Outros índices
         entity.HasIndex(e => e.Title);

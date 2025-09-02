@@ -26,7 +26,6 @@ public class Book
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
-    public bool IsActive { get; set; } = true;
     
     // Foreign key
     public string UserId { get; set; } = string.Empty;

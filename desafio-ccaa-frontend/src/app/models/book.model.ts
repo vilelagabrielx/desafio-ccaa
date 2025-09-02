@@ -19,7 +19,6 @@ export interface Book {
   
   createdAt: Date;
   updatedAt?: Date;
-  isActive: boolean;
   userId: string;
   userFullName?: string; // Para exibição no frontend
 }
@@ -196,5 +195,4 @@ export interface User {
   email: string;
   createdAt: Date;
   updatedAt?: Date;
-  isActive: boolean;
 }

@@ -24,7 +24,6 @@ public record UserResponseDto
     public string Email { get; init; } = string.Empty;
     public string FullName { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
-    public bool IsActive { get; init; }
 }
 
 public record ChangePasswordDto

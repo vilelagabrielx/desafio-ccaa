@@ -49,11 +49,6 @@ namespace DesafioCCAA.Infrastructure.Migrations
                         .HasMaxLength(13)
                         .HasColumnType("character varying(13)");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
                     b.Property<byte[]>("PhotoBytes")
                         .HasColumnType("bytea");
 
@@ -95,15 +90,14 @@ namespace DesafioCCAA.Infrastructure.Migrations
 
                     b.HasIndex("Genre");
 
+                    b.HasIndex("ISBN")
+                        .IsUnique();
+
                     b.HasIndex("Publisher");
 
                     b.HasIndex("Title");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("ISBN", "IsActive")
-                        .IsUnique()
-                        .HasFilter("\"IsActive\" = true");
 
                     b.ToTable("Books");
                 });
@@ -137,11 +131,6 @@ namespace DesafioCCAA.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
 
                     b.Property<string>("LastName")
                         .IsRequired()

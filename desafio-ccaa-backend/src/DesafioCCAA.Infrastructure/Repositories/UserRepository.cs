@@ -18,14 +18,13 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Books)
-            .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
+            .FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<IEnumerable<User>> GetAllAsync()
     {
         return await _context.Users
             .Include(u => u.Books)
-            .Where(u => u.IsActive)
             .ToListAsync();
     }
 
@@ -49,28 +48,27 @@ public class UserRepository : IUserRepository
         var user = await _context.Users.FindAsync(id);
         if (user == null) return false;
 
-        user.IsActive = false;
-        user.UpdatedAt = DateTime.UtcNow;
+        _context.Users.Remove(user);
         await _context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> ExistsAsync(string id)
     {
-        return await _context.Users.AnyAsync(u => u.Id == id && u.IsActive);
+        return await _context.Users.AnyAsync(u => u.Id == id);
     }
 
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            .FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<User?> GetByEmailWithBooksAsync(string email)
     {
         return await _context.Users
-            .Include(u => u.Books.Where(b => b.IsActive))
-            .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            .Include(u => u.Books)
+            .FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<bool> EmailExistsAsync(string email)

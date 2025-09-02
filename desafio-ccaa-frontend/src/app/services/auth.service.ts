@@ -13,7 +13,6 @@ export interface UserProfile {
   lastName: string;
   fullName: string;
   createdAt: string;
-  isActive: boolean;
 }
 
 export interface LocalUserRegistration {
@@ -37,7 +36,6 @@ export interface LocalUser {
   lastName: string;
   fullName: string;
   createdAt: string;
-  isActive: boolean;
 }
 
 export interface ApiResponse<T> {

@@ -44,12 +44,7 @@ import { Observable } from 'rxjs';
               <span>{{ user.createdAt | date:'dd/MM/yyyy' }}</span>
             </div>
 
-            <div class="info-item">
-              <label>Status:</label>
-              <span [class]="user.isActive ? 'verified' : 'not-verified'">
-                {{ user.isActive ? '✅ Ativo' : '❌ Inativo' }}
-              </span>
-            </div>
+
 
             <div class="info-item">
               <label>ID do Usuário:</label>

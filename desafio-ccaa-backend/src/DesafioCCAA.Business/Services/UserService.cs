@@ -65,7 +65,7 @@ public class UserService(
         try
         {
             var user = await userManager.FindByEmailAsync(loginDto.Email);
-            if (user is null || !user.IsActive)
+            if (user is null)
             {
                 return ServiceResult<string>.Failure("Credenciais inválidas");
             }
@@ -245,17 +245,14 @@ public class UserService(
                 return ServiceResult<bool>.Failure("Usuário não encontrado");
             }
 
-            user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            var result = await userRepository.UpdateAsync(user);
-            if (result is null)
+            var result = await userRepository.DeleteAsync(userId);
+            if (!result)
             {
-                var errors = new List<string> { "Erro ao desativar usuário" };
+                var errors = new List<string> { "Erro ao excluir usuário" };
                 return ServiceResult<bool>.ValidationFailure(errors);
             }
 
-            logger.LogInformation("Usuário desativado com sucesso para: {UserId}", userId);
+            logger.LogInformation("Usuário excluído com sucesso para: {UserId}", userId);
             return ServiceResult<bool>.Success(true);
         }
         catch (Exception ex)
@@ -413,7 +410,6 @@ public class UserService(
             FirstName = user.FirstName,
             LastName = user.LastName,
             FullName = user.FullName ?? string.Empty,
-            CreatedAt = user.CreatedAt,
-            IsActive = user.IsActive
+            CreatedAt = user.CreatedAt
         };
 }

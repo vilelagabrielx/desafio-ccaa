@@ -9,7 +9,6 @@ public class User : IdentityUser
     public DateTime DateOfBirth { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
-    public bool IsActive { get; set; } = true;
     
     // Navigation properties
     public virtual ICollection<Book> Books { get; set; } = [];
