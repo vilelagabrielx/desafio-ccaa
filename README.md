@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular 17** (frontend) e **ASP.NET Core 8.0** (backend), com suporte completo a **PostgreSQL** e **SQL Server**. O projeto implementa todos os requisitos funcionais e não-funcionais especificados, além de funcionalidades extras.
+Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular 18** (frontend) e **ASP.NET Core 8.0** (backend), com suporte completo a **PostgreSQL** e **SQL Server**. O projeto implementa todos os requisitos funcionais e não-funcionais especificados, além de funcionalidades extras.
 
 ## Status do Projeto
 
@@ -65,7 +65,7 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 ## ✅ REQUISITOS FUNCIONAIS - IMPLEMENTADOS
 
 ### 1. **Sistema de Catálogo de Livros** ✅
-**Como implementei**: Criei uma aplicação web completa com Angular 17 no frontend e ASP.NET Core 8.0 no backend, seguindo Clean Architecture com separação clara de responsabilidades.
+**Como implementei**: Criei uma aplicação web completa com Angular 18 no frontend e ASP.NET Core 8.0 no backend, seguindo Clean Architecture com separação clara de responsabilidades.
 
 **Arquivos principais do backend**:
 - `BookController.cs` - Endpoints RESTful para gestão de livros
@@ -146,12 +146,12 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 **Arquivos principais do backend**:
 - `BookReportService.cs` - Lógica de geração de relatórios
 - `PdfReportGenerator.cs` - Geração específica de PDF
-- `ExcelReportGenerator.cs` - Geração adicional de Excel
+- `ExcelReportGenerator.cs` - Estrutura para geração de Excel (implementação pendente)
 
 **Funcionalidades de relatório**:
 - ✅ Relatório PDF com todos os livros do usuário
 - ✅ Layout profissional com logo e dados do usuário
-- ✅ Relatório Excel como funcionalidade extra
+- ✅ Relatório Excel (estrutura implementada, geração pendente)
 - ✅ Download direto via endpoint `/api/book/report/pdf`
 
 ### 7. **Sistema de Emails** ✅
@@ -251,7 +251,7 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 **Como implementei**: Stack completa com comunicação via HTTP e JWT.
 
 **Tecnologias implementadas**:
-- ✅ **Frontend**: Angular 17 com TypeScript
+- ✅ **Frontend**: Angular 18 com TypeScript
 - ✅ **Backend**: ASP.NET Core 8.0 Web API
 - ✅ **Comunicação**: HTTP RESTful com JWT
 
@@ -354,8 +354,6 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 - ✅ `/health/ready` - Readiness probe (Kubernetes)
 - ✅ `/health/live` - Liveness probe (Kubernetes)
 - ✅ `/health-ui` - Interface visual dos health checks
-- ✅ `/api/health/detailed` - Health check detalhado via API
-- ✅ `/api/health/database-stats` - Estatísticas do banco de dados
 
 **Health Checks implementados**:
 - ✅ **Database Health Check**: Conectividade e estatísticas do banco
@@ -374,7 +372,7 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 - ✅ `EnvironmentServiceTests.cs` - Testes de configuração de ambiente
 
 **Cobertura de testes**:
-- ✅ **82 testes automatizados** executando com sucesso
+- ✅ **72 testes automatizados** executando com sucesso
 - ✅ **Backend**: 90%+ (Serviços principais e business logic)
 - ✅ **Integração**: 85%+ (Controllers e APIs)
 - ✅ **XUnit**: Framework de testes implementado
@@ -384,8 +382,8 @@ Sistema full-stack para gestão de catálogo de livros desenvolvido em **Angular
 
 ## 🎨 Arquitetura do Frontend
 
-### **Angular 17 com TypeScript**
-- **Framework**: Angular 17 com TypeScript
+### **Angular 18 com TypeScript**
+- **Framework**: Angular 18 com TypeScript
 - **State Management**: RxJS + Signals
 - **Forms**: Reactive Forms com validação em tempo real
 - **Authentication**: JWT Guards e Interceptors
@@ -1112,7 +1110,7 @@ Este projeto demonstra competências em:
 - **UnitOfWork**: Padrão de transações
 
 ### **Tecnologias Frontend**
-- **Angular 17**: Framework moderno com TypeScript
+- **Angular 18**: Framework moderno com TypeScript
 - **RxJS + Signals**: Gerenciamento de estado reativo
 - **Reactive Forms**: Validação em tempo real
 - **HTTP Interceptors**: Autenticação automática
@@ -1135,13 +1133,13 @@ Este projeto demonstra competências em:
 ### **Funcionalidades**
 - **Requisitos**: Todos implementados
 - **Funcionalidades extras**: OpenLibrary, relatórios, multi-banco, emails
-- **Interface**: Design system responsivo com 12+ componentes
+- **Interface**: Design system responsivo com 12 componentes
 - **Performance**: Índices, cache, otimizações
 - **Sistema completo**: 10 serviços backend + 13 serviços frontend
 
 ---
 
-**Tecnologias**: ASP.NET Core 8.0, Entity Framework Core, PostgreSQL, SQL Server, JWT, FluentValidation, Mapster, XUnit, Angular 17, RxJS, TypeScript
+**Tecnologias**: ASP.NET Core 8.0, Entity Framework Core, PostgreSQL, SQL Server, JWT, FluentValidation, Mapster, XUnit, Angular 18, RxJS, TypeScript
 
 **Arquitetura**: Clean Architecture, RESTful API, Multi-provider Database, SOLID Principles, Design Patterns
 
