@@ -93,7 +93,7 @@ public class BookReportService : IBookReportService
 /// </summary>
 public class PdfReportGenerator : IReportGenerator
 {
-    public async Task<byte[]> GenerateReportAsync<T>(IEnumerable<T> data, string title, Dictionary<string, object>? parameters = null)
+    public Task<byte[]> GenerateReportAsync<T>(IEnumerable<T> data, string title, Dictionary<string, object>? parameters = null)
     {
         using var memoryStream = new MemoryStream();
         var writer = new PdfWriter(memoryStream);
@@ -150,7 +150,7 @@ public class PdfReportGenerator : IReportGenerator
         }
 
         document.Close();
-        return memoryStream.ToArray();
+        return Task.FromResult(memoryStream.ToArray());
     }
 }
 
@@ -159,11 +159,10 @@ public class PdfReportGenerator : IReportGenerator
 /// </summary>
 public class ExcelReportGenerator : IReportGenerator
 {
-    public async Task<byte[]> GenerateReportAsync<T>(IEnumerable<T> data, string title, Dictionary<string, object>? parameters = null)
+    public Task<byte[]> GenerateReportAsync<T>(IEnumerable<T> data, string title, Dictionary<string, object>? parameters = null)
     {
         // TODO: Implementar geração de Excel usando EPPlus ou ClosedXML
         // Por enquanto, retorna um array vazio
-        await Task.CompletedTask;
-        return Array.Empty<byte>();
+        return Task.FromResult(Array.Empty<byte>());
     }
 }

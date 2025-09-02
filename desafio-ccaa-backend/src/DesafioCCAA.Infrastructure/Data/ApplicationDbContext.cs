@@ -6,8 +6,12 @@ namespace DesafioCCAA.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<User>
 {
+    private readonly string _databaseProvider;
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
+        // Detectar o provider do banco de dados
+        _databaseProvider = Database.ProviderName ?? "";
     }
 
     public DbSet<Book> Books { get; set; }
@@ -29,7 +33,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
             entity.Property(e => e.Summary).HasMaxLength(10000); // Resumo pode ser mais longo que a sinopse
             
             // Configuração para as novas propriedades de imagem
-            entity.Property(e => e.PhotoBytes).HasColumnType("bytea"); // PostgreSQL para dados binários
+            ConfigureImageProperties(entity);
             entity.Property(e => e.PhotoContentType).HasMaxLength(100);
 
             
@@ -47,14 +51,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
                   .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            entity.HasIndex(e => new { e.ISBN, e.IsActive })
-                  .HasFilter("\"IsActive\" = true")
-                  .IsUnique();
-            entity.HasIndex(e => e.Title);
-            entity.HasIndex(e => e.Author);
-            entity.HasIndex(e => e.Genre);
-            entity.HasIndex(e => e.Publisher);
-            entity.HasIndex(e => e.UserId);
+            ConfigureIndexes(entity);
         });
 
         // User entity configuration
@@ -70,5 +67,65 @@ public class ApplicationDbContext : IdentityDbContext<User>
             // Indexes
             entity.HasIndex(e => e.Email).IsUnique();
         });
+    }
+
+    /// <summary>
+    /// Configura propriedades de imagem baseado no provider do banco
+    /// </summary>
+    private void ConfigureImageProperties(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Book> entity)
+    {
+        if (IsPostgreSQL())
+        {
+            entity.Property(e => e.PhotoBytes).HasColumnType("bytea");
+        }
+        else if (IsSQLServer())
+        {
+            entity.Property(e => e.PhotoBytes).HasColumnType("varbinary(max)");
+        }
+        else
+        {
+            // Deixar o EF Core decidir automaticamente
+            entity.Property(e => e.PhotoBytes);
+        }
+    }
+
+    /// <summary>
+    /// Configura índices baseado no provider do banco
+    /// </summary>
+    private void ConfigureIndexes(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Book> entity)
+    {
+        // Índice único para ISBN ativo
+        var isbnIndex = entity.HasIndex(e => new { e.ISBN, e.IsActive }).IsUnique();
+        
+        if (IsPostgreSQL())
+        {
+            // PostgreSQL suporta filtros de índice
+            isbnIndex.HasFilter("\"IsActive\" = true");
+        }
+        // SQL Server não suporta filtros de índice da mesma forma, então usamos apenas o índice composto
+
+        // Outros índices
+        entity.HasIndex(e => e.Title);
+        entity.HasIndex(e => e.Author);
+        entity.HasIndex(e => e.Genre);
+        entity.HasIndex(e => e.Publisher);
+        entity.HasIndex(e => e.UserId);
+    }
+
+    /// <summary>
+    /// Verifica se está usando PostgreSQL
+    /// </summary>
+    private bool IsPostgreSQL()
+    {
+        return _databaseProvider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Verifica se está usando SQL Server
+    /// </summary>
+    private bool IsSQLServer()
+    {
+        return _databaseProvider.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) ||
+               _databaseProvider.Contains("Microsoft.Data.SqlClient", StringComparison.OrdinalIgnoreCase);
     }
 }

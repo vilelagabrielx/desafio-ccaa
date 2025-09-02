@@ -17,9 +17,11 @@ namespace DesafioCCAA.Tests.Integration;
 
 public class ControllerIntegrationTests
 {
-    private readonly Mock<IBookService> _bookServiceMock;
+    private readonly Mock<IBookCrudService> _bookCrudServiceMock;
+    private readonly Mock<IBookReportService> _bookReportServiceMock;
+    private readonly Mock<IBookSearchService> _bookSearchServiceMock;
+    private readonly Mock<IBookImageService> _bookImageServiceMock;
     private readonly Mock<IUserService> _userServiceMock;
-    private readonly Mock<IImageOptimizationService> _imageServiceMock;
     private readonly Mock<IEnvironmentService> _environmentServiceMock;
     private readonly Mock<ILogger<BookController>> _bookLoggerMock;
     private readonly Mock<ILogger<UserController>> _userLoggerMock;
@@ -28,14 +30,20 @@ public class ControllerIntegrationTests
 
     public ControllerIntegrationTests()
     {
-        _bookServiceMock = new Mock<IBookService>();
+        _bookCrudServiceMock = new Mock<IBookCrudService>();
+        _bookReportServiceMock = new Mock<IBookReportService>();
+        _bookSearchServiceMock = new Mock<IBookSearchService>();
+        _bookImageServiceMock = new Mock<IBookImageService>();
         _userServiceMock = new Mock<IUserService>();
-        _imageServiceMock = new Mock<IImageOptimizationService>();
         _environmentServiceMock = new Mock<IEnvironmentService>();
         _bookLoggerMock = new Mock<ILogger<BookController>>();
         _userLoggerMock = new Mock<ILogger<UserController>>();
 
-        _bookController = new BookController(_bookServiceMock.Object, _imageServiceMock.Object);
+        _bookController = new BookController(
+            _bookCrudServiceMock.Object, 
+            _bookReportServiceMock.Object,
+            _bookSearchServiceMock.Object,
+            _bookImageServiceMock.Object);
         _userController = new UserController(_userServiceMock.Object, _environmentServiceMock.Object);
     }
 
@@ -49,7 +57,7 @@ public class ControllerIntegrationTests
             new() { Id = 2, Title = "Livro 2", Author = "Autor 2" }
         };
 
-        _bookServiceMock.Setup(x => x.GetAllBooksAsync())
+        _bookCrudServiceMock.Setup(x => x.GetAllBooksAsync())
             .ReturnsAsync(books);
 
         // Act
@@ -83,7 +91,7 @@ public class ControllerIntegrationTests
             Author = "Autor Teste"
         };
 
-        _bookServiceMock.Setup(x => x.CreateBookAsync(userId, createBookDto, null))
+        _bookCrudServiceMock.Setup(x => x.CreateBookAsync(userId, createBookDto, null))
             .ReturnsAsync(ServiceResult<BookResponseDto>.Success(bookResponse));
 
         // Setup user claims

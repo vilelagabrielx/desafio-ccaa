@@ -79,31 +79,53 @@ Console.WriteLine($"  - Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"  - Content Root: {builder.Environment.ContentRootPath}");
 
 // Build connection string from configuration or environment variables
-var connectionString = builder.Configuration.GetConnectionString("PostgreSQL");
-Console.WriteLine($"Connection string from config: {connectionString}");
+string connectionString;
 
-if (string.IsNullOrEmpty(connectionString))
+if (dbProvider.ToLower() == "postgresql" || dbProvider.ToLower() == "postgres")
 {
-    // Fallback to environment variables if no connection string in config
-    connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+    connectionString = builder.Configuration.GetConnectionString("PostgreSQL") ?? "";
+    
     if (string.IsNullOrEmpty(connectionString))
     {
+        // Fallback to environment variables for PostgreSQL
         var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
         var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
         var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "postgres";
         var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "postgres";
         var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
         
-        if (dbProvider.ToLower() == "postgresql" || dbProvider.ToLower() == "postgres")
+        connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUsername};Password={dbPassword};SSL Mode=Require;Trust Server Certificate=true;";
+    }
+}
+else if (dbProvider.ToLower() == "sqlserver" || dbProvider.ToLower() == "mssql")
+{
+            connectionString = builder.Configuration.GetConnectionString("SQLServer") ?? "";
+    
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        // Fallback to environment variables for SQL Server
+        var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+        var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "1433";
+        var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "DesafioCCAA";
+        var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "";
+        var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+        
+        if (!string.IsNullOrEmpty(dbUsername))
         {
-            connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUsername};Password={dbPassword};";
+            connectionString = $"Server={dbHost},{dbPort};Database={dbName};User Id={dbUsername};Password={dbPassword};TrustServerCertificate=true;MultipleActiveResultSets=true;";
         }
-        else if (dbProvider.ToLower() == "sqlserver" || dbProvider.ToLower() == "mssql")
+        else
         {
-            connectionString = builder.Configuration.GetConnectionString("SQLServer");
+            connectionString = $"Server={dbHost},{dbPort};Database={dbName};Trusted_Connection=true;TrustServerCertificate=true;MultipleActiveResultSets=true;";
         }
     }
 }
+else
+{
+    throw new InvalidOperationException($"Unsupported database provider: {dbProvider}");
+}
+
+Console.WriteLine($"Connection string from config: {connectionString}");
 
 Console.WriteLine($"Using Database Provider: {dbProvider}");
 Console.WriteLine($"Connection String: {connectionString?.Substring(0, Math.Min(50, connectionString?.Length ?? 0))}...");
@@ -195,7 +217,7 @@ builder.Services.AddScoped<IBookSearchService, BookSearchService>();
 builder.Services.AddScoped<IBookImageService, BookImageService>();
 
 // Legacy interface for backward compatibility
-builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IBookService, BookServiceFacade>();
 
 // Other services
 builder.Services.AddScoped<IImageOptimizationService, ImageOptimizationService>();
