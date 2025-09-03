@@ -559,25 +559,10 @@ export class AuthService {
   }
 
   /**
-   * Reset de senha com Auth0 (compatibilidade - não suportado)
-   */
-  resetPasswordWithAuth0(): void {
-    console.warn('resetPasswordWithAuth0 não é mais suportado. Use resetPassword() em vez disso.');
-  }
-
-  /**
    * Métodos de compatibilidade (não usados mais)
    */
-  loginWithAuth0(): void {
-    console.warn('loginWithAuth0 não é mais suportado. Use login() em vez disso.');
-  }
-
   loginWithGoogle(): void {
     console.warn('loginWithGoogle não é mais suportado. Use login() em vez disso.');
-  }
-
-  signupWithAuth0(): void {
-    console.warn('signupWithAuth0 não é mais suportado. Use register() em vez disso.');
   }
 
   registerLocalUser(userData: LocalUserRegistration): Observable<LocalUser> {

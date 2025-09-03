@@ -19,13 +19,7 @@ export const environment = {
     retryAttempts: 3, // Tentativas de retry
   },
   
-  // 🔧 CONFIGURAÇÃO: Auth0
-  auth0: {
-    domain: 'dev-5uh7sugfyt00g0qf.us.auth0.com',
-    clientId: '6WLBR8IcBjgjAcg7ItbEa62WRkVIXedn', // Client ID da aplicação Auth0
-    redirectUri: 'https://seudominio.com',
-    logoutRedirectUri: 'https://seudominio.com',
-  },
+
   
   // 🔧 CONFIGURAÇÃO: Logging
   logging: {

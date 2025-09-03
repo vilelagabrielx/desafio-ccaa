@@ -22,6 +22,15 @@
 **/.env.development
 **/.env.production
 
+# Arquivos de configuração com credenciais
+**/database-config.json
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
+**/appsettings.SQLServer.json
+**/appsettings.SQLServerLocal.json
+
 # Arquivos de build e output
 **/bin/
 **/obj/

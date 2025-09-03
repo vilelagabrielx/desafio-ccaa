@@ -1,0 +1,57 @@
+[33mcommit 4c2cc4b0808eceaba4e68af8bd86e6cb2064504b[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Mon Sep 1 19:47:19 2025 -0300
+
+    Implement public access for book retrieval and enhance user authentication flow
+    
+    - Added a new endpoint in BookController to list all books publicly.
+    - Refactored existing GetAllBooks method to improve error handling and response structure.
+    - Updated UserController to allow anonymous access for registration, login, and [1;31mpassword[m reset endpoints.
+    - Introduced GuestGuard to restrict access to authentication routes for logged-in users.
+    - Enhanced login component with lockout functionality after multiple failed attempts, including user feedback animations.
+    - Improved error handling in AuthService for better user experience during login failures.
+    - Added floating development tools button for easier access to environment information.
+
+[33mcommit ff9ad2e2712de509ffc7885e22ce1e71967f4f34[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Mon Sep 1 19:34:41 2025 -0300
+
+    Add email reset functionality with new templates and SMTP configuration
+    
+    - Introduced new email templates for [1;31mpassword[m reset notifications.
+    - Configured SMTP settings in appsettings.json for email delivery.
+    - Implemented EmailService to handle email sending and error management.
+    - Added EnvironmentService to manage environment-specific configurations.
+    - Enhanced UserController with endpoints for environment info and email template download.
+    - Updated frontend components to support new reset [1;31mpassword[m flow and email handling features.
+    - Included development tools for testing email functionalities and environment checks.
+
+[33mcommit 44a5fe1b4dd64f123c2f7a5771a3bbb12b6eedd8[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Mon Sep 1 15:38:50 2025 -0300
+
+    Enhance OpenLibraryService to improve book data retrieval by adding a method for obtaining work [1;31mkey[ms from the Book API. Update BookDTOs to include a [1;31mKey[m field for better identification. Modify BookService to return structured responses for ISBN searches, including summary data. Update frontend components to log and handle summary information effectively, improving user feedback and data management.
+
+[33mcommit 44cd9c5368613fd2b128c05de56a73fb3f6e2383[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Sat Aug 30 20:51:38 2025 -0300
+
+    Refactor authentication system to remove Auth0 integration and implement local authentication using ASP.NET Core Identity and JWT. Update README to reflect changes in authentication methods and system architecture. Remove outdated migration scripts and clean up old Auth0 data. Enhance user registration and profile management components in the frontend, including date of birth handling and improved error validation. Streamline email handling for [1;31mpassword[m resets using a local pickup directory.
+
+[33mcommit 3ee5505c6eda9bb99d075aec55f319e0c048a10d[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Fri Aug 29 05:16:49 2025 -0300
+
+    Refactor backend and frontend configurations for improved security and functionality. Update start-local.bat to use PowerShell for backend execution. Move sensitive [1;31mcredential[ms to environment variables and enhance README with secure configuration instructions. Update Angular project settings and routing for better structure and performance.
+
+[33mcommit ece91fa61cedaa5903912b99e8d8fa9c1c81af18[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Fri Aug 29 03:43:04 2025 -0300
+
+    Add local restart, start, and stop scripts for application management. Implement Auth0 signup and reset [1;31mpassword[m components in the frontend, enhancing user authentication flow. Update routing and environment configurations for improved functionality.
+
+[33mcommit 7026b698e1553859a4f83be626022ae3cba8dc1a[m
+Author: gabriel <gabrielvilelax@gmail.com>
+Date:   Fri Aug 29 02:50:53 2025 -0300
+
+    Update database [1;31mpassword[m and remove exposed [1;31mcredential[ms

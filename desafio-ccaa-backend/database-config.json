@@ -5,13 +5,13 @@
       "port": 5432,
       "database": "postgres",
       "username": "postgres.dhzqrasofzdjfpfhhnqm",
-      "password": "ccaateste@123",
+      "password": "SUA_SENHA_DO_BANCO_AQUI",
       "ssl": {
         "mode": "Require",
         "trustServerCertificate": true
       },
       "timeout": 300,
-      "connectionString": "Host=aws-1-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.dhzqrasofzdjfpfhhnqm;Password=ccaateste@123;SSL Mode=Require;Trust Server Certificate=true;Command Timeout=300;"
+      "connectionString": "Host=aws-1-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.dhzqrasofzdjfpfhhnqm;Password=SUA_SENHA_DO_BANCO_AQUI;SSL Mode=Require;Trust Server Certificate=true;Command Timeout=300;"
     },
     "sqlserver": {
       "server": "(localdb)\\mssqllocaldb",
@@ -22,7 +22,7 @@
     },
     "provider": "PostgreSQL",
     "urls": {
-      "supabase": "postgresql://postgres.dhzqrasofzdjfpfhhnqm:ccaateste@123@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
+      "supabase": "postgresql://postgres.dhzqrasofzdjfpfhhnqm:SUA_SENHA_DO_BANCO_AQUI@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
       "pooler": "aws-1-us-east-1.pooler.supabase.com",
       "direct": "db.dhzqrasofzdjfpfhhnqm.supabase.co"
     }
