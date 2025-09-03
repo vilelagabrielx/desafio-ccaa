@@ -97,3 +97,5 @@
 
 # Manter apenas o README.md principal
 !README.md
+desafio-ccaa-backend/database-config.json
+desafio-ccaa-backend/src/DesafioCCAA.API/appsettings.json
